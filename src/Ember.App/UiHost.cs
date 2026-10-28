@@ -7,7 +7,7 @@ namespace Ember.App;
 
 /// <summary>
 /// Decides which UI package is shown: the one embedded in the exe (always works offline) or a newer
-/// downloaded one from %LOCALAPPDATA%\Ember\ui. Both are served as https://ui.ember.invalid/.
+/// downloaded one from C:\Ember\Cache\ui. Both are served as https://ui.ember.invalid/.
 /// </summary>
 public sealed class UiHost
 {

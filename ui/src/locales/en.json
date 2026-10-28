@@ -17,9 +17,9 @@
       "portable": "portable",
       "dev": "development"
     },
-    "advancedOn": "Advanced modules are now visible.",
-    "advancedOff": "Advanced modules are hidden.",
-    "advancedNotAllowed": "According to the team configuration, the advanced modules are not enabled for your account."
+    "advancedOn": "KI and Energy are visible now. Ctrl + E hides them again.",
+    "advancedOff": "KI and Energy are hidden. Ctrl + E shows them again.",
+    "advancedNotAllowed": "KI and Energy are only available to admins listed in the team configuration (team.json → admins)."
   },
   "nav": {
     "start": "Home",
@@ -84,7 +84,6 @@
     "localZipMissing": "The local px zip was not found: {path}",
     "settingsInvalid": "Check the settings: {detail}",
     "commandFailed": "{command} failed: {detail}",
-    "deviceUnknown": "This device does not exist (any more).",
     "elevatedNoResult": "The action with admin rights returned no result.",
     "elevationCancelled": "The Windows prompt for admin rights was cancelled.",
     "exeUpdateMissing": "No downloaded update is ready.",
@@ -95,7 +94,6 @@
     "llamaNoAsset": "The current llama.cpp release has no Windows build \"{variant}\".",
     "llamaNoServer": "llama-server.exe is missing from the downloaded archive.",
     "llamaNotInstalled": "llama.cpp is not installed yet.",
-    "macInvalid": "\"{mac}\" is not a valid MAC address (e.g. 02-00-5E-10-00-01).",
     "mailNoRecipient": "The team configuration has no service center address (serviceCenter.email).",
     "missingParam": "Missing parameter: {name}",
     "modelMissing": "The model file is missing: {path}",
@@ -108,6 +106,8 @@
     "powerNoBackup": "There is no saved previous state.",
     "powerProfileUnknown": "The power profile \"{id}\" does not exist.",
     "powershell": "PowerShell reports: {detail}",
+    "powershellEmpty": "PowerShell returned no data. The log shows what happened.",
+    "powershellNoResult": "PowerShell did not run the script ({way}: {detail}). A security policy may be blocking this call. The log has the details.",
     "processStart": "Could not start {file}.",
     "processTimeout": "{file} did not respond after {seconds} s.",
     "proxyUnreachable": "The proxy {proxy} cannot be reached via TCP. Are host and port correct, and does the firewall let Ember out?",
@@ -221,7 +221,7 @@
       "notInstalled": "px is not installed",
       "outdated": "The px configuration no longer matches the settings (e.g. a new proxy in the team configuration). \"Install / update\" brings it up to date.",
       "confirmUninstall": "px will be stopped, autostart removed, the proxy entries of environment variables, git, npm, NuGet, pip and VS Code reverted and the installation folder deleted. Entries that do not point to px stay unchanged.",
-      "debugHint": "In debug mode px runs in the foreground with a detailed log (source \"px\" in the log tab)."
+      "debugHint": "In debug mode px runs in its own console window with verbose output. Ember also writes it to C:\\Ember\\Logs and opens that folder when px debug ends."
     },
     "diag": {
       "title": "Diagnosis",
@@ -312,8 +312,9 @@
     "started": "px started: {path}",
     "processStopped": "{name} ({pid}) stopped",
     "processStopFailed": "{name} ({pid}) could not be stopped: {detail}",
-    "debugStarted": "px is running in debug mode. Its output appears here with the source \"px\".",
-    "debugEnded": "px debug ended (exit code {code})"
+    "debugStarted": "px is running in debug mode in its own window. The output is also written to {file}.",
+    "debugEnded": "px debug ended (exit code {code})",
+    "debugWindow": "px debug is running. The output is also written to {file}. Close this window or click “Stop px debug” in Ember to end it."
   },
   "git": {
     "title": "Git identity",
@@ -519,18 +520,7 @@
     "biosHint": "Ember cannot check the BIOS. On Dell: turn on \"Wake on LAN\", \"Wake on Dell USB-C Dock\" and possibly \"MAC Address Pass-Through\", and turn off \"Deep Sleep Control\".",
     "local": {
       "changed": "Wake-on-LAN: {count} setting(s) changed"
-    },
-    "jobs": {
-      "wake": "Wake {name}"
-    },
-    "steps": {
-      "send": "Send magic packet",
-      "wait": "Wait for an answer"
-    },
-    "sent": "{count} packets sent to {mac}",
-    "waiting": "Waiting for {host} … (try {count})",
-    "online": "{host} is reachable ({ms} ms)",
-    "noHost": "No host name entered, so no check"
+    }
   },
   "system": {
     "title": "System & policies",
@@ -542,7 +532,8 @@
       "locked": "by policy",
       "info": "info",
       "missing": "missing",
-      "error": "error"
+      "error": "error",
+      "pending": "checking"
     },
     "checks": {
       "gpo": {
@@ -551,7 +542,8 @@
         "noResult": "gpresult returned no result",
         "actions": {
           "gpupdate": "Refresh policies now"
-        }
+        },
+        "timeout": "gpresult did not answer within {seconds} s. “Update policies now” often helps; check again afterwards."
       },
       "executionPolicy": {
         "title": "PowerShell execution policy",
@@ -585,19 +577,7 @@
   },
   "ai": {
     "title": "AI",
-    "subtitle": "Wake your own machines, manage llama.cpp and models, set up agent tools.",
-    "devices": {
-      "title": "Wake machines",
-      "empty": "No machines entered yet.",
-      "name": "Name",
-      "mac": "MAC address",
-      "host": "Host name/IP (optional, for the reachability check)",
-      "broadcast": "Broadcast address (optional)",
-      "port": "Port",
-      "wake": "Wake",
-      "add": "Add machine",
-      "saved": "Device list saved"
-    },
+    "subtitle": "Enable Wake-on-LAN for this machine, manage llama.cpp and models, run llama-server.",
     "gpu": {
       "title": "Graphics card",
       "none": "No NVIDIA graphics card found (nvidia-smi missing).",
@@ -665,22 +645,6 @@
       "stopped": "llama-server stopped",
       "started": "llama-server started: {model} on port {port}",
       "openUi": "Open web UI"
-    },
-    "agents": {
-      "title": "Agent tools",
-      "subtitle": "Installed globally with npm – through px, like everything else.",
-      "installed": "installed: {version}",
-      "latest": "latest: {version}",
-      "notInstalled": "not installed",
-      "install": "Install",
-      "update": "Update",
-      "add": "Add npm package",
-      "jobs": {
-        "install": "Install {package}"
-      },
-      "steps": {
-        "install": "npm install -g {package}"
-      }
     }
   },
   "settings": {
@@ -753,9 +717,9 @@
       "source": "Source: {source}"
     },
     "advanced": {
-      "title": "Advanced",
-      "toggle": "Show advanced modules (AI tab, developer tools of the UI)",
-      "shortcut": "Shortcut: Ctrl + Shift + E"
+      "title": "Advanced modules",
+      "admin": "You are listed as an admin in the team configuration. Ctrl + E shows and hides the KI and Energy tabs.",
+      "notAdmin": "KI and Energy are only available to admins listed in the team configuration (team.json → admins)."
     },
     "folders": {
       "title": "Folders",

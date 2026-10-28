@@ -39,28 +39,6 @@ public class ModuleTests
         Assert.Contains("Diagnosebericht", b2);
     }
 
-    [Theory]
-    [InlineData("02-00-5E-10-00-01")]
-    [InlineData("02:00:5e:10:00:01")]
-    [InlineData("02005E100001")]
-    public void Magic_packet_has_header_and_16_macs(string mac)
-    {
-        var packet = WakeOnLan.BuildPacket(mac);
-        Assert.Equal(102, packet.Length);
-        Assert.All(packet.Take(6), b => Assert.Equal(0xFF, b));
-        var expected = new byte[] { 0x02, 0x00, 0x5E, 0x10, 0x00, 0x01 };
-        for (int i = 0; i < 16; i++) Assert.Equal(expected, packet.Skip(6 + i * 6).Take(6).ToArray());
-    }
-
-    [Fact]
-    public void Invalid_mac_is_rejected()
-    {
-        L.Configure("de");
-        var ex = Assert.Throws<EmberException>(() => WakeOnLan.BuildPacket("02-00-5E"));
-        Assert.Equal("macInvalid", ex.Code);
-        Assert.Contains("keine gültige MAC-Adresse", ex.Message);
-    }
-
     [Fact]
     public void Wol_state_is_evaluated_for_waking_from_s5()
     {
@@ -117,13 +95,6 @@ public class ModuleTests
         Assert.Equal(new[] { "-ngl", "99", "-c", "8192", "--alias", "mein Modell" },
                      LlamaCpp.SplitArgs("-ngl 99  -c 8192 --alias \"mein Modell\""));
     }
-
-    [Theory]
-    [InlineData("@anthropic-ai/claude-code", true)]
-    [InlineData("opencode-ai", true)]
-    [InlineData("foo & del C:\\", false)]
-    [InlineData("pkg;rm", false)]
-    public void Only_valid_npm_names_reach_cmd(string name, bool valid) => Assert.Equal(valid, AgentTools.IsValidPackage(name));
 
     [Fact]
     public void Gpu_csv_from_nvidia_smi()

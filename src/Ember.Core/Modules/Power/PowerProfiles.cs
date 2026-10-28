@@ -229,7 +229,7 @@ public static class PowerProfiles
 
     static void SaveBackups(Dictionary<string, Dictionary<string, long?[]>> backups)
     {
-        Directory.CreateDirectory(Paths.AppData);
+        Directory.CreateDirectory(Paths.ConfigDir);
         File.WriteAllText(Paths.PowerBackupFile, Json.Serialize(backups, indented: true));
     }
 }

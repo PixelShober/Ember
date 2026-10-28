@@ -208,8 +208,7 @@
     <!-- advanced -->
     <section class="card stack tight">
       <h2>{t('settings.advanced.title')}</h2>
-      <label class="check"><input type="checkbox" bind:checked={s.advanced} disabled={!app.info?.aiAllowed} />{t('settings.advanced.toggle')}</label>
-      <p class="hint">{app.info?.aiAllowed ? t('settings.advanced.shortcut') : t('app.advancedNotAllowed')}</p>
+      <p class="muted">{app.info?.admin ? t('settings.advanced.admin') : t('settings.advanced.notAdmin')}</p>
     </section>
 
     <!-- folders -->

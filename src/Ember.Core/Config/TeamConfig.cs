@@ -91,22 +91,11 @@ public sealed class TeamPower
     public List<PowerProfileDefinition>? Profiles { get; set; }
 }
 
-public sealed class ModuleAccess
+/// <summary>Who counts as admin and sees the advanced modules (KI, Energie). Accounts and AD groups, with or without domain.</summary>
+public sealed class TeamAdmins
 {
-    public List<string>? AllowUsers { get; set; }
-    public List<string>? AllowGroups { get; set; }
-}
-
-public sealed class TeamModules
-{
-    public ModuleAccess? Ai { get; set; }
-}
-
-public sealed class AgentTool
-{
-    public string Package { get; set; } = "";
-    public string? Name { get; set; }
-    public LocalizedText? Description { get; set; }
+    public List<string>? Users { get; set; }
+    public List<string>? Groups { get; set; }
 }
 
 public sealed class TeamUpdate
@@ -128,8 +117,7 @@ public sealed class TeamConfig
     public Dictionary<string, MailTemplate>? MailTemplates { get; set; }
     public List<TeamSoftware>? Software { get; set; }
     public TeamPower? Power { get; set; }
-    public TeamModules? Modules { get; set; }
-    public List<AgentTool>? AgentTools { get; set; }
+    public TeamAdmins? Admins { get; set; }
     public List<ModelEntry>? Models { get; set; }
     public TeamUpdate? Update { get; set; }
     /// <summary>Overrides the download URL of the WebView2 standalone installer.</summary>
@@ -224,7 +212,7 @@ public sealed class TeamConfigService
     {
         try
         {
-            Directory.CreateDirectory(Paths.AppData);
+            Directory.CreateDirectory(Paths.ConfigDir);
             File.WriteAllText(Paths.TeamCacheFile, Json.Serialize(cache, indented: true));
         }
         catch (Exception ex)

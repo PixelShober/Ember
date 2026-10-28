@@ -39,7 +39,11 @@ public sealed class EmberHost : IDisposable
 
     public EffectiveSettings Effective => EffectiveSettings.Build(Settings, Team.Config);
 
-    bool AiAllowed => Settings.Advanced && ModuleAccessCheck.AiAllowed(Team.Config);
+    /// <summary>Admin in the team configuration: may use the advanced modules (KI, Energie).</summary>
+    public bool IsAdmin => AdminCheck.IsAdmin(Team.Config);
+
+    /// <summary>The advanced tabs are visible (admin, and not hidden with Ctrl+E). Also switches the DevTools.</summary>
+    public bool ShowAdvanced => IsAdmin && !Settings.HideAdvanced;
 
     /// <summary>Loads the team configuration and starts the background timers.</summary>
     public async Task InitializeAsync()
@@ -47,6 +51,7 @@ public sealed class EmberHost : IDisposable
         Log.Cleanup();
         Log.Info(L.T("app.started", ("version", AppInfo.Version), ("mode", AppInfo.Mode), ("language", L.Tag)));
         await Team.LoadAsync(Settings, _cts.Token);
+        Shell.SetDevTools(ShowAdvanced);
 
         _logTimer = new Timer(_ => FlushLog(), null, 150, 150);
         _pxTimer = new Timer(async _ => await PollPxAsync(), null, 500, 4000);
@@ -87,9 +92,9 @@ public sealed class EmberHost : IDisposable
         }
     }
 
-    void RequireAi()
+    void RequireAdmin()
     {
-        if (!AiAllowed) throw new EmberException("moduleNotAllowed");
+        if (!IsAdmin) throw new EmberException("moduleNotAllowed");
     }
 
     void RequireNoPxJob()
@@ -108,8 +113,10 @@ public sealed class EmberHost : IDisposable
         user = Elevation.AccountName,
         computer = Environment.MachineName,
         elevated = Elevation.IsElevated,
-        advanced = Settings.Advanced,
-        aiAllowed = ModuleAccessCheck.AiAllowed(Team.Config),
+        admin = IsAdmin,
+        showAdvanced = ShowAdvanced,
+        root = Paths.Root,
+        logDir = Paths.LogDir,
         team = Team.Status,
         teamName = Team.Config.Name,
         serviceCenter = Team.Config.ServiceCenter?.Email,
@@ -123,6 +130,16 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
+        // Ctrl+E: admins show or hide the advanced tabs (KI, Energie).
+        b.Register("app.toggleAdvanced", () =>
+        {
+            RequireAdmin();
+            Settings.HideAdvanced = !Settings.HideAdvanced;
+            Settings.Save();
+            Shell.SetDevTools(ShowAdvanced);
+            Bridge.Emit("app.info", Info());
+            return ShowAdvanced;
+        });
         b.Register("app.ready", (args, _) =>
         {
             Log.Debug("UI ready: " + args.OptStr("version"));
@@ -139,7 +156,7 @@ public sealed class EmberHost : IDisposable
             var dir = args.Req("key") switch
             {
                 "logs" => Paths.LogDir,
-                "settings" => Paths.AppData,
+                "settings" => Paths.ConfigDir,
                 "px" => Effective.InstallDir,
                 "pxConfig" => Path.GetDirectoryName(Paths.PxConfigIni)!,
                 "reports" => Paths.ReportDir,
@@ -163,14 +180,14 @@ public sealed class EmberHost : IDisposable
             if (error != null) throw new EmberException("settingsInvalid", ("detail", error));
             bool languageChanged = next.Language != Settings.Language;
             bool teamChanged = next.TeamConfigPath != Settings.TeamConfigPath;
-            bool advancedChanged = next.Advanced != Settings.Advanced;
+            next.HideAdvanced = Settings.HideAdvanced;   // only Ctrl+E changes this (app.toggleAdvanced)
             next.Save();
             Settings = next;
             if (languageChanged) L.Configure(next.Language);
             if (teamChanged) await Team.LoadAsync(Settings, ct);
-            if (advancedChanged) Shell.SetDevTools(Settings.Advanced);
+            if (teamChanged) Shell.SetDevTools(ShowAdvanced);
             Log.Info(L.T("settings.saved", ("path", Paths.SettingsFile)));
-            if (languageChanged || teamChanged || advancedChanged) Bridge.Emit("app.info", Info());
+            if (languageChanged || teamChanged) Bridge.Emit("app.info", Info());
             return SettingsView();
         });
         b.Register("settings.defaults", () => new UserSettings());
@@ -178,6 +195,7 @@ public sealed class EmberHost : IDisposable
         b.Register("team.reload", async ct =>
         {
             await Team.LoadAsync(Settings, ct);
+            Shell.SetDevTools(ShowAdvanced);
             Bridge.Emit("app.info", Info());
             return SettingsView();
         });
@@ -303,18 +321,21 @@ public sealed class EmberHost : IDisposable
         });
 
         // ------------------------------------------------------------------ power
-        b.Register("power.state", async ct => await PowerProfiles.GetStateAsync(Team.Config, ct));
-        b.Register("power.apply", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Apply, ct));
-        b.Register("power.defaults", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Defaults, ct));
-        b.Register("power.restore", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Backup, ct));
+        // ------------------------------------------------------------------ power (advanced)
+        b.Register("power.state", async ct => { RequireAdmin(); return await PowerProfiles.GetStateAsync(Team.Config, ct); });
+        b.Register("power.apply", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Apply, ct); });
+        b.Register("power.defaults", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Defaults, ct); });
+        b.Register("power.restore", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Backup, ct); });
 
-        // ------------------------------------------------------------------ wake-on-LAN (this machine)
-        b.Register("wol.local", async ct => await WolTarget.GetStateAsync(ct));
-        b.Register("wol.apply", async ct => { var errors = await WolTarget.ApplyAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
-        b.Register("wol.reset", async ct => { var errors = await WolTarget.ResetAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
+        // ------------------------------------------------------------------ wake-on-LAN for this machine (KI tab, advanced)
+        b.Register("wol.local", async ct => { RequireAdmin(); return await WolTarget.GetStateAsync(ct); });
+        b.Register("wol.apply", async ct => { RequireAdmin(); var errors = await WolTarget.ApplyAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
+        b.Register("wol.reset", async ct => { RequireAdmin(); var errors = await WolTarget.ResetAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
 
         // ------------------------------------------------------------------ system
         b.Register("system.checks", async ct => await SystemChecks.RunAsync(ct));
+        b.Register("system.list", () => SystemChecks.Pending());
+        b.Register("system.check", async (args, ct) => await SystemChecks.RunOneAsync(args.Req("id"), ct));
         b.Register("system.action", async (args, ct) => await SystemChecks.RunActionAsync(args.Req("check"), args.Req("action"), ct));
         b.Register("system.adminCommands", (args, _) =>
             Task.FromResult<object?>(SystemChecks.AdminCommands(args.Req("check"), args.Req("action"))));
@@ -322,7 +343,7 @@ public sealed class EmberHost : IDisposable
         // ------------------------------------------------------------------ AI (advanced)
         b.Register("ai.status", async ct =>
         {
-            RequireAi();
+            RequireAdmin();
             return new
             {
                 gpus = await Gpu.NvidiaAsync(ct),
@@ -331,16 +352,9 @@ public sealed class EmberHost : IDisposable
                 modelsDir = Models.Dir(Settings),
             };
         });
-        b.Register("ai.wake", (args, _) =>
-        {
-            RequireAi();
-            var id = args.Req("id");
-            var device = Settings.WolDevices.FirstOrDefault(d => d.Id == id) ?? throw new EmberException("deviceUnknown");
-            return Task.FromResult<object?>(Jobs.Start("wake:" + id, "wake", L.T("wol.jobs.wake", ("name", device.Name)), WakeOnLan.WakeSteps(device)).Snapshot());
-        });
         b.Register("ai.llama.install", () =>
         {
-            RequireAi();
+            RequireAdmin();
             return Jobs.Start("llama", "llama", L.T("ai.llama.jobs.install"), LlamaCpp.InstallSteps(Settings, Effective, current =>
             {
                 Settings.LlamaCurrent = current;
@@ -349,14 +363,14 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.llama.select", (args, _) =>
         {
-            RequireAi();
+            RequireAdmin();
             Settings.LlamaCurrent = args.Req("name");
             Settings.Save();
             return Task.FromResult<object?>(null);
         });
         b.Register("ai.server.start", (args, _) =>
         {
-            RequireAi();
+            RequireAdmin();
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("model")) ?? throw new EmberException("modelUnknown");
             LlamaCpp.StartServer(Settings, model.Path);
             return Task.FromResult<object?>(null);
@@ -364,7 +378,7 @@ public sealed class EmberHost : IDisposable
         b.Register("ai.server.stop", () => { LlamaCpp.StopServer(); return null; });
         b.Register("ai.models.download", (args, _) =>
         {
-            RequireAi();
+            RequireAdmin();
             var id = args.Req("id");
             var model = Models.All(Settings, Team.Config).FirstOrDefault(m => m.Id == id) ?? throw new EmberException("modelUnknown");
             return Task.FromResult<object?>(Jobs.Start("model:" + id, "model", L.T("ai.models.jobs.download", ("name", model.Name.Length > 0 ? model.Name : id)),
@@ -372,18 +386,10 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.models.delete", (args, _) =>
         {
-            RequireAi();
+            RequireAdmin();
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("id")) ?? throw new EmberException("modelUnknown");
             if (File.Exists(model.Path)) File.Delete(model.Path);
             return Task.FromResult<object?>(null);
-        });
-        b.Register("ai.agents.list", async ct => { RequireAi(); return await AgentTools.ListAsync(Settings, Team.Config, ct); });
-        b.Register("ai.agents.install", (args, _) =>
-        {
-            RequireAi();
-            var package = args.Req("package");
-            return Task.FromResult<object?>(Jobs.Start("agent:" + package, "agent", L.T("ai.agents.jobs.install", ("package", package)),
-                AgentTools.InstallSteps(package)).Snapshot());
         });
 
         // ------------------------------------------------------------------ updates

@@ -2,18 +2,6 @@ using System.Text.Json;
 
 namespace Ember.Core;
 
-public sealed class WolDevice
-{
-    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
-    public string Name { get; set; } = "";
-    public string Mac { get; set; } = "";
-    /// <summary>Empty = 255.255.255.255 plus the directed broadcast of every network interface.</summary>
-    public string Broadcast { get; set; } = "";
-    public int Port { get; set; } = 9;
-    /// <summary>Host name or IP to ping after waking (optional).</summary>
-    public string Host { get; set; } = "";
-}
-
 public sealed class ModelEntry
 {
     public string Id { get; set; } = "";
@@ -25,7 +13,7 @@ public sealed class ModelEntry
 }
 
 /// <summary>
-/// What the user changed locally, stored in %APPDATA%\Ember\settings.json.
+/// What the user changed locally, stored in C:\Ember\Config\settings.json.
 /// Values that can also come from the team configuration are nullable: null means
 /// "take the team value, or Ember's default".
 /// </summary>
@@ -51,15 +39,17 @@ public sealed class UserSettings
     public bool ConfigureNuGet { get; set; } = true;
 
     // --- App ------------------------------------------------------------------------
-    /// <summary>"auto", "de", "de-CH" or "en".</summary>
+    /// <summary>"auto" (the Windows language), "de" or "en".</summary>
     public string Language { get; set; } = "auto";
-    public bool Advanced { get; set; }
+
+    /// <summary>Admins hid the advanced tabs with Ctrl+E (who is admin comes from the team configuration).</summary>
+    public bool HideAdvanced { get; set; }
+
     /// <summary>UNC path of team.json; empty = ember-team.txt next to the exe or EMBER_TEAM_CONFIG.</summary>
     public string TeamConfigPath { get; set; } = "";
     public bool AutoUpdate { get; set; } = true;
 
     // --- AI module ------------------------------------------------------------------
-    public List<WolDevice> WolDevices { get; set; } = new();
     public string ModelsDir { get; set; } = "";
     /// <summary>"auto", "cuda", "vulkan" or "cpu".</summary>
     public string LlamaVariant { get; set; } = "auto";
@@ -67,7 +57,6 @@ public sealed class UserSettings
     public int LlamaPort { get; set; } = 8080;
     public string LlamaArgs { get; set; } = "-ngl 99 -c 8192";
     public List<ModelEntry> Models { get; set; } = new();
-    public List<string> AgentTools { get; set; } = new();
 
     public static UserSettings Load()
     {
@@ -85,7 +74,7 @@ public sealed class UserSettings
 
     public void Save()
     {
-        Directory.CreateDirectory(Paths.AppData);
+        Directory.CreateDirectory(Paths.ConfigDir);
         var tmp = Paths.SettingsFile + ".tmp";
         File.WriteAllText(tmp, Json.Serialize(this, indented: true));
         File.Move(tmp, Paths.SettingsFile, overwrite: true);

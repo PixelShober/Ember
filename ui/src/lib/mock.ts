@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AgentToolState, AiStatus, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AiStatus, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -22,10 +22,9 @@ export function createMockBridge(): Bridge {
     usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null,
     installDir: 'C:\\Ember\\px', localZip: '', autostart: true,
     configureEnvVars: true, configureGit: true, configureNpm: true, configurePip: true, configureNuGet: true,
-    language: lang === 'auto' ? 'auto' : lang, advanced: true, teamConfigPath: '\\\\fs01\\entwicklung\\ember\\team.json', autoUpdate: true,
-    wolDevices: [{ id: 'a1b2c3d4', name: 'KI-Workstation Büro', mac: '02-00-5E-10-00-01', broadcast: '', port: 9, host: 'ki-ws-01' }],
+    language: lang === 'auto' ? 'auto' : lang, hideAdvanced: false, teamConfigPath: '\\\\fs01\\entwicklung\\ember\\team.json', autoUpdate: true,
     modelsDir: '', llamaVariant: 'auto', llamaCurrent: 'b6890-cuda', llamaPort: 8080, llamaArgs: '-ngl 99 -c 8192',
-    models: [], agentTools: [],
+    models: [],
   };
 
   const team = {
@@ -36,7 +35,7 @@ export function createMockBridge(): Bridge {
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
     languageSetting: user.language, user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
-    advanced: true, aiAllowed: true, team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
+    admin: true, showAdvanced: true, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
   };
 
@@ -190,13 +189,8 @@ export function createMockBridge(): Bridge {
       { id: 'qwen3-coder-30b', name: 'Qwen3 Coder 30B A3B (Q4_K_M)', url: 'https://huggingface.co/…/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf', note: 'Gut für Code, passt in 24 GB', downloaded: true, size: 18_556_687_000, path: '' },
       { id: 'gemma-3-12b', name: 'Gemma 3 12B (Q4_K_M)', url: 'https://huggingface.co/…/gemma-3-12b-it-Q4_K_M.gguf', note: null, downloaded: false, size: null, path: '' },
     ],
-    modelsDir: 'C:\\Users\\jmoessner\\AppData\\Local\\Ember\\models',
+    modelsDir: 'C:\\Ember\\Models',
   };
-
-  const agents: AgentToolState[] = [
-    { package: '@anthropic-ai/claude-code', name: 'Claude Code', description: null, installed: '2.4.1', latest: '2.5.0' },
-    { package: 'opencode-ai', name: 'opencode', description: 'Terminal-Agent', installed: null, latest: '1.3.7' },
-  ];
 
   const git: GitIdentityInfo = { gitFound: true, name: null, email: null, suggestedName: 'Jürgen Mößner', suggestedEmail: 'juergen.moessner@firma.example', source: 'ad' };
 
@@ -213,7 +207,7 @@ export function createMockBridge(): Bridge {
     team: { usePac: true, pacUrl: 'http://pac.firma.example/proxy.pac', upstreamProxy: 'proxy.firma.example:8080', internalDomains: 'firma.local, intranet.firma.example', port: null },
     effective: { usePac: user.usePac ?? true, pacUrl: user.pacUrl ?? 'http://pac.firma.example/proxy.pac', upstreamProxy: user.upstreamProxy ?? 'proxy.firma.example:8080', internalDomains: user.internalDomains ?? 'firma.local, intranet.firma.example', port: user.port ?? 3128, pxUrl, detectedPac: 'http://pac.firma.example/proxy.pac' },
     teamStatus: team,
-    paths: { settings: 'C:\\Users\\jmoessner\\AppData\\Roaming\\Ember\\settings.json', logs: 'C:\\Users\\jmoessner\\AppData\\Roaming\\Ember\\logs', pxConfig: 'C:\\Users\\jmoessner\\AppData\\Roaming\\px\\px.ini', models: ai.modelsDir },
+    paths: { settings: 'C:\\Ember\\Config\\settings.json', logs: 'C:\\Ember\\Logs', pxConfig: 'C:\\Users\\jmoessner\\AppData\\Roaming\\px\\px.ini', models: ai.modelsDir },
   });
 
   const handlers: Record<string, (p: any) => unknown | Promise<unknown>> = {
@@ -224,7 +218,8 @@ export function createMockBridge(): Bridge {
     'app.pickFolder': () => 'D:\\Werkzeuge\\px',
     'app.pickFile': () => 'C:\\Users\\jmoessner\\Downloads\\px-v0.10.2-windows-amd64.zip',
     'settings.get': () => settingsView(),
-    'settings.save': (p) => { Object.assign(user, p.settings); info.advanced = user.advanced; info.languageSetting = user.language; return settingsView(); },
+    'settings.save': (p) => { Object.assign(user, p.settings); info.languageSetting = user.language; return settingsView(); },
+    'app.toggleAdvanced': () => { user.hideAdvanced = !user.hideAdvanced; info.showAdvanced = !user.hideAdvanced; emit('app.info', { ...info }); return info.showAdvanced; },
     'settings.defaults': () => ({ ...user, usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null }),
     'team.status': () => ({ status: team, name: info.teamName }),
     'team.reload': () => settingsView(),
@@ -249,8 +244,8 @@ export function createMockBridge(): Bridge {
     'software.open': () => null,
     'software.install': (p) => { void simulate('software:' + p.key, 'software', t('software.jobs.install', { name: p.name }), [t('software.steps.trigger'), t('software.steps.wait')]); return null; },
     'mail.preview': (p) => ({ to: info.serviceCenter, subject: t(`mail.templates.${p.template}.subject`, { ...p.vars, user: info.user, computer: info.computer }), body: t(`mail.templates.${p.template}.body`, { ...p.vars, user: info.user, computer: info.computer }) }),
-    'mail.compose': (p) => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text', reportPath: 'C:\\Users\\jmoessner\\AppData\\Local\\Ember\\reports\\ember-diagnose-20261028-141500.txt', reportText: p.attachReport ? 'Ember-Diagnosebericht\n…' : null }),
-    'diagnostics.report': () => ({ text: 'Ember-Diagnosebericht\n=====\nRechner: NB-ENT-0427\nBenutzer: FIRMA\\jmoessner', path: 'C:\\Users\\jmoessner\\AppData\\Local\\Ember\\reports\\ember-diagnose-20261028-141500.txt' }),
+    'mail.compose': (p) => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text', reportPath: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt', reportText: p.attachReport ? 'Ember-Diagnosebericht\n…' : null }),
+    'diagnostics.report': () => ({ text: 'Ember-Diagnosebericht\n=====\nRechner: NB-ENT-0427\nBenutzer: FIRMA\\jmoessner', path: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt' }),
     'power.state': () => power,
     'power.apply': () => ({ changed: 2, skipped: 0, elevated: false, errors: [] }),
     'power.defaults': () => ({ changed: 3, skipped: 0, elevated: false, errors: [] }),
@@ -259,25 +254,24 @@ export function createMockBridge(): Bridge {
     'wol.apply': () => { throw new BridgeError('elevationCancelled', t('errors.elevationCancelled')); },
     'wol.reset': () => ({ errors: [], state: wol }),
     'system.checks': () => checks,
+    'system.list': () => checks.map((c) => ({ ...c, status: 'pending', value: '', detail: null, actions: [] })),
+    'system.check': async (p) => { await new Promise((r) => setTimeout(r, p.id === 'gpo' ? 1500 : 300)); return checks.find((x) => x.id === p.id); },
     'system.action': (p) => { if (p.check === 'winLongPaths') throw new BridgeError('elevationCancelled', t('errors.elevationCancelled')); return 'OK'; },
     'system.adminCommands': () => 'reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f',
     'ai.status': () => ai,
-    'ai.wake': (p) => { const d = user.wolDevices.find((x) => x.id === p.id); void simulate('wake:' + p.id, 'wake', t('wol.jobs.wake', { name: d?.name ?? '?' }), [t('wol.steps.send'), t('wol.steps.wait')]); return null; },
     'ai.llama.install': () => { void simulate('llama', 'llama', t('ai.llama.jobs.install'), ['detect', 'release', 'download', 'extract', 'cleanup'].map((k) => t(`ai.llama.steps.${k}`))); return null; },
     'ai.llama.select': () => null,
     'ai.server.start': (p) => { ai.llama.serverRunning = true; ai.llama.serverModel = p.model; return null; },
     'ai.server.stop': () => { ai.llama.serverRunning = false; return null; },
     'ai.models.download': (p) => { void simulate('model:' + p.id, 'model', t('ai.models.jobs.download', { name: p.id }), [t('ai.models.steps.download'), t('ai.models.steps.verify')]); return null; },
     'ai.models.delete': () => null,
-    'ai.agents.list': () => agents,
-    'ai.agents.install': (p) => { void simulate('agent:' + p.package, 'agent', t('ai.agents.jobs.install', { package: p.package }), [t('ai.agents.steps.install', { package: p.package })]); return null; },
     'update.status': () => update,
     'update.check': async () => { await wait(600); return update; },
     'update.applyUi': () => null,
     'update.applyExe': () => null,
     'log.recent': () => logs,
     'log.clear': () => null,
-    'log.save': () => 'C:\\Users\\jmoessner\\AppData\\Local\\Ember\\reports\\ember-log.txt',
+    'log.save': () => 'C:\\Ember\\Reports\\ember-log.txt',
   };
 
   return {

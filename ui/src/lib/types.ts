@@ -22,8 +22,13 @@ export interface AppInfo {
   user: string;
   computer: string;
   elevated: boolean;
-  advanced: boolean;
-  aiAllowed: boolean;
+  /** Admin in the team configuration: may use the advanced modules (KI, Energie). */
+  admin: boolean;
+  /** Advanced tabs visible (admin and not hidden with Ctrl+E). */
+  showAdvanced: boolean;
+  /** C:\\Ember (or the fallback under %LOCALAPPDATA%). */
+  root: string;
+  logDir: string;
   team: TeamStatus;
   teamName: string | null;
   serviceCenter: string | null;
@@ -100,15 +105,6 @@ export interface ProxyRow {
   hint: string | null;
 }
 
-export interface WolDevice {
-  id: string;
-  name: string;
-  mac: string;
-  broadcast: string;
-  port: number;
-  host: string;
-}
-
 export interface ModelEntry {
   id: string;
   name: string;
@@ -132,17 +128,15 @@ export interface UserSettings {
   configurePip: boolean;
   configureNuGet: boolean;
   language: string;
-  advanced: boolean;
+  hideAdvanced: boolean;
   teamConfigPath: string;
   autoUpdate: boolean;
-  wolDevices: WolDevice[];
   modelsDir: string;
   llamaVariant: string;
   llamaCurrent: string;
   llamaPort: number;
   llamaArgs: string;
   models: ModelEntry[];
-  agentTools: string[];
 }
 
 export interface TeamProxyValues {
@@ -312,7 +306,7 @@ export interface CheckAction {
 export interface CheckResult {
   id: string;
   title: string;
-  status: 'ok' | 'warn' | 'locked' | 'info' | 'missing' | 'error';
+  status: 'ok' | 'warn' | 'locked' | 'info' | 'missing' | 'error' | 'pending';
   value: string;
   detail: string | null;
   actions: CheckAction[];
@@ -363,10 +357,3 @@ export interface AiStatus {
   modelsDir: string;
 }
 
-export interface AgentToolState {
-  package: string;
-  name: string;
-  description: string | null;
-  installed: string | null;
-  latest: string | null;
-}

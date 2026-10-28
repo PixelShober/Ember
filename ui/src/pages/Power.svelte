@@ -1,23 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { api, confirm, copyText, run, toast } from '../lib/app.svelte';
+  import { api, confirm, run, toast } from '../lib/app.svelte';
   import { host, t } from '../lib/i18n.svelte';
   import { formatPowerValue } from '../lib/format';
-  import type { PowerApplyResult, PowerProfileState, PowerSettingState, PowerState, PowerValue, WolLocalState } from '../lib/types';
+  import type { PowerApplyResult, PowerProfileState, PowerSettingState, PowerState, PowerValue } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
 
   let power = $state<PowerState | null>(null);
-  let wol = $state<WolLocalState | null>(null);
   let busy = $state<string | null>(null);
   let open = $state<Record<string, boolean>>({});
 
   async function load() {
-    [power, wol] = await Promise.all([
-      run(() => api<PowerState>('power.state')).then((r) => r ?? power),
-      run(() => api<WolLocalState>('wol.local')).then((r) => r ?? wol),
-    ]);
+    power = (await run(() => api<PowerState>('power.state'))) ?? power;
   }
   onMount(load);
 
@@ -52,19 +48,6 @@
     if (r) {
       toast(r.errors.length ? 'error' : 'ok', [t('power.applied', { count: r.changed }), r.elevated ? t('power.elevatedNote') : '', ...r.errors].filter(Boolean).join(' · '));
       await load();
-    }
-  }
-
-  async function wolChange(method: 'wol.apply' | 'wol.reset') {
-    const ok = await confirm(t('wol.title'), method === 'wol.apply' ? t('wol.confirmApply') : t('wol.confirmReset'), method === 'wol.apply' ? t('wol.apply') : t('wol.reset'));
-    if (!ok) return;
-    busy = 'wol';
-    const details = 'Set-NetAdapterAdvancedProperty *WakeOnMagicPacket=1, S5WakeOnLan/WakeOnMagicPacketFromS5=1; powercfg /deviceenablewake; HiberbootEnabled=0';
-    const r = await run(() => api<{ errors: string[]; state: WolLocalState }>(method), undefined, details);
-    busy = null;
-    if (r) {
-      wol = r.state;
-      toast(r.errors.length ? 'error' : 'ok', r.errors.length ? r.errors.join(' · ') : t('common.saved'));
     }
   }
 </script>
@@ -146,57 +129,6 @@
   <p class="muted">{t('common.loading')}</p>
 {/if}
 
-<section class="card wol">
-  <div class="card-head">
-    <h2>{t('wol.title')}</h2>
-    {#if wol}<span class="badge {wol.ready ? 'ok' : 'warn'}">{wol.ready ? t('wol.ready') : t('wol.notReady')}</span>{/if}
-    <span class="spacer"></span>
-    <button class="btn primary small" disabled={busy !== null} onclick={() => wolChange('wol.apply')}>{t('wol.apply')}</button>
-    <button class="btn small" disabled={busy !== null} onclick={() => wolChange('wol.reset')}><Icon name="undo" size={14} />{t('wol.reset')}</button>
-  </div>
-  <p class="muted desc">{t('wol.subtitle')}</p>
-  <p class="small muted">{t('common.needsAdmin')}</p>
-
-  {#if wol}
-    {#if wol.adapters.length === 0}
-      <div class="note warn"><Calcifer /><p>{t('wol.noAdapters')}</p></div>
-    {/if}
-    <div class="adapters">
-      {#each wol.adapters as a (a.name)}
-        <div class="adapter">
-          <div class="row between">
-            <div>
-              <h3>{a.name}</h3>
-              <p class="small muted">{a.description} · {a.status}</p>
-            </div>
-            <span class="badge {a.ready ? 'ok' : 'warn'}">{a.ready ? t('wol.ready') : t('wol.notReady')}</span>
-          </div>
-          <div class="row">
-            <span class="small">{t('wol.mac')}:</span>
-            <code>{a.mac}</code>
-            <button class="btn ghost small" title={t('wol.macHint')} onclick={async () => { await copyText(a.mac); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button>
-            <span class="badge {a.armed ? 'ok' : 'warn'}">{a.armed ? t('wol.armed') : t('wol.notArmed')}</span>
-          </div>
-          <ul class="props">
-            {#each a.props as prop (prop.keyword)}
-              <li>
-                <span class="state" class:ok={prop.ok}><Icon name={prop.ok ? 'check' : 'x'} size={13} /></span>
-                <span>{prop.name}</span>
-                <span class="small muted">{prop.display ?? prop.value}</span>
-                <span class="badge {prop.required ? 'accent' : ''}">{prop.required ? t('wol.required') : t('wol.optional')}</span>
-              </li>
-            {/each}
-          </ul>
-        </div>
-      {/each}
-    </div>
-    <p class="row small">
-      <span class="badge {wol.fastStartupOff ? 'ok' : 'warn'}">{t('wol.fastStartup')}</span>
-      {wol.fastStartupOff ? t('wol.fastStartupOff') : t('wol.fastStartupOn')}
-    </p>
-    <div class="note"><Icon name="info" /><p class="small">{t('wol.biosHint')}</p></div>
-  {/if}
-</section>
 
 <style>
   .meta { margin-bottom: 14px; }
@@ -210,11 +142,4 @@
   td.miss { color: var(--warn); font-weight: 600; }
   td.target { font-weight: 500; }
   tr.dim { opacity: 0.55; }
-  .wol { margin-top: 16px; }
-  .adapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; margin: 12px 0; }
-  .adapter { border: 1px solid var(--border); border-radius: var(--radius-small); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-  .props { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  .props li { display: grid; grid-template-columns: 20px 1fr auto auto; gap: 8px; align-items: center; }
-  .state { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--warn-soft); color: var(--warn); }
-  .state.ok { background: var(--ok-soft); color: var(--ok); }
 </style>

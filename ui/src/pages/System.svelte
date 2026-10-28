@@ -13,14 +13,23 @@
   let open = $state<Record<string, boolean>>({});
   let output = $state<Record<string, string>>({});
 
+  // Every check loads on its own: gpresult can take a minute on a domain machine and must not hold up the rest.
   async function load() {
     loading = true;
-    checks = (await run(() => api<CheckResult[]>('system.checks'))) ?? checks;
+    const list = await run(() => api<CheckResult[]>('system.list'));
+    if (list) {
+      checks = list;
+      await Promise.all(list.map(async (c) => {
+        const r = await api<CheckResult>('system.check', { id: c.id })
+          .catch((e: unknown): CheckResult => ({ ...c, status: 'error', value: String((e as Error)?.message ?? e) }));
+        checks = (checks ?? []).map((x) => (x.id === r.id ? r : x));
+      }));
+    }
     loading = false;
   }
   onMount(load);
 
-  const tone: Record<string, string> = { ok: 'ok', warn: 'warn', locked: 'info', info: 'info', missing: '', error: 'error' };
+  const tone: Record<string, string> = { ok: 'ok', warn: 'warn', locked: 'info', info: 'info', missing: '', error: 'error', pending: '' };
 
   async function act(c: CheckResult, a: CheckAction) {
     busy = c.id + a.id;
@@ -51,7 +60,7 @@
       <section class="card check">
         <div class="row">
           {#if c.status === 'warn'}<Calcifer size={28} />{/if}
-          <span class="badge {tone[c.status]}">{t(`system.status.${c.status}`)}</span>
+          <span class="badge {tone[c.status]}">{#if c.status === 'pending'}<span class="spin"><Icon name="refresh" size={12} /></span>{/if}{t(`system.status.${c.status}`)}</span>
           <h3>{host(c.title)}</h3>
           <span class="muted">{host(c.value)}</span>
           <span class="spacer"></span>
@@ -77,5 +86,7 @@
 <style>
   .head { margin: -8px 0 12px; }
   .check { padding: 12px 16px; }
+  .spin { display: inline-flex; animation: spin 1.2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
   pre { margin: 10px 0 0; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius-small); white-space: pre-wrap; font-family: var(--mono); font-size: 12px; max-height: 280px; overflow: auto; }
 </style>

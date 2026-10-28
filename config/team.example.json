@@ -48,17 +48,10 @@
     ]
   },
 
-  "modules": {
-    "ai": {
-      "allowUsers": ["FIRMA\\max.mustermann"],
-      "allowGroups": ["FIRMA\\KI-Entwicklung"]
-    }
+  "admins": {
+    "users": ["FIRMA\\max.mustermann"],
+    "groups": ["FIRMA\\Entwicklung-Admins"]
   },
-
-  "agentTools": [
-    { "package": "@anthropic-ai/claude-code", "name": "Claude Code" },
-    { "package": "opencode-ai", "name": "opencode", "description": { "de": "Agent im Terminal", "en": "Terminal agent" } }
-  ],
 
   "models": [
     {

@@ -3,26 +3,23 @@
   import { api, app, confirm, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { formatBytes } from '../lib/format';
-  import type { AgentToolState, AiStatus, SettingsView, UserSettings, WolDevice } from '../lib/types';
+  import type { AiStatus, SettingsView, UserSettings } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
+  import WolCard from '../lib/components/WolCard.svelte';
 
   let status = $state<AiStatus | null>(null);
-  let agents = $state<AgentToolState[] | null>(null);
   let settings = $state<UserSettings | null>(null);
   let serverModel = $state('');
   let newModel = $state({ url: '', name: '' });
-  let newAgent = $state('');
 
   async function load() {
-    const [s, a, v] = await Promise.all([
+    const [s, v] = await Promise.all([
       run(() => api<AiStatus>('ai.status')),
-      run(() => api<AgentToolState[]>('ai.agents.list')),
       run(() => api<SettingsView>('settings.get')),
     ]);
     status = s ?? status;
-    agents = a ?? agents;
     settings = v?.user ?? settings;
     if (!serverModel) serverModel = status?.models.find((m) => m.downloaded)?.id ?? '';
   }
@@ -30,7 +27,7 @@
 
   // Reload the lists when a download or installation finishes.
   $effect(() => {
-    const finished = Object.values(app.jobs).filter((j) => ['llama', 'model', 'agent'].includes(j.kind) && j.state === 'done').length;
+    const finished = Object.values(app.jobs).filter((j) => ['llama', 'model'].includes(j.kind) && j.state === 'done').length;
     if (finished) void load();
   });
 
@@ -38,15 +35,6 @@
     if (!settings) return;
     const r = await run(() => api<SettingsView>('settings.save', { settings: $state.snapshot(settings) }), okText);
     if (r) settings = r.user;
-  }
-
-  function addDevice() {
-    settings?.wolDevices.push({ id: crypto.randomUUID().slice(0, 8), name: '', mac: '', broadcast: '', port: 9, host: '' });
-  }
-
-  function removeDevice(d: WolDevice) {
-    if (!settings) return;
-    settings.wolDevices = settings.wolDevices.filter((x) => x.id !== d.id);
   }
 
   async function addModel() {
@@ -64,14 +52,6 @@
     await load();
   }
 
-  async function addAgent() {
-    if (!settings || !newAgent.trim()) return;
-    settings.agentTools.push(newAgent.trim());
-    newAgent = '';
-    await saveSettings(t('common.saved'));
-    await load();
-  }
-
   async function startServer() {
     if (await run(() => api('ai.server.start', { model: serverModel }))) await load();
     else await load();
@@ -84,30 +64,8 @@
 </header>
 
 <div class="stack">
-  <!-- Wake other machines -->
-  <section class="card">
-    <div class="card-head">
-      <Icon name="wake" />
-      <h2>{t('ai.devices.title')}</h2>
-      <span class="spacer"></span>
-      <button class="btn small" onclick={addDevice}><Icon name="plus" size={14} />{t('ai.devices.add')}</button>
-      <button class="btn small primary" onclick={() => saveSettings(t('ai.devices.saved'))}>{t('common.save')}</button>
-    </div>
-    {#if settings && settings.wolDevices.length === 0}<div class="note"><Calcifer /><p>{t('ai.devices.empty')}</p></div>{/if}
-    {#each settings?.wolDevices ?? [] as d (d.id)}
-      <div class="device">
-        <label class="field"><span>{t('ai.devices.name')}</span><input bind:value={d.name} /></label>
-        <label class="field"><span>{t('ai.devices.mac')}</span><input bind:value={d.mac} class="mono" placeholder="02-00-5E-10-00-01" spellcheck="false" /></label>
-        <label class="field"><span>{t('ai.devices.host')}</span><input bind:value={d.host} spellcheck="false" /></label>
-        <label class="field narrow"><span>{t('ai.devices.port')}</span><input type="number" bind:value={d.port} min="1" max="65535" /></label>
-        <div class="row end">
-          <button class="btn primary small" onclick={() => run(() => api('ai.wake', { id: d.id }))}><Icon name="wake" size={14} />{t('ai.devices.wake')}</button>
-          <button class="btn ghost small" aria-label={t('common.remove')} onclick={() => removeDevice(d)}><Icon name="trash" size={14} /></button>
-        </div>
-        <div class="full"><JobView id={'wake:' + d.id} compact /></div>
-      </div>
-    {/each}
-  </section>
+  <!-- Wake-on-LAN for this machine -->
+  <WolCard />
 
   <!-- GPU -->
   <section class="card">
@@ -225,45 +183,11 @@
       </div>
     {/if}
   </section>
-
-  <!-- Agent tools -->
-  <section class="card">
-    <div class="card-head"><Icon name="terminal" /><div><h2>{t('ai.agents.title')}</h2><p class="small muted">{t('ai.agents.subtitle')}</p></div></div>
-    <ul class="models">
-      {#each agents ?? [] as a (a.package)}
-        <li>
-          <div class="grow">
-            <strong>{a.name}</strong> <code class="small muted">{a.package}</code>
-            {#if a.description}<p class="small muted">{a.description}</p>{/if}
-            <p class="small">
-              {a.installed ? t('ai.agents.installed', { version: a.installed }) : t('ai.agents.notInstalled')}
-              {#if a.latest} · <span class="muted">{t('ai.agents.latest', { version: a.latest })}</span>{/if}
-            </p>
-          </div>
-          {#if !a.installed || (a.latest && a.installed !== a.latest)}
-            <button class="btn small {a.installed ? '' : 'primary'}" disabled={app.jobs['agent:' + a.package]?.state === 'running'} onclick={() => run(() => api('ai.agents.install', { package: a.package }))}>
-              <Icon name="download" size={14} />{a.installed ? t('ai.agents.update') : t('ai.agents.install')}
-            </button>
-          {:else}
-            <span class="badge ok"><Icon name="check" size={13} /></span>
-          {/if}
-          <div class="full"><JobView id={'agent:' + a.package} compact /></div>
-        </li>
-      {/each}
-    </ul>
-    <div class="add">
-      <input bind:value={newAgent} placeholder="@scope/package" spellcheck="false" class="mono" />
-      <button class="btn small" disabled={!newAgent.trim()} onclick={addAgent}><Icon name="plus" size={14} />{t('ai.agents.add')}</button>
-    </div>
-  </section>
 </div>
 
 <style>
-  .device { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr 90px auto; gap: 10px; align-items: end; padding: 10px 0; border-top: 1px solid var(--border); }
-  .device:first-of-type { border-top: none; }
   .full { grid-column: 1 / -1; }
   .full:empty { display: none; }
-  .end { justify-content: flex-end; }
   .narrow input { width: 90px; }
   .gpu { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
   .right { text-align: right; }
@@ -275,7 +199,6 @@
   .add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; margin-top: 8px; }
   .server { display: grid; grid-template-columns: 1.5fr 100px 1.5fr; gap: 10px; margin-bottom: 10px; }
   @media (max-width: 1100px) {
-    .device { grid-template-columns: 1fr 1fr; }
     .server, .add { grid-template-columns: 1fr; }
   }
 </style>

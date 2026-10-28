@@ -9,24 +9,31 @@ namespace Ember.Core;
 /// Who may see the advanced modules. This only hides UI – Ember is open source, so it is not a
 /// security boundary. The host checks it as well so the UI and the bridge agree.
 /// </summary>
-public static class ModuleAccessCheck
+/// <summary>
+/// Admins (from team.json → admins) see the advanced modules KI and Energie. Without an admins
+/// list nobody does – except local developer builds. This shapes the UI and is enforced by the
+/// bridge, but it is no security boundary: the code is open and the actions run with the user's rights.
+/// </summary>
+public static class AdminCheck
 {
-    public static bool AiAllowed(TeamConfig team)
+    public static bool IsAdmin(TeamConfig team) =>
+        AppInfo.Version.EndsWith("-dev", StringComparison.Ordinal) ||
+        IsAdmin(team, Elevation.AccountName, Elevation.GroupNames());
+
+    internal static bool IsAdmin(TeamConfig team, string account, IEnumerable<string> groups)
     {
-        var access = team.Modules?.Ai;
-        var users = access?.AllowUsers ?? new List<string>();
-        var groups = access?.AllowGroups ?? new List<string>();
-        if (users.Count == 0 && groups.Count == 0) return true;
-
-        static bool Same(string configured, string actual) =>
-            configured.Equals(actual, StringComparison.OrdinalIgnoreCase) ||
-            (!configured.Contains('\\') && actual.EndsWith("\\" + configured, StringComparison.OrdinalIgnoreCase));
-
-        var account = Elevation.AccountName;
+        var users = team.Admins?.Users ?? new List<string>();
+        var adminGroups = team.Admins?.Groups ?? new List<string>();
         if (users.Any(u => Same(u, account))) return true;
-        var mine = Elevation.GroupNames();
-        return groups.Any(g => mine.Any(m => Same(g, m)));
+        var mine = groups.ToList();
+        return adminGroups.Any(g => mine.Any(m => Same(g, m)));
     }
+
+    /// <summary>"FIRMA\\max" matches "FIRMA\\max" and "max"; the comparison ignores case.</summary>
+    static bool Same(string configured, string actual) =>
+        configured.Trim().Length > 0 &&
+        (configured.Trim().Equals(actual, StringComparison.OrdinalIgnoreCase) ||
+         (!configured.Contains('\\') && actual.EndsWith("\\" + configured.Trim(), StringComparison.OrdinalIgnoreCase)));
 }
 
 public sealed record GpuInfo(string Name, string? Driver, string? Cuda, int? MemoryTotalMb, int? MemoryUsedMb,
@@ -330,67 +337,4 @@ public static class Models
             }, () => string.IsNullOrWhiteSpace(model.Sha256) ? L.T("ai.models.noSha") : null),
         };
     }
-}
-
-public sealed record AgentToolState(string Package, string Name, string? Description, string? Installed, string? Latest);
-
-/// <summary>Agent CLIs installed globally with npm (through px, like everything else).</summary>
-public static class AgentTools
-{
-    public static readonly string[] Defaults = { "@anthropic-ai/claude-code" };
-
-    public static List<AgentTool> All(UserSettings s, TeamConfig team)
-    {
-        var list = new List<AgentTool>(team.AgentTools ?? new List<AgentTool>());
-        foreach (var p in Defaults.Concat(s.AgentTools))
-            if (!list.Any(t => t.Package.Equals(p, StringComparison.OrdinalIgnoreCase))) list.Add(new AgentTool { Package = p });
-        return list.Where(t => IsValidPackage(t.Package)).ToList();
-    }
-
-    /// <summary>npm package names only – they go through cmd.exe.</summary>
-    public static bool IsValidPackage(string name) => Regex.IsMatch(name ?? "", @"^(@[a-z0-9][\w.\-]*/)?[a-z0-9][\w.\-]*$");
-
-    public static async Task<List<AgentToolState>> ListAsync(UserSettings s, TeamConfig team, CancellationToken ct)
-    {
-        var tools = All(s, team);
-        var npm = Tools.Npm;
-        var installed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (npm != null)
-        {
-            var r = await ProcessRunner.RunCmdAsync($"\"{npm}\" ls -g --depth=0 --json", ct, 60, logOutput: false);
-            try
-            {
-                using var doc = JsonDocument.Parse(r.StdOut.Length > 0 ? r.StdOut : "{}");
-                if (doc.RootElement.TryGetProperty("dependencies", out var deps))
-                    foreach (var d in deps.EnumerateObject())
-                        if (d.Value.TryGetProperty("version", out var v)) installed[d.Name] = v.GetString() ?? "";
-            }
-            catch (JsonException) { }
-        }
-
-        var latest = await Task.WhenAll(tools.Select(async t =>
-        {
-            if (npm == null) return null;
-            try { return NullIfEmpty((await ProcessRunner.RunCmdAsync($"\"{npm}\" view {t.Package} version", ct, 60, logOutput: false)).LastLine); }
-            catch (Exception ex) when (ex is not OperationCanceledException) { return null; }
-        }));
-
-        return tools.Select((t, i) => new AgentToolState(t.Package, t.Name ?? t.Package, t.Description?.Get(),
-                                                         installed.TryGetValue(t.Package, out var v) ? v : null, latest[i])).ToList();
-    }
-
-    public static List<SetupStep> InstallSteps(string package) => new()
-    {
-        new(L.T("ai.agents.steps.install", ("package", package)), async (step, ct) =>
-        {
-            if (!IsValidPackage(package)) throw new EmberException("packageInvalid", ("package", package));
-            var npm = Tools.Npm ?? throw new EmberException("toolMissing", ("tool", "npm"));
-            step.SetProgress(null);
-            var r = await ProcessRunner.RunCmdAsync($"\"{npm}\" install -g {package}@latest", ct, 900);
-            if (!r.Ok) throw new EmberException("commandFailed", ("command", "npm install -g " + package), ("detail", r.Output));
-            step.Report(r.LastLine);
-        }),
-    };
-
-    static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

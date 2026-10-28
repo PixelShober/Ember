@@ -1,6 +1,3 @@
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -60,9 +57,9 @@ public static class WolTarget
     internal static WolLocalState Evaluate(JsonElement json, bool hasBackup)
     {
         var adapters = new List<WolAdapter>();
-        if (json.TryGetProperty("adapters", out var list))
+        if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("adapters", out var list))
         {
-            foreach (var a in list.AsArray())
+            foreach (var a in list.AsArray().Where(x => x.ValueKind == JsonValueKind.Object))
             {
                 var props = new List<WolProp>();
                 if (a.TryGetProperty("props", out var ps))
@@ -94,7 +91,7 @@ public static class WolTarget
         var before = await GetStateAsync(ct);
         if (!File.Exists(Paths.WolBackupFile))
         {
-            Directory.CreateDirectory(Paths.AppData);
+            Directory.CreateDirectory(Paths.ConfigDir);
             await File.WriteAllTextAsync(Paths.WolBackupFile, Json.Serialize(before, indented: true), ct);
         }
 
@@ -176,110 +173,4 @@ public static class WolTarget
         var hex = Regex.Replace(mac, "[^0-9A-Fa-f]", "").ToUpperInvariant();
         return hex.Length == 12 ? string.Join("-", Enumerable.Range(0, 6).Select(i => hex.Substring(i * 2, 2))) : mac;
     }
-}
-
-/// <summary>Sends magic packets to wake other machines (AI module).</summary>
-public static class WakeOnLan
-{
-    public static byte[] ParseMac(string mac)
-    {
-        var hex = Regex.Replace(mac ?? "", "[^0-9A-Fa-f]", "");
-        if (hex.Length != 12) throw new EmberException("macInvalid", ("mac", mac));
-        return Enumerable.Range(0, 6).Select(i => Convert.ToByte(hex.Substring(i * 2, 2), 16)).ToArray();
-    }
-
-    /// <summary>6 × 0xFF followed by the MAC address 16 times.</summary>
-    public static byte[] BuildPacket(string mac)
-    {
-        var m = ParseMac(mac);
-        var packet = new byte[6 + 16 * 6];
-        for (int i = 0; i < 6; i++) packet[i] = 0xFF;
-        for (int i = 0; i < 16; i++) Buffer.BlockCopy(m, 0, packet, 6 + i * 6, 6);
-        return packet;
-    }
-
-    /// <summary>Sends the packet on every active IPv4 interface (limited and directed broadcast).</summary>
-    public static async Task<int> SendAsync(WolDevice device, CancellationToken ct)
-    {
-        var packet = BuildPacket(device.Mac);
-        int sent = 0;
-        var targets = new List<(IPAddress Local, IPAddress Target)>();
-        if (!string.IsNullOrWhiteSpace(device.Broadcast) && IPAddress.TryParse(device.Broadcast, out var fixedTarget))
-        {
-            targets.Add((IPAddress.Any, fixedTarget));
-        }
-        else
-        {
-            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
-                foreach (var ua in nic.GetIPProperties().UnicastAddresses)
-                {
-                    if (ua.Address.AddressFamily != AddressFamily.InterNetwork) continue;
-                    targets.Add((ua.Address, IPAddress.Broadcast));
-                    var ip = ua.Address.GetAddressBytes();
-                    var mask = ua.IPv4Mask.GetAddressBytes();
-                    targets.Add((ua.Address, new IPAddress(ip.Zip(mask, (a, b) => (byte)(a | ~b)).ToArray())));
-                }
-            }
-            if (targets.Count == 0) targets.Add((IPAddress.Any, IPAddress.Broadcast));
-        }
-
-        foreach (var (local, target) in targets.Distinct())
-        {
-            try
-            {
-                using var udp = new UdpClient(new IPEndPoint(local, 0)) { EnableBroadcast = true };
-                for (int i = 0; i < 3; i++)
-                {
-                    await udp.SendAsync(packet, new IPEndPoint(target, device.Port <= 0 ? 9 : device.Port), ct);
-                    sent++;
-                }
-                Log.Debug($"WOL {device.Mac} → {target}:{device.Port} via {local}");
-            }
-            catch (SocketException ex)
-            {
-                Log.Debug($"WOL via {local}: {ex.Message}");
-            }
-        }
-        if (sent == 0) throw new EmberException("wolSendFailed");
-        return sent;
-    }
-
-    public static List<SetupStep> WakeSteps(WolDevice device) => new()
-    {
-        new SetupStep(L.T("wol.steps.send"), async (step, ct) =>
-        {
-            var n = await SendAsync(device, ct);
-            step.Report(L.T("wol.sent", ("count", n), ("mac", WolTarget.FormatMac(device.Mac))));
-        }),
-        new SetupStep(L.T("wol.steps.wait"), async (step, ct) =>
-        {
-            step.SetProgress(null);
-            using var ping = new Ping();
-            var deadline = DateTime.UtcNow.AddMinutes(3);
-            int tries = 0;
-            while (DateTime.UtcNow < deadline)
-            {
-                tries++;
-                try
-                {
-                    var reply = await ping.SendPingAsync(device.Host, 1000);
-                    if (reply.Status == IPStatus.Success)
-                    {
-                        step.Report(L.T("wol.online", ("host", device.Host), ("ms", reply.RoundtripTime)));
-                        return;
-                    }
-                }
-                catch (PingException)
-                {
-                    // name not resolvable yet – keep trying
-                }
-                step.Report(L.T("wol.waiting", ("host", device.Host), ("count", tries)), log: false);
-                if (tries % 10 == 0) await SendAsync(device, ct);   // resend now and then
-                await Task.Delay(2000, ct);
-            }
-            throw new EmberException("wolNoAnswer", ("host", device.Host));
-        }, () => string.IsNullOrWhiteSpace(device.Host) ? L.T("wol.noHost") : null),
-    };
 }

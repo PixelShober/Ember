@@ -17,9 +17,9 @@
       "portable": "portabel",
       "dev": "Entwicklung"
     },
-    "advancedOn": "Erweiterte Module sind jetzt sichtbar.",
-    "advancedOff": "Erweiterte Module sind ausgeblendet.",
-    "advancedNotAllowed": "Die erweiterten Module sind laut Team-Konfiguration nicht für dein Konto freigegeben."
+    "advancedOn": "KI und Energie sind jetzt sichtbar. Strg + E blendet sie wieder aus.",
+    "advancedOff": "KI und Energie sind ausgeblendet. Strg + E zeigt sie wieder.",
+    "advancedNotAllowed": "KI und Energie gibt es nur für Admins aus der Team-Konfiguration (team.json → admins)."
   },
   "nav": {
     "start": "Start",
@@ -84,7 +84,6 @@
     "localZipMissing": "Das lokale px-Zip wurde nicht gefunden: {path}",
     "settingsInvalid": "Einstellungen prüfen: {detail}",
     "commandFailed": "{command} ist fehlgeschlagen: {detail}",
-    "deviceUnknown": "Dieses Gerät gibt es nicht (mehr).",
     "elevatedNoResult": "Die Aktion mit Adminrechten hat kein Ergebnis geliefert.",
     "elevationCancelled": "Die Windows-Abfrage nach Adminrechten wurde abgebrochen.",
     "exeUpdateMissing": "Es liegt kein heruntergeladenes Update bereit.",
@@ -95,7 +94,6 @@
     "llamaNoAsset": "Im aktuellen llama.cpp-Release gibt es keine Windows-Variante „{variant}“.",
     "llamaNoServer": "llama-server.exe fehlt im heruntergeladenen Archiv.",
     "llamaNotInstalled": "llama.cpp ist noch nicht installiert.",
-    "macInvalid": "„{mac}“ ist keine gültige MAC-Adresse (z. B. 02-00-5E-10-00-01).",
     "mailNoRecipient": "In der Team-Konfiguration fehlt die Adresse des Service-Centers (serviceCenter.email).",
     "missingParam": "Parameter fehlt: {name}",
     "modelMissing": "Die Modelldatei fehlt: {path}",
@@ -108,6 +106,8 @@
     "powerNoBackup": "Es gibt keinen gesicherten vorherigen Stand.",
     "powerProfileUnknown": "Das Energieprofil „{id}“ gibt es nicht.",
     "powershell": "PowerShell meldet: {detail}",
+    "powershellEmpty": "PowerShell hat keine Daten geliefert. Was genau passiert ist, steht im Log.",
+    "powershellNoResult": "PowerShell hat das Skript nicht ausgeführt ({way}: {detail}). Möglicherweise blockiert eine Sicherheitsrichtlinie diesen Aufruf. Details stehen im Log.",
     "processStart": "Konnte {file} nicht starten.",
     "processTimeout": "{file} hat nach {seconds} s nicht geantwortet.",
     "proxyUnreachable": "Der Proxy {proxy} ist per TCP nicht erreichbar. Stimmen Host und Port, und darf Ember laut Firewall ins Netz?",
@@ -221,7 +221,7 @@
       "notInstalled": "px ist nicht installiert",
       "outdated": "Die px-Konfiguration passt nicht mehr zu den Einstellungen (z. B. neuer Proxy in der Team-Konfiguration). „Installieren / Aktualisieren“ bringt sie auf den neuen Stand.",
       "confirmUninstall": "px wird beendet, der Autostart entfernt, die Proxy-Einträge von Umgebungsvariablen, git, npm, NuGet, pip und VS Code zurückgenommen und der Installationsordner gelöscht. Einträge, die nicht auf px zeigen, bleiben unverändert.",
-      "debugHint": "Im Debug-Modus läuft px im Vordergrund mit ausführlichem Log (Quelle „px“ im Log-Tab)."
+      "debugHint": "Im Debug-Modus läuft px in einem eigenen Konsolenfenster mit ausführlicher Ausgabe. Ember schreibt sie unter C:\\Ember\\Logs mit und öffnet den Ordner, sobald px-Debug endet."
     },
     "diag": {
       "title": "Diagnose",
@@ -312,8 +312,9 @@
     "started": "px gestartet: {path}",
     "processStopped": "{name} ({pid}) beendet",
     "processStopFailed": "{name} ({pid}) ließ sich nicht beenden: {detail}",
-    "debugStarted": "px läuft im Debug-Modus. Die Ausgabe erscheint hier mit der Quelle „px“.",
-    "debugEnded": "px-Debug beendet (Exitcode {code})"
+    "debugStarted": "px läuft im Debug-Modus in einem eigenen Fenster. Die Ausgabe wird in {file} mitgeschrieben.",
+    "debugEnded": "px-Debug beendet (Exitcode {code})",
+    "debugWindow": "px-Debug läuft. Die Ausgabe steht zusätzlich in {file}. Fenster schließen oder in Ember auf „px-Debug beenden“ klicken, um aufzuhören."
   },
   "git": {
     "title": "Git-Identität",
@@ -519,18 +520,7 @@
     "biosHint": "Das BIOS kann Ember nicht prüfen. Bei Dell: „Wake on LAN“, „Wake on Dell USB-C Dock“ und ggf. „MAC Address Pass-Through“ einschalten, „Deep Sleep Control“ aus.",
     "local": {
       "changed": "Wake-on-LAN: {count} Einstellung(en) geändert"
-    },
-    "jobs": {
-      "wake": "{name} wecken"
-    },
-    "steps": {
-      "send": "Magic Packet senden",
-      "wait": "Auf Antwort warten"
-    },
-    "sent": "{count} Pakete an {mac} gesendet",
-    "waiting": "Warte auf {host} … (Versuch {count})",
-    "online": "{host} ist erreichbar ({ms} ms)",
-    "noHost": "Kein Hostname eingetragen, daher keine Prüfung"
+    }
   },
   "system": {
     "title": "System & Richtlinien",
@@ -542,7 +532,8 @@
       "locked": "per Richtlinie",
       "info": "Info",
       "missing": "fehlt",
-      "error": "Fehler"
+      "error": "Fehler",
+      "pending": "wird geprüft"
     },
     "checks": {
       "gpo": {
@@ -551,7 +542,8 @@
         "noResult": "gpresult hat kein Ergebnis geliefert",
         "actions": {
           "gpupdate": "Richtlinien jetzt aktualisieren"
-        }
+        },
+        "timeout": "gpresult hat nach {seconds} s nicht geantwortet. „Richtlinien jetzt aktualisieren“ hilft oft, danach erneut prüfen."
       },
       "executionPolicy": {
         "title": "PowerShell-Ausführungsrichtlinie",
@@ -585,19 +577,7 @@
   },
   "ai": {
     "title": "KI",
-    "subtitle": "Eigene Rechner wecken, llama.cpp und Modelle verwalten, Agent-Werkzeuge einrichten.",
-    "devices": {
-      "title": "Rechner wecken",
-      "empty": "Noch keine Rechner eingetragen.",
-      "name": "Name",
-      "mac": "MAC-Adresse",
-      "host": "Hostname/IP (optional, für die Erreichbarkeitsprüfung)",
-      "broadcast": "Broadcast-Adresse (optional)",
-      "port": "Port",
-      "wake": "Wecken",
-      "add": "Rechner hinzufügen",
-      "saved": "Geräteliste gespeichert"
-    },
+    "subtitle": "Diesen Rechner für Wake-on-LAN freischalten, llama.cpp und Modelle verwalten, llama-server starten.",
     "gpu": {
       "title": "Grafikkarte",
       "none": "Keine NVIDIA-Grafikkarte gefunden (nvidia-smi fehlt).",
@@ -665,22 +645,6 @@
       "stopped": "llama-server beendet",
       "started": "llama-server gestartet: {model} auf Port {port}",
       "openUi": "Weboberfläche öffnen"
-    },
-    "agents": {
-      "title": "Agent-Werkzeuge",
-      "subtitle": "Werden mit npm global installiert – über px, wie alles andere.",
-      "installed": "installiert: {version}",
-      "latest": "aktuell: {version}",
-      "notInstalled": "nicht installiert",
-      "install": "Installieren",
-      "update": "Aktualisieren",
-      "add": "npm-Paket hinzufügen",
-      "jobs": {
-        "install": "{package} installieren"
-      },
-      "steps": {
-        "install": "npm install -g {package}"
-      }
     }
   },
   "settings": {
@@ -753,9 +717,9 @@
       "source": "Quelle: {source}"
     },
     "advanced": {
-      "title": "Erweitert",
-      "toggle": "Erweiterte Module anzeigen (KI-Tab, Entwicklerwerkzeuge der Oberfläche)",
-      "shortcut": "Tastenkürzel: Strg + Umschalt + E"
+      "title": "Erweiterte Module",
+      "admin": "Du stehst in der Team-Konfiguration als Admin. Mit Strg + E blendest du die Tabs KI und Energie ein und aus.",
+      "notAdmin": "KI und Energie gibt es nur für Admins aus der Team-Konfiguration (team.json → admins)."
     },
     "folders": {
       "title": "Ordner",

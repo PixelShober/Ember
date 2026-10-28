@@ -3,7 +3,7 @@
   import { fly, fade } from 'svelte/transition';
   import { api, app, init, navigate, toast } from './lib/app.svelte';
   import { t } from './lib/i18n.svelte';
-  import type { Route, SettingsView } from './lib/types';
+  import type { Route } from './lib/types';
   import Icon from './lib/components/Icon.svelte';
   import Toasts from './lib/components/Toasts.svelte';
   import ConfirmDialog from './lib/components/ConfirmDialog.svelte';
@@ -25,7 +25,10 @@
     init().catch((e) => (failed = String(e?.message ?? e)));
   });
 
-  const showAi = $derived(!!app.info?.advanced && !!app.info?.aiAllowed);
+  // KI and Energie are advanced modules: only admins from the team configuration see them,
+  // and Ctrl+E shows or hides them.
+  const advancedRoutes: Route[] = ['power', 'ai'];
+  const showAdvanced = $derived(!!app.info?.showAdvanced);
 
   const nav = $derived(
     [
@@ -33,33 +36,31 @@
       { route: 'proxy', icon: 'proxy' },
       { route: 'git', icon: 'git' },
       { route: 'software', icon: 'software' },
-      { route: 'power', icon: 'power' },
       { route: 'system', icon: 'system' },
-      ...(showAi ? [{ route: 'ai', icon: 'ai' }] : []),
+      ...(showAdvanced ? [{ route: 'power', icon: 'power' }, { route: 'ai', icon: 'ai' }] : []),
     ] as { route: Route; icon: string }[],
   );
 
   $effect(() => {
-    if (app.ready && app.route === 'ai' && !showAi) navigate('start');
+    if (app.ready && advancedRoutes.includes(app.route) && !showAdvanced) navigate('start');
   });
 
   const pxState = $derived(
     !app.px ? 'muted' : app.px.portOpen ? 'ok' : app.px.installed ? 'warn' : 'muted',
   );
 
-  /** Ctrl+Shift+E shows or hides the advanced modules (stored in the settings). */
+  /** Ctrl+E shows or hides the advanced tabs (admins only; remembered in the settings). */
   async function onKey(e: KeyboardEvent) {
-    if (!(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'e') || !app.info) return;
+    if (!(e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'e') || !app.info) return;
     e.preventDefault();
-    if (!app.info.aiAllowed) {
+    if (!app.info.admin) {
       toast('info', t('app.advancedNotAllowed'));
       return;
     }
-    const view = await api<SettingsView>('settings.get');
-    const next = !view.user.advanced;
-    await api('settings.save', { settings: { ...view.user, advanced: next } });
-    app.info.advanced = next;
-    toast('info', next ? t('app.advancedOn') : t('app.advancedOff'));
+    const shown = await api<boolean>('app.toggleAdvanced').catch(() => null);
+    if (shown === null) return;
+    app.info.showAdvanced = shown;
+    toast('info', shown ? t('app.advancedOn') : t('app.advancedOff'));
   }
 </script>
 

@@ -40,7 +40,7 @@ public sealed record UpdateStatus(
     string Current, string UiCurrent, string? Latest, bool UiAvailable, bool ExeAvailable,
     string? UiReady, bool ExeReady, bool Checking, DateTime? LastCheck, string? Error, string? Notes, string Source);
 
-/// <summary>Downloaded UI packages under %LOCALAPPDATA%\Ember\ui\&lt;version&gt;.</summary>
+/// <summary>Downloaded UI packages under C:\Ember\Cache\ui\&lt;version&gt;.</summary>
 public static class UiPackages
 {
     static string BadFile => Path.Combine(Paths.UiDir, "bad.json");

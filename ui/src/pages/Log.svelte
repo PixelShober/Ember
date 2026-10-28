@@ -27,7 +27,7 @@
 
 <header class="page-head">
   <h1>{t('log.title')}</h1>
-  <p class="break">{t('log.subtitle', { path: '%APPDATA%\\Ember\\logs' })}</p>
+  <p class="break">{t('log.subtitle', { path: app.info?.logDir ?? 'C:\\Ember\\Logs' })}</p>
 </header>
 
 <div class="row tools">

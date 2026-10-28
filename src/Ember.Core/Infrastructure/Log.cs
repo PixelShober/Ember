@@ -11,7 +11,7 @@ public sealed record LogEntry(DateTime Time, LogLevel Level, string Source, stri
 
 /// <summary>
 /// Central log. Every entry goes to the UI (via <see cref="Written"/>) and to
-/// %APPDATA%\Ember\logs\ember-YYYY-MM-DD.log (UTF-8 with BOM, so Notepad shows umlauts correctly).
+/// C:\Ember\Logs\ember-YYYY-MM-DD.log (UTF-8 with BOM, so Notepad shows umlauts correctly).
 /// </summary>
 public static class Log
 {

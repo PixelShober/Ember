@@ -131,45 +131,49 @@ public static class PxControl
         }
     }
 
-    /// <summary>Starts px in the foreground with verbose logging; its output appears in the log (source "px").</summary>
+    /// <summary>Log file of the running (or last) debug session.</summary>
+    public static string? DebugLogFile { get; private set; }
+
+    /// <summary>
+    /// Starts px with verbose logging in its own console window, so the output is visible live.
+    /// Tee-Object writes the same output to C:\Ember\Logs\px-debug-*.log. When the session ends
+    /// (stopped in Ember or window closed), Explorer opens with that file selected.
+    /// </summary>
     public static async Task StartDebugAsync(EffectiveSettings s, Action onExit)
     {
         await StopAsync(s, CancellationToken.None);
         var exe = FindExe(s.InstallDir, "px.exe")
                   ?? throw new EmberException("pxNotInstalled", ("path", s.InstallDir));
 
-        var psi = new ProcessStartInfo(exe)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            WorkingDirectory = Path.GetDirectoryName(exe)!
-        };
-        psi.ArgumentList.Add("--config=" + s.ConfigIni);
-        psi.ArgumentList.Add("--log=4");
-        psi.ArgumentList.Add("--foreground=1");
+        var logFile = Path.Combine(Paths.Ensure(Paths.LogDir), $"px-debug-{DateTime.Now:yyyyMMdd-HHmmss}.log");
+        var script = $$"""
+            $Host.UI.RawUI.WindowTitle = 'Ember – px-Debug'
+            try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch {}
+            Write-Host {{PowerShell.Quote(L.T("px.debugWindow", ("file", logFile)))}} -ForegroundColor Yellow
+            & {{PowerShell.Quote(exe)}} {{PowerShell.Quote("--config=" + s.ConfigIni)}} '--log=4' '--foreground=1' 2>&1 |
+              ForEach-Object { "$_" } | Tee-Object -FilePath {{PowerShell.Quote(logFile)}}
+            """;
+        var (psi, scriptFile) = PowerShell.VisibleStartInfo(script);
+        psi.WorkingDirectory = Path.GetDirectoryName(exe)!;
         psi.Environment["PYTHONUNBUFFERED"] = "1";   // px is Python: otherwise output only arrives in blocks
         psi.Environment["PYTHONIOENCODING"] = "utf-8";
-        psi.StandardOutputEncoding = System.Text.Encoding.UTF8;
-        psi.StandardErrorEncoding = System.Text.Encoding.UTF8;
 
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) Log.Info(e.Data, "px"); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) Log.Info(e.Data, "px"); };
         process.Exited += (_, _) =>
         {
             int code = -1;
             try { code = process.ExitCode; } catch { }
             Log.Info(L.T("px.debugEnded", ("code", code)));
+            if (scriptFile != null) { try { File.Delete(scriptFile); } catch { } }
+            if (File.Exists(logFile)) Mail.ShowInExplorer(logFile);
+            if (ReferenceEquals(_debugProcess, process)) _debugProcess = null;
             onExit();
         };
 
         process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
         _debugProcess = process;
-        Log.Info(L.T("px.debugStarted"));
+        DebugLogFile = logFile;
+        Log.Info(L.T("px.debugStarted", ("file", logFile)));
     }
 
     public static void StopDebug()

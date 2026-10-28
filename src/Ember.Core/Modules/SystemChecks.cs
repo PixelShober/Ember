@@ -14,26 +14,40 @@ public sealed record CheckResult(string Id, string Title, string Status, string 
 public static class SystemChecks
 {
     const string FileSystemKey = @"SYSTEM\CurrentControlSet\Control\FileSystem";
+    const int GpResultTimeoutSec = 90;
 
-    public static async Task<List<CheckResult>> RunAsync(CancellationToken ct)
+    /// <summary>All checks in display order. gpresult can take a minute on a domain machine, so each check loads on its own.</summary>
+    static readonly (string Id, Func<CancellationToken, Task<CheckResult>> Run)[] All =
     {
-        var results = new List<CheckResult>();
-        foreach (var check in new Func<CancellationToken, Task<CheckResult>>[]
-                 {
-                     GroupPolicyAsync, ExecutionPolicyAsync, GitLongPathsAsync, WindowsLongPathsAsync, ProxyPolicyAsync, DeveloperModeAsync,
-                 })
+        ("gpo", GroupPolicyAsync),
+        ("executionPolicy", ExecutionPolicyAsync),
+        ("gitLongPaths", GitLongPathsAsync),
+        ("winLongPaths", WindowsLongPathsAsync),
+        ("proxyPolicy", ProxyPolicyAsync),
+        ("devMode", DeveloperModeAsync),
+    };
+
+    /// <summary>The checks with status "pending", so the page can show them right away.</summary>
+    public static List<CheckResult> Pending() =>
+        All.Select(c => new CheckResult(c.Id, Title(c.Id), "pending", "", null, Array.Empty<CheckAction>())).ToList();
+
+    public static async Task<CheckResult> RunOneAsync(string id, CancellationToken ct)
+    {
+        var check = All.FirstOrDefault(c => c.Id == id);
+        if (check.Run == null) throw new EmberException("unknownAction", ("action", id));
+        try
         {
-            try
-            {
-                results.Add(await check(ct));
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                results.Add(new CheckResult(check.Method.Name.Replace("Async", ""), check.Method.Name, "error", Net.Describe(ex), null, Array.Empty<CheckAction>()));
-            }
+            return await check.Run(ct);
         }
-        return results;
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Warn($"System check {id}: {Net.Describe(ex)}");
+            return new CheckResult(id, Title(id), "error", Net.Describe(ex), null, Array.Empty<CheckAction>());
+        }
     }
+
+    public static async Task<List<CheckResult>> RunAsync(CancellationToken ct) =>
+        (await Task.WhenAll(All.Select(c => RunOneAsync(c.Id, ct)))).ToList();
 
     static string Title(string id) => L.T($"system.checks.{id}.title");
 
@@ -41,11 +55,20 @@ public static class SystemChecks
 
     static async Task<CheckResult> GroupPolicyAsync(CancellationToken ct)
     {
-        var xml = Path.Combine(Path.GetTempPath(), $"ember-gpresult-{Guid.NewGuid():N}.xml");
+        var xml = Paths.TempFile("ember-gpresult", "xml");
         try
         {
-            var r = await ProcessRunner.RunAsync(ProcessRunner.SystemExe("gpresult.exe"), new[] { "/scope", "user", "/x", xml, "/f" },
-                                                 ct, 120, OutputKind.Oem, logOutput: false);
+            ProcResult r;
+            try
+            {
+                r = await ProcessRunner.RunAsync(ProcessRunner.SystemExe("gpresult.exe"), new[] { "/scope", "user", "/x", xml, "/f" },
+                                                 ct, GpResultTimeoutSec, OutputKind.Oem, logOutput: false);
+            }
+            catch (EmberException ex) when (ex.Code == "processTimeout")
+            {
+                return new CheckResult("gpo", Title("gpo"), "warn", L.T("system.checks.gpo.timeout", ("seconds", GpResultTimeoutSec)), null,
+                                       new[] { Action("gpo", "gpupdate") });
+            }
             if (!File.Exists(xml))
                 return new CheckResult("gpo", Title("gpo"), "warn", L.T("system.checks.gpo.noResult"), r.Output, new[] { Action("gpo", "gpupdate") });
             var names = ParseGpResult(await File.ReadAllTextAsync(xml, ct));

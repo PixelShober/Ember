@@ -84,7 +84,7 @@ public sealed class MainWindow : Window, IHostShell
 #else
         bool debug = false;
 #endif
-        settings.AreDevToolsEnabled = debug || Host.Settings.Advanced;
+        settings.AreDevToolsEnabled = debug || Host.ShowAdvanced;
         settings.AreBrowserAcceleratorKeysEnabled = debug;   // no F5 / Ctrl+P / Ctrl+F in an app
         settings.IsStatusBarEnabled = false;
         settings.IsGeneralAutofillEnabled = false;
@@ -283,12 +283,12 @@ public sealed class MainWindow : Window, IHostShell
     static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 }
 
-/// <summary>Remembers window size and position in %APPDATA%\Ember\window.json.</summary>
+/// <summary>Remembers window size and position in C:\Ember\Config\window.json.</summary>
 static class WindowPlacement
 {
     sealed record Placement(double Left, double Top, double Width, double Height, bool Maximized);
 
-    static string File => Path.Combine(Paths.AppData, "window.json");
+    static string File => Paths.WindowFile;
 
     public static void Restore(Window w)
     {
@@ -322,7 +322,7 @@ static class WindowPlacement
         try
         {
             var r = w.WindowState == WindowState.Normal ? new Rect(w.Left, w.Top, w.Width, w.Height) : w.RestoreBounds;
-            Directory.CreateDirectory(Paths.AppData);
+            Directory.CreateDirectory(Paths.ConfigDir);
             System.IO.File.WriteAllText(File, Json.Serialize(new Placement(r.Left, r.Top, r.Width, r.Height, w.WindowState == WindowState.Maximized)));
         }
         catch

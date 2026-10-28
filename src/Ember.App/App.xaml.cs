@@ -18,6 +18,7 @@ public partial class App : Application
             args.SetObserved();
         };
 
+        Paths.MigrateOldLocations();
         L.Configure(UserSettings.Load().Language);
         var args = e.Args;
         bool afterUpdate = args.Contains(ExeUpdate.AfterUpdateSwitch, StringComparer.OrdinalIgnoreCase);

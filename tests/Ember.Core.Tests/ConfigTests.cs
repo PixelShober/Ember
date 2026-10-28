@@ -14,8 +14,7 @@ public class ConfigTests
         Assert.Equal(2, team.Proxy.InternalDomains!.Count);
         Assert.Equal("servicecenter@firma.example", team.ServiceCenter!.Email);
         Assert.Contains(team.Software!, s => s.Name == "Alfaview" && s.SccmName == "alfaview*");
-        Assert.Single(team.Modules!.Ai!.AllowGroups!);
-        Assert.Equal(2, team.AgentTools!.Count);
+        Assert.Single(team.Admins!.Groups!);
     }
 
     [Fact]
@@ -55,22 +54,25 @@ public class ConfigTests
     [Fact]
     public void User_settings_round_trip_with_umlauts_unescaped()
     {
-        var s = new UserSettings { InternalDomains = "müller.local", WolDevices = { new WolDevice { Name = "Büro-PC", Mac = "02-00-5E-10-00-01" } } };
+        var s = new UserSettings { InternalDomains = "müller.local", ModelsDir = @"D:\Modelle für Jürgen" };
         var json = Json.Serialize(s, indented: true);
-        Assert.Contains("\"Büro-PC\"", json);   // readable in an editor, not "Büro"
+        Assert.Contains("Modelle für Jürgen", json);   // readable in an editor, not "f\u00FCr"
         var back = Json.Deserialize<UserSettings>(json)!;
         Assert.Equal("müller.local", back.InternalDomains);
-        Assert.Equal("Büro-PC", back.WolDevices[0].Name);
+        Assert.Equal(@"D:\Modelle für Jürgen", back.ModelsDir);
         Assert.Null(back.UsePac);
     }
 
     [Fact]
-    public void Ai_module_access_by_user_and_group()
+    public void Advanced_modules_only_for_admins_from_the_team_config()
     {
-        Assert.True(ModuleAccessCheck.AiAllowed(new TeamConfig()));
-        var restricted = TeamConfig.Parse("""{ "modules": { "ai": { "allowUsers": ["NIEMAND\\niemand"] } } }""");
-        Assert.False(ModuleAccessCheck.AiAllowed(restricted));
-        var me = TeamConfig.Parse($$"""{ "modules": { "ai": { "allowUsers": ["{{Environment.UserName}}"] } } }""");
-        Assert.True(ModuleAccessCheck.AiAllowed(me));
+        var groups = new[] { @"FIRMA\Domänen-Benutzer", @"FIRMA\Entwicklung-Admins" };
+        Assert.False(AdminCheck.IsAdmin(new TeamConfig(), @"FIRMA\jmoessner", groups));   // no admins list: nobody
+        var byUser = TeamConfig.Parse("""{ "admins": { "users": ["jmoessner"] } }""");
+        Assert.True(AdminCheck.IsAdmin(byUser, @"FIRMA\JMoessner", Array.Empty<string>()));
+        Assert.False(AdminCheck.IsAdmin(byUser, @"FIRMA\someone", Array.Empty<string>()));
+        var byGroup = TeamConfig.Parse("""{ "admins": { "groups": ["FIRMA\\entwicklung-admins"] } }""");
+        Assert.True(AdminCheck.IsAdmin(byGroup, @"FIRMA\someone", groups));
+        Assert.False(AdminCheck.IsAdmin(byGroup, @"FIRMA\someone", new[] { @"FIRMA\Domänen-Benutzer" }));
     }
 }
