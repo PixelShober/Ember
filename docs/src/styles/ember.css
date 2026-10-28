@@ -1,0 +1,35 @@
+/* Ember colours for Starlight (warm orange accent, like the app). */
+:root {
+  --sl-color-accent-low: #3b291d;
+  --sl-color-accent: #e0702f;
+  --sl-color-accent-high: #f6c3a1;
+  --sl-color-white: #f8f6f3;
+  --sl-color-gray-1: #ebe7e2;
+  --sl-color-gray-2: #c9c2ba;
+  --sl-color-gray-3: #9b9289;
+  --sl-color-gray-4: #5f5851;
+  --sl-color-gray-5: #3a3632;
+  --sl-color-gray-6: #272421;
+  --sl-color-black: #1c1b1a;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #fbe3d6;
+  --sl-color-accent: #b03a0a;
+  --sl-color-accent-high: #5e2105;
+  --sl-color-white: #1c1b1a;
+  --sl-color-gray-1: #272421;
+  --sl-color-gray-2: #3a3632;
+  --sl-color-gray-3: #5f5851;
+  --sl-color-gray-4: #9b9289;
+  --sl-color-gray-5: #c9c2ba;
+  --sl-color-gray-6: #ebe7e2;
+  --sl-color-gray-7: #f6f5f3;
+  --sl-color-black: #ffffff;
+}
+
+.sl-markdown-content img {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.08);
+}

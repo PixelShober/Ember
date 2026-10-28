@@ -1,0 +1,98 @@
+name: CI
+
+# Runs on every pull request and on main. The PR build (Ember.exe + UI package) can be
+# downloaded from the run page as artifact "Ember-PR-<number>" – no local build needed.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: Oberfläche (Svelte)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+      - name: Typprüfung
+        run: npm run check
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: UTF-8, Umlaute und Übersetzungen prüfen
+        run: node ../scripts/check-encoding.mjs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ui-dist
+          path: ui/dist
+          retention-days: 7
+
+  windows:
+    name: Exe (WPF + WebView2)
+    needs: ui
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v8
+        with:
+          name: ui-dist
+          path: ui/dist
+      - name: Tests
+        run: dotnet test tests/Ember.Core.Tests -c Release
+      - name: Abhängigkeits-Wächter
+        run: node scripts/check-deps.mjs
+      - name: Ember.exe bauen
+        shell: bash
+        run: dotnet publish src/Ember.App/Ember.App.csproj -c Release -o artifacts/exe "-p:Version=0.0.0-ci.${{ github.run_number }}"
+      - name: UI-Paket packen
+        shell: pwsh
+        run: Compress-Archive -Path ui/dist/* -DestinationPath artifacts/ember-ui.zip
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ github.event_name == 'pull_request' && format('Ember-PR-{0}', github.event.pull_request.number) || format('Ember-build-{0}', github.run_number) }}
+          path: |
+            artifacts/exe/Ember.exe
+            artifacts/ember-ui.zip
+          retention-days: 14
+
+  docs:
+    name: Doku (Starlight)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+      - run: npm ci
+      - run: npm run build
