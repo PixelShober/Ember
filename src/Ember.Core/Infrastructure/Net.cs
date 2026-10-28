@@ -9,7 +9,8 @@ using Microsoft.Win32;
 
 namespace Ember.Core;
 
-public sealed record ReleaseInfo(string Tag, IReadOnlyList<string> AssetUrls);
+/// <param name="Sha256">SHA-256 per asset file name, where GitHub publishes it (asset "digest").</param>
+public sealed record ReleaseInfo(string Tag, IReadOnlyList<string> AssetUrls, IReadOnlyDictionary<string, string>? Sha256 = null);
 
 public sealed record ProxyDetectionResult(string? PacUrl, string? SystemProxy, IReadOnlyList<string> PacProxies);
 
@@ -147,11 +148,16 @@ public static class Net
                 EnsureOk(response);
                 using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
                 var tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "?";
-                var urls = doc.RootElement.GetProperty("assets").EnumerateArray()
-                              .Select(a => a.GetProperty("browser_download_url").GetString())
-                              .OfType<string>()
-                              .ToList();
-                return new ReleaseInfo(tag, urls);
+                var items = doc.RootElement.GetProperty("assets").EnumerateArray().ToList();
+                var urls = items.Select(a => a.GetProperty("browser_download_url").GetString())
+                                .OfType<string>()
+                                .ToList();
+                var sha = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var a in items)
+                    if (a.TryGetProperty("digest", out var d) && d.GetString() is { } digest &&
+                        digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) && a.GetProperty("name").GetString() is { } name)
+                        sha[name] = digest["sha256:".Length..].ToLowerInvariant();
+                return new ReleaseInfo(tag, urls, sha);
             }
         }
 

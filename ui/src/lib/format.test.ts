@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { setLanguage } from './i18n.svelte';
-import { firstName, formatBytes, formatPowerValue } from './format';
+import { compareVersions, firstName, formatBytes, formatPowerValue, isNewer } from './format';
 
 describe('formatPowerValue', () => {
   beforeEach(() => setLanguage('de'));
@@ -32,5 +32,19 @@ describe('helpers', () => {
   it('takes the first name for the greeting', () => {
     expect(firstName('Jürgen Mößner', 'FIRMA\\jmoessner')).toBe('Jürgen');
     expect(firstName(null, 'FIRMA\\jmoessner')).toBe('jmoessner');
+  });
+});
+
+describe('versions', () => {
+  it('compares numerically, not as text', () => {
+    expect(compareVersions('2.47.10', '2.47.9')).toBe(1);
+    expect(compareVersions('v26.12.1', '26.12.1')).toBe(0);
+    expect(compareVersions('3.13', '3.13.1')).toBe(-1);
+  });
+  it('only reports real updates', () => {
+    expect(isNewer('3.14.2', '3.13.1')).toBe(true);
+    expect(isNewer('3.13.1', '3.13.1')).toBe(false);
+    expect(isNewer('aktuelle Version', '17.14.12')).toBe(false);
+    expect(isNewer('1.2.3', null)).toBe(false);
   });
 });

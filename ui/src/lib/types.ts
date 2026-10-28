@@ -19,6 +19,8 @@ export interface AppInfo {
   mode: 'installed' | 'portable' | 'dev';
   language: 'de' | 'de-CH' | 'en';
   languageSetting: string;
+  /** "de" or "en": what "auto" means on this machine. */
+  windowsLanguage: 'de' | 'en';
   user: string;
   computer: string;
   elevated: boolean;
@@ -150,6 +152,8 @@ export interface TeamProxyValues {
 export interface SettingsView {
   user: UserSettings;
   team: TeamProxyValues;
+  /** What Windows reported at start (PAC address, first proxy from the PAC file or the system proxy). */
+  detected: { usePac: boolean | null; pacUrl: string | null; upstreamProxy: string | null };
   effective: {
     usePac: boolean;
     pacUrl: string;
@@ -207,9 +211,22 @@ export interface SoftwareItem {
   canInstall: boolean;
 }
 
+export interface DevToolState {
+  id: string;
+  name: string;
+  description: string;
+  installedVersion: string | null;
+  installedName: string | null;
+  sccm: SccmItem | null;
+  /** sccm: package in Software Center · direct: from the vendor · mail: only via the service center */
+  method: 'sccm' | 'direct' | 'mail';
+  needsAdmin: boolean;
+}
+
 export interface SoftwareList {
   clientPresent: boolean;
   clientVersion: string | null;
+  devTools: DevToolState[];
   items: SoftwareItem[];
   errors: string[];
 }

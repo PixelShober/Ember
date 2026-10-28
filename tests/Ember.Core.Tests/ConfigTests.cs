@@ -42,6 +42,23 @@ public class ConfigTests
     }
 
     [Fact]
+    public void Detected_proxy_fills_the_gaps_but_team_and_user_win()
+    {
+        var detected = new ProxyDetectionResult("http://pac.erkannt.example/proxy.pac", null, new[] { "proxy.erkannt.example:8080" });
+        var eff = EffectiveSettings.Build(new UserSettings(), new TeamConfig(), detected);
+        Assert.True(eff.UsePac);
+        Assert.Equal("http://pac.erkannt.example/proxy.pac", eff.PacUrl);
+        Assert.Equal("proxy.erkannt.example:8080", eff.UpstreamHostPort);
+
+        Assert.Equal("http://pac.firma.example/proxy.pac", EffectiveSettings.Build(new UserSettings(), Example, detected).PacUrl);
+        Assert.Equal("eigener.example:1", EffectiveSettings.Build(new UserSettings { UpstreamProxy = "eigener.example:1" }, new TeamConfig(), detected).UpstreamHostPort);
+
+        var systemOnly = EffectiveSettings.Build(new UserSettings(), new TeamConfig(), new ProxyDetectionResult(null, "sys.proxy.example:3128", Array.Empty<string>()));
+        Assert.False(systemOnly.UsePac);
+        Assert.Equal("sys.proxy.example:3128", systemOnly.UpstreamHostPort);
+    }
+
+    [Fact]
     public void Validation_messages_are_translated()
     {
         L.Configure("de");

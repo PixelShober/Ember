@@ -34,7 +34,7 @@ export function createMockBridge(): Bridge {
 
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
-    languageSetting: user.language, user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
+    languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
     admin: true, showAdvanced: true, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
   };
@@ -173,7 +173,16 @@ export function createMockBridge(): Bridge {
   ];
 
   const software: SoftwareList = {
-    clientPresent: true, clientVersion: '5.00.9132.1011', errors: [],
+    clientPresent: true, clientVersion: '5.00.9132.1011',
+    devTools: [
+      { id: 'nodejs', name: 'Node.js LTS (npm)', description: t('devtools.nodejs.description'), installedVersion: '24.11.0', installedName: 'Node.js', sccm: null, method: 'direct', needsAdmin: false },
+      { id: 'git', name: 'Git for Windows', description: t('devtools.git.description'), installedVersion: '2.47.1', installedName: 'Git', sccm: { kind: 'package', name: 'Git for Windows 2.47', packageId: 'FIR00042', programId: 'Install', appId: null, version: '2.47', installState: null, evaluationState: 12, lastRunStatus: 'Succeeded' }, method: 'sccm', needsAdmin: false },
+      { id: 'vscode', name: 'Visual Studio Code', description: t('devtools.vscode.description'), installedVersion: null, installedName: null, sccm: null, method: 'direct', needsAdmin: false },
+      { id: 'python', name: 'Python 3', description: t('devtools.python.description'), installedVersion: null, installedName: null, sccm: null, method: 'direct', needsAdmin: false },
+      { id: 'visualstudio', name: 'Visual Studio Professional', description: t('devtools.visualstudio.description'), installedVersion: '17.14.12', installedName: 'Visual Studio Professional 2022', sccm: null, method: 'direct', needsAdmin: true },
+      { id: 'dotnet', name: '.NET SDK (LTS)', description: t('devtools.dotnet.description'), installedVersion: '10.0.100', installedName: 'Microsoft .NET SDK 10.0.100 (x64)', sccm: null, method: 'direct', needsAdmin: true },
+      { id: 'pwsh', name: 'PowerShell 7', description: t('devtools.pwsh.description'), installedVersion: null, installedName: null, sccm: null, method: 'direct', needsAdmin: true },
+    ], errors: [],
     items: [
       { key: 'vs', name: 'Visual Studio Professional 2022', category: 'IDE', note: 'Lizenz über das Team', installed: { name: 'Visual Studio Professional 2022', version: '17.14.12', publisher: 'Microsoft Corporation' }, sccm: { kind: 'package', name: 'Visual Studio Professional 2022', packageId: 'FIR00123', programId: 'Installieren', appId: null, version: '17.14', installState: null, evaluationState: 12, lastRunStatus: 'Succeeded' }, link: null, canInstall: true },
       { key: 'alfaview', name: 'Alfaview', category: 'Kommunikation', note: null, installed: null, sccm: { kind: 'package', name: 'alfaview 9', packageId: 'FIR00456', programId: 'Install', appId: null, version: '9.21', installState: null, evaluationState: 1, lastRunStatus: null }, link: null, canInstall: true },
@@ -205,6 +214,7 @@ export function createMockBridge(): Bridge {
   const settingsView = (): SettingsView => ({
     user,
     team: { usePac: true, pacUrl: 'http://pac.firma.example/proxy.pac', upstreamProxy: 'proxy.firma.example:8080', internalDomains: 'firma.local, intranet.firma.example', port: null },
+    detected: { usePac: true, pacUrl: 'http://pac.firma.example/proxy.pac', upstreamProxy: 'proxy.firma.example:8080' },
     effective: { usePac: user.usePac ?? true, pacUrl: user.pacUrl ?? 'http://pac.firma.example/proxy.pac', upstreamProxy: user.upstreamProxy ?? 'proxy.firma.example:8080', internalDomains: user.internalDomains ?? 'firma.local, intranet.firma.example', port: user.port ?? 3128, pxUrl, detectedPac: 'http://pac.firma.example/proxy.pac' },
     teamStatus: team,
     paths: { settings: 'C:\\Ember\\Config\\settings.json', logs: 'C:\\Ember\\Logs', pxConfig: 'C:\\Users\\jmoessner\\AppData\\Roaming\\px\\px.ini', models: ai.modelsDir },
@@ -242,6 +252,9 @@ export function createMockBridge(): Bridge {
     'git.set': (p) => { git.name = p.name; git.email = p.email; return git; },
     'software.list': () => software,
     'software.open': () => null,
+    'devtools.latest': (p) => ({ nodejs: '26.12.1', git: '2.47.1', vscode: '1.106.2', python: '3.14.2', visualstudio: t('devtools.channel'), dotnet: '10.0.105', pwsh: '7.5.4' } as Record<string, string>)[p.id],
+    'devtools.install': (p) => { void simulate('devtool:' + p.id, 'devtool', t('devtools.jobs.install', { name: p.id }), [t('devtools.steps.resolve'), t('devtools.steps.download'), t('devtools.steps.verify'), t('devtools.steps.install'), t('devtools.steps.check')]); return null; },
+    'devtools.installMany': (p) => { void simulate('devtools', 'devtool', t('devtools.jobs.installMany', { count: p.tools.length }), p.tools.flatMap((x: { id: string }) => [x.id + ': ' + t('devtools.steps.download'), x.id + ': ' + t('devtools.steps.install')])); return null; },
     'software.install': (p) => { void simulate('software:' + p.key, 'software', t('software.jobs.install', { name: p.name }), [t('software.steps.trigger'), t('software.steps.wait')]); return null; },
     'mail.preview': (p) => ({ to: info.serviceCenter, subject: t(`mail.templates.${p.template}.subject`, { ...p.vars, user: info.user, computer: info.computer }), body: t(`mail.templates.${p.template}.body`, { ...p.vars, user: info.user, computer: info.computer }) }),
     'mail.compose': (p) => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text', reportPath: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt', reportText: p.attachReport ? 'Ember-Diagnosebericht\n…' : null }),

@@ -1,15 +1,17 @@
 <script lang="ts">
   import { t } from '../i18n.svelte';
 
-  // Where a setting comes from: own value, team.json or Ember's default.
-  let { user, team, onreset }: { user: unknown; team: unknown; onreset?: () => void } = $props();
-  const source = $derived(user !== null && user !== undefined ? 'user' : team !== null && team !== undefined ? 'team' : 'default');
+  // Where a setting comes from: own value, team.json, detected at start, or Ember's default.
+  let { user, team, detected, onreset }: { user: unknown; team: unknown; detected?: unknown; onreset?: () => void } = $props();
+  const has = (v: unknown) => v !== null && v !== undefined;
+  const source = $derived(has(user) ? 'user' : has(team) ? 'team' : has(detected) ? 'detected' : 'default');
+  const tone: Record<string, string> = { team: 'info', user: 'accent', detected: 'ok', default: '' };
 </script>
 
 <span class="row source">
-  <span class="badge {source === 'team' ? 'info' : source === 'user' ? 'accent' : ''}">{t(`common.sources.${source}`)}</span>
-  {#if source === 'user' && team !== null && team !== undefined && onreset}
-    <button class="btn ghost small" onclick={onreset}>{t('common.resetToTeam')}</button>
+  <span class="badge {tone[source]}">{t(`common.sources.${source}`)}</span>
+  {#if source === 'user' && onreset && (has(team) || has(detected))}
+    <button class="btn ghost small" onclick={onreset}>{has(team) ? t('common.resetToTeam') : t('common.resetToDetected')}</button>
   {/if}
 </span>
 

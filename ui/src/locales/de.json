@@ -63,13 +63,15 @@
     "sources": {
       "user": "eigener Wert",
       "team": "aus Team-Konfiguration",
-      "default": "Ember-Standard"
+      "default": "Ember-Standard",
+      "detected": "automatisch erkannt"
     },
     "resetToTeam": "Auf Team-Wert zurücksetzen",
     "needsAdmin": "Braucht Adminrechte – Windows fragt nach",
     "askServiceCenter": "Beim Service-Center anfragen",
     "saved": "Gespeichert",
-    "cancelled": "Abgebrochen"
+    "cancelled": "Abgebrochen",
+    "resetToDetected": "Erkannten Wert nutzen"
   },
   "errors": {
     "internal": "Interner Fehler: {message}",
@@ -136,7 +138,16 @@
     "webView2Signature": "Die Signatur des WebView2-Installers ist ungültig. Aus Sicherheitsgründen wird er nicht gestartet.",
     "wolNoAnswer": "{host} antwortet nach 3 Minuten nicht. Ist Wake-on-LAN im BIOS und am Netzwerkadapter aktiv?",
     "wolSendFailed": "Das Magic Packet konnte über keine Netzwerkverbindung gesendet werden.",
-    "zipInvalidPath": "Ungültiger Pfad im Zip: {entry}"
+    "zipInvalidPath": "Ungültiger Pfad im Zip: {entry}",
+    "devToolDirectDisabled": "Laut Team-Konfiguration installiert Ember nichts direkt vom Hersteller. Frag beim Service-Center an.",
+    "devToolUnsigned": "{file} ist nicht gültig signiert. Ember hat die Datei gelöscht und nichts installiert.",
+    "devToolSigner": "{file} ist von „{signer}“ signiert, erwartet war „{expected}“. Ember hat die Datei gelöscht und nichts installiert.",
+    "devToolNotFound": "{tool} ist nach der Installation nicht zu finden. Details stehen im Log.",
+    "devToolExit": "Der Installer von {tool} hat mit Code {code} aufgehört.",
+    "devToolNoRelease": "Für {tool} war keine passende Version zu finden.",
+    "devToolNoChecksum": "Für {file} gibt es keine Prüfsumme, deshalb installiert Ember es nicht.",
+    "nodeInUse": "Node.js ist gerade in Benutzung ({path}). Schließ alle Konsolen und Editoren, die node verwenden, und versuch es noch einmal.",
+    "devToolNothingToDo": "Es fehlt nichts."
   },
   "jobs": {
     "started": "gestartet",
@@ -261,7 +272,12 @@
     "removed": "Entfernt: {items}",
     "nothingToRemove": "Nichts zu entfernen",
     "unchanged": "Unverändert (zeigt auf {value})",
-    "keptForeign": "Nicht von Ember gesetzt, bleibt unverändert: {value}"
+    "keptForeign": "Nicht von Ember gesetzt, bleibt unverändert: {value}",
+    "detect": {
+      "atStart": "Firmenproxy beim Start erkannt: PAC {pac}, Proxy {proxy}. Diese Werte gelten, solange weder du noch die Team-Konfiguration etwas anderes einträgt.",
+      "nothing": "Beim Start keinen Firmenproxy erkannt (keine PAC-Adresse, kein Systemproxy).",
+      "failed": "Proxy-Erkennung beim Start fehlgeschlagen: {detail}"
+    }
   },
   "px": {
     "title": "px",
@@ -700,10 +716,9 @@
     },
     "language": {
       "title": "Sprache",
-      "auto": "Wie Windows ({value})",
       "de": "Deutsch",
-      "de-CH": "Deutsch (Schweiz)",
-      "en": "English"
+      "en": "English",
+      "windows": "Windows-Sprache"
     },
     "updates": {
       "title": "Updates",
@@ -789,5 +804,64 @@
     "installing": "WebView2 wird installiert …",
     "installed": "WebView2 {version} installiert",
     "failed": "WebView2 konnte nicht eingerichtet werden:\n\n{detail}\n\nSoll die Download-Seite von Microsoft geöffnet werden?"
+  },
+  "devtools": {
+    "title": "Entwicklerwerkzeuge",
+    "subtitle": "Der Grundstock für die Entwicklung. Stellt eure IT ein Werkzeug im Softwarecenter bereit, installiert Ember es von dort. Sonst kommt es direkt vom Hersteller über px, mit geprüfter Prüfsumme und Signatur.",
+    "nodejs": {
+      "description": "JavaScript-Laufzeit mit npm. Ember legt sie für dein Konto unter C:\\Ember\\Tools\\node ab, ohne Adminrechte."
+    },
+    "git": {
+      "description": "git mit Git Bash und Credential Manager, ohne Adminrechte für dein Konto."
+    },
+    "vscode": {
+      "description": "Editor von Microsoft als Benutzer-Installation, ohne Adminrechte."
+    },
+    "python": {
+      "description": "Aktuelles Python 3 mit pip und py-Launcher, für dein Konto."
+    },
+    "visualstudio": {
+      "description": "Visual Studio Professional mit den Workloads für .NET-Desktop und ASP.NET. Braucht Adminrechte und eine Lizenz; anmelden musst du dich danach selbst."
+    },
+    "dotnet": {
+      "description": "Aktuelles .NET SDK mit Langzeit-Support (LTS) für dotnet build und dotnet run. Braucht Adminrechte."
+    },
+    "pwsh": {
+      "description": "PowerShell 7 neben Windows PowerShell 5.1. Braucht Adminrechte."
+    },
+    "steps": {
+      "resolve": "Version ermitteln",
+      "download": "Herunterladen",
+      "verify": "Prüfsumme und Signatur prüfen",
+      "install": "Installieren",
+      "check": "Installation prüfen"
+    },
+    "jobs": {
+      "install": "{name} installieren",
+      "installMany": "{count} Werkzeug(e) installieren"
+    },
+    "signedBy": "signiert von {signer}",
+    "noChecksum": "keine Prüfsumme veröffentlicht",
+    "uacHint": "Windows fragt gleich nach Adminrechten.",
+    "reboot": "Installiert. Ein Neustart schließt die Installation ab.",
+    "installed": "{name} {version} ist installiert.",
+    "nodeReady": "Node.js liegt in {path}. Neu geöffnete Konsolen finden node und npm über den PATH.",
+    "pathAdded": "Zum PATH hinzugefügt: {dirs}. Gilt für neu geöffnete Konsolen.",
+    "channel": "aktuelle Version",
+    "visualstudioHint": "Der Visual-Studio-Installer lädt die Workloads selbst nach. Je nach Leitung dauert das 20 bis 60 Minuten.",
+    "installedVersion": "installiert · {version}",
+    "notInstalled": "nicht installiert",
+    "latest": "aktuell {version}",
+    "updateAvailable": "neu: {version}",
+    "viaSccm": "über Softwarecenter",
+    "direct": "vom Hersteller",
+    "mailOnly": "nur über Service-Center",
+    "needsAdmin": "braucht Adminrechte",
+    "install": "Installieren",
+    "update": "Aktualisieren",
+    "installMissing": "Fehlende installieren",
+    "confirmInstall": "{name} installieren? Ember lädt den Installer über px, prüft ihn und installiert. Schließ das Programm vorher, falls es schon läuft.",
+    "confirmMany": "Diese Werkzeuge installieren: {names}. Bei Visual Studio, .NET SDK und PowerShell 7 fragt Windows nach Adminrechten.",
+    "allInstalled": "Alles da."
   }
 }

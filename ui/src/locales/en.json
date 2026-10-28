@@ -63,13 +63,15 @@
     "sources": {
       "user": "your value",
       "team": "from team configuration",
-      "default": "Ember default"
+      "default": "Ember default",
+      "detected": "detected automatically"
     },
     "resetToTeam": "Reset to team value",
     "needsAdmin": "Needs admin rights – Windows will ask",
     "askServiceCenter": "Ask the service center",
     "saved": "Saved",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "resetToDetected": "Use detected value"
   },
   "errors": {
     "internal": "Internal error: {message}",
@@ -136,7 +138,16 @@
     "webView2Signature": "The signature of the WebView2 installer is invalid. For safety reasons it is not started.",
     "wolNoAnswer": "{host} does not answer after 3 minutes. Is Wake-on-LAN enabled in the BIOS and on the network adapter?",
     "wolSendFailed": "The magic packet could not be sent over any network connection.",
-    "zipInvalidPath": "Invalid path in zip: {entry}"
+    "zipInvalidPath": "Invalid path in zip: {entry}",
+    "devToolDirectDisabled": "According to the team configuration Ember does not install anything directly from the vendor. Ask the service center.",
+    "devToolUnsigned": "{file} has no valid signature. Ember deleted the file and installed nothing.",
+    "devToolSigner": "{file} is signed by “{signer}”, expected “{expected}”. Ember deleted the file and installed nothing.",
+    "devToolNotFound": "{tool} cannot be found after the installation. The log has the details.",
+    "devToolExit": "The {tool} installer stopped with code {code}.",
+    "devToolNoRelease": "No suitable version of {tool} was found.",
+    "devToolNoChecksum": "There is no checksum for {file}, so Ember does not install it.",
+    "nodeInUse": "Node.js is in use right now ({path}). Close all terminals and editors that use node and try again.",
+    "devToolNothingToDo": "Nothing is missing."
   },
   "jobs": {
     "started": "started",
@@ -261,7 +272,12 @@
     "removed": "Removed: {items}",
     "nothingToRemove": "Nothing to remove",
     "unchanged": "Unchanged (points to {value})",
-    "keptForeign": "Not set by Ember, left unchanged: {value}"
+    "keptForeign": "Not set by Ember, left unchanged: {value}",
+    "detect": {
+      "atStart": "Company proxy detected at start: PAC {pac}, proxy {proxy}. These values apply as long as neither you nor the team configuration sets something else.",
+      "nothing": "No company proxy detected at start (no PAC address, no system proxy).",
+      "failed": "Proxy detection at start failed: {detail}"
+    }
   },
   "px": {
     "title": "px",
@@ -700,10 +716,9 @@
     },
     "language": {
       "title": "Language",
-      "auto": "Like Windows ({value})",
       "de": "Deutsch",
-      "de-CH": "Deutsch (Schweiz)",
-      "en": "English"
+      "en": "English",
+      "windows": "Windows language"
     },
     "updates": {
       "title": "Updates",
@@ -789,5 +804,64 @@
     "installing": "Installing WebView2 …",
     "installed": "WebView2 {version} installed",
     "failed": "WebView2 could not be set up:\n\n{detail}\n\nOpen Microsoft's download page?"
+  },
+  "devtools": {
+    "title": "Developer tools",
+    "subtitle": "The basics for development. If your IT offers a tool in Software Center, Ember installs it from there. Otherwise it comes straight from the vendor through px, with checked checksum and signature.",
+    "nodejs": {
+      "description": "JavaScript runtime with npm. Ember puts it under C:\\Ember\\Tools\\node for your account, no admin rights needed."
+    },
+    "git": {
+      "description": "git with Git Bash and Credential Manager, for your account without admin rights."
+    },
+    "vscode": {
+      "description": "Microsoft's editor as a user installation, no admin rights needed."
+    },
+    "python": {
+      "description": "Current Python 3 with pip and the py launcher, for your account."
+    },
+    "visualstudio": {
+      "description": "Visual Studio Professional with the .NET desktop and ASP.NET workloads. Needs admin rights and a license; you sign in yourself afterwards."
+    },
+    "dotnet": {
+      "description": "Current .NET SDK with long-term support (LTS) for dotnet build and dotnet run. Needs admin rights."
+    },
+    "pwsh": {
+      "description": "PowerShell 7 next to Windows PowerShell 5.1. Needs admin rights."
+    },
+    "steps": {
+      "resolve": "Find the version",
+      "download": "Download",
+      "verify": "Check checksum and signature",
+      "install": "Install",
+      "check": "Check the installation"
+    },
+    "jobs": {
+      "install": "Install {name}",
+      "installMany": "Install {count} tool(s)"
+    },
+    "signedBy": "signed by {signer}",
+    "noChecksum": "no checksum published",
+    "uacHint": "Windows will ask for admin rights in a moment.",
+    "reboot": "Installed. A restart completes the installation.",
+    "installed": "{name} {version} is installed.",
+    "nodeReady": "Node.js is in {path}. Newly opened terminals find node and npm through PATH.",
+    "pathAdded": "Added to PATH: {dirs}. Applies to newly opened terminals.",
+    "channel": "current version",
+    "visualstudioHint": "The Visual Studio installer downloads the workloads itself. Depending on the connection this takes 20 to 60 minutes.",
+    "installedVersion": "installed · {version}",
+    "notInstalled": "not installed",
+    "latest": "current {version}",
+    "updateAvailable": "new: {version}",
+    "viaSccm": "via Software Center",
+    "direct": "from the vendor",
+    "mailOnly": "service center only",
+    "needsAdmin": "needs admin rights",
+    "install": "Install",
+    "update": "Update",
+    "installMissing": "Install missing",
+    "confirmInstall": "Install {name}? Ember downloads the installer through px, checks it and installs. Close the program first if it is already running.",
+    "confirmMany": "Install these tools: {names}. For Visual Studio, .NET SDK and PowerShell 7 Windows asks for admin rights.",
+    "allInstalled": "All there."
   }
 }

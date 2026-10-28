@@ -4,8 +4,12 @@ namespace Ember.Core;
 public static class Tools
 {
     public static string? Git => Find("git.exe", @"%ProgramFiles%\Git\cmd", @"%LocalAppData%\Programs\Git\cmd");
-    public static string? Npm => Find("npm.cmd", @"%ProgramFiles%\nodejs", @"%AppData%\npm");
-    public static string? Node => Find("node.exe", @"%ProgramFiles%\nodejs");
+    public static string? Npm => Find("npm.cmd", @"%ProgramFiles%\nodejs", EmberNode, @"%AppData%\npm");
+    public static string? Npx => Find("npx.cmd", @"%ProgramFiles%\nodejs", EmberNode, @"%AppData%\npm");
+    public static string? Node => Find("node.exe", @"%ProgramFiles%\nodejs", EmberNode);
+
+    /// <summary>Node.js installed by Ember (zip, per user).</summary>
+    static string EmberNode => Path.Combine(Paths.ToolsDir, "node");
     public static string? Dotnet => Find("dotnet.exe", @"%ProgramFiles%\dotnet", @"%LocalAppData%\Microsoft\dotnet");
     public static string? NvidiaSmi => Find("nvidia-smi.exe", @"%SystemRoot%\System32", @"%ProgramFiles%\NVIDIA Corporation\NVSMI");
 

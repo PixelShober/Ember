@@ -2,20 +2,51 @@
   import { onMount } from 'svelte';
   import { api, app, confirm, openMail, run } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
-  import type { SoftwareItem, SoftwareList } from '../lib/types';
+  import { isNewer } from '../lib/format';
+  import type { DevToolState, SoftwareItem, SoftwareList } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
 
   let list = $state<SoftwareList | null>(null);
   let loading = $state(false);
+  let latest = $state<Record<string, string>>({});
 
   async function load() {
     loading = true;
     list = (await run(() => api<SoftwareList>('software.list'))) ?? list;
     loading = false;
+    // The vendors' current versions arrive one by one (through px, cached for an hour by the host).
+    for (const d of list?.devTools ?? []) {
+      if (d.method !== 'direct' || latest[d.id]) continue;
+      api<string>('devtools.latest', { id: d.id }).then((v) => (latest[d.id] = v)).catch(() => {});
+    }
   }
   onMount(load);
+
+  // Reload when an installation finishes.
+  $effect(() => {
+    const finished = Object.values(app.jobs).filter((j) => (j.kind === 'devtool' || j.kind === 'software') && j.state === 'done').length;
+    if (finished) void load();
+  });
+
+  const missing = $derived((list?.devTools ?? []).filter((d) => !d.installedVersion && d.method !== 'mail'));
+  const busyTools = $derived(Object.values(app.jobs).some((j) => j.kind === 'devtool' && j.state === 'running'));
+
+  function request(d: DevToolState) {
+    return d.sccm?.packageId && d.sccm.programId ? { id: d.id, packageId: d.sccm.packageId, programId: d.sccm.programId } : { id: d.id };
+  }
+
+  async function installTool(d: DevToolState) {
+    if (!(await confirm(d.name, t('devtools.confirmInstall', { name: d.name }), t('devtools.install')))) return;
+    await run(() => api('devtools.install', request(d)));
+  }
+
+  async function installMissing() {
+    const names = missing.map((d) => d.name).join(', ');
+    if (!(await confirm(t('devtools.installMissing'), t('devtools.confirmMany', { names }), t('devtools.installMissing')))) return;
+    await run(() => api('devtools.installMany', { tools: missing.map(request) }));
+  }
 
   const stateKey = (s: number | null): string =>
     s == null || s <= 1 ? 'available' : s <= 4 ? 'preparing' : s === 5 ? 'downloading' : s === 6 || s === 14 ? 'waiting'
@@ -53,6 +84,50 @@
     <span class="spacer"></span>
     <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
   </div>
+
+  <section class="card tools">
+    <div class="card-head">
+      <Icon name="terminal" />
+      <div class="grow"><h2>{t('devtools.title')}</h2><p class="small muted">{t('devtools.subtitle')}</p></div>
+      {#if missing.length}
+        <Calcifer size={30} />
+        <button class="btn primary small" disabled={busyTools} onclick={installMissing}><Icon name="download" size={14} />{t('devtools.installMissing')} ({missing.length})</button>
+      {:else}
+        <span class="badge ok"><Icon name="check" size={13} />{t('devtools.allInstalled')}</span>
+      {/if}
+    </div>
+    <JobView id="devtools" />
+    <ul>
+      {#each list.devTools as d (d.id)}
+        {@const update = isNewer(latest[d.id], d.installedVersion)}
+        <li>
+          <div class="grow">
+            <div class="row">
+              <strong>{d.name}</strong>
+              {#if d.installedVersion}<span class="badge ok">{t('devtools.installedVersion', { version: d.installedVersion })}</span>
+              {:else}<span class="badge">{t('devtools.notInstalled')}</span>{/if}
+              {#if update}<span class="badge accent">{t('devtools.updateAvailable', { version: latest[d.id] })}</span>
+              {:else if latest[d.id] && !d.installedVersion}<span class="small muted">{t('devtools.latest', { version: latest[d.id] })}</span>{/if}
+              <span class="badge {d.method === 'sccm' ? 'info' : ''}">{t(d.method === 'sccm' ? 'devtools.viaSccm' : d.method === 'direct' ? 'devtools.direct' : 'devtools.mailOnly')}</span>
+              {#if d.needsAdmin}<span class="badge"><Icon name="shield" size={12} />{t('devtools.needsAdmin')}</span>{/if}
+            </div>
+            <p class="small muted">{d.description}</p>
+          </div>
+          <div class="row">
+            {#if d.method !== 'mail' && (!d.installedVersion || update)}
+              <button class="btn small {d.installedVersion ? '' : 'primary'}" disabled={busyTools} onclick={() => installTool(d)}>
+                <Icon name="download" size={14} />{d.installedVersion ? t('devtools.update') : t('devtools.install')}
+              </button>
+            {/if}
+            {#if d.method === 'mail'}
+              <button class="btn small" onclick={() => openMail('softwareRequest', { app: d.name })}><Icon name="mail" size={14} />{t('software.request')}</button>
+            {/if}
+          </div>
+          <div class="full"><JobView id={'devtool:' + d.id} compact /></div>
+        </li>
+      {/each}
+    </ul>
+  </section>
 
   {#if list.items.length === 0}
     <div class="note"><Calcifer /><p>{t('software.empty')}</p></div>
@@ -104,4 +179,11 @@
   .main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .job { grid-column: 1 / -1; }
   .job:empty { display: none; }
+  .tools { margin-bottom: 18px; }
+  .tools ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
+  .tools li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 0; border-top: 1px solid var(--border); }
+  .tools li:first-child { border-top: none; }
+  .grow { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 3px; }
+  .full { flex-basis: 100%; }
+  .full:empty { display: none; }
 </style>

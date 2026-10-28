@@ -14,7 +14,8 @@ public sealed record SoftwareItem(
     string Key, string Name, string? Category, string? Note,
     InstalledApp? Installed, SccmItem? Sccm, string? Link, bool CanInstall);
 
-public sealed record SoftwareList(bool ClientPresent, string? ClientVersion, IReadOnlyList<SoftwareItem> Items, IReadOnlyList<string> Errors);
+public sealed record SoftwareList(bool ClientPresent, string? ClientVersion, IReadOnlyList<DevToolState> DevTools,
+                                  IReadOnlyList<SoftwareItem> Items, IReadOnlyList<string> Errors);
 
 /// <summary>Installed programs from the Uninstall registry keys (64-bit, 32-bit, per user).</summary>
 public static class InstalledSoftware
@@ -124,7 +125,8 @@ public static class SoftwareCenter
                                        LinkFor(entry, match), match is { Kind: "package", PackageId: not null, ProgramId: not null }));
         }
 
-        return new SoftwareList(clientVersion != null, clientVersion, items, errors);
+        var devTools = DevTools.States(team, installed, sccm, clientVersion != null);
+        return new SoftwareList(clientVersion != null, clientVersion, devTools, items, errors);
     }
 
     static string? LinkFor(TeamSoftware entry, SccmItem? sccm) =>

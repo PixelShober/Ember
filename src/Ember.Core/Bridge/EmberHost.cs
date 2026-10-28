@@ -37,7 +37,10 @@ public sealed class EmberHost : IDisposable
     public JobManager Jobs { get; } = new();
     public Updater Updater { get; }
 
-    public EffectiveSettings Effective => EffectiveSettings.Build(Settings, Team.Config);
+    public EffectiveSettings Effective => EffectiveSettings.Build(Settings, Team.Config, _detected);
+
+    /// <summary>Company proxy as Windows reports it (detected once at start, see <see cref="DetectProxyAtStartAsync"/>).</summary>
+    ProxyDetectionResult? _detected;
 
     /// <summary>Admin in the team configuration: may use the advanced modules (KI, Energie).</summary>
     public bool IsAdmin => AdminCheck.IsAdmin(Team.Config);
@@ -52,12 +55,34 @@ public sealed class EmberHost : IDisposable
         Log.Info(L.T("app.started", ("version", AppInfo.Version), ("mode", AppInfo.Mode), ("language", L.Tag)));
         await Team.LoadAsync(Settings, _cts.Token);
         Shell.SetDevTools(ShowAdvanced);
+        _ = DetectProxyAtStartAsync();
 
         _logTimer = new Timer(_ => FlushLog(), null, 150, 150);
         _pxTimer = new Timer(async _ => await PollPxAsync(), null, 500, 4000);
         if (Settings.AutoUpdate && !AppInfo.IsPrerelease)
             _updateTimer = new Timer(async _ => await Updater.CheckAsync(download: true, _cts.Token), null,
                                      TimeSpan.FromSeconds(15), TimeSpan.FromHours(6));
+    }
+
+    /// <summary>
+    /// Reads PAC address and system proxy and the proxies in the PAC file. They fill the proxy
+    /// settings wherever neither the user nor team.json has a value.
+    /// </summary>
+    async Task DetectProxyAtStartAsync()
+    {
+        try
+        {
+            var r = await Net.DetectProxyAsync(_cts.Token);
+            _detected = r;
+            var d = EffectiveSettings.Detected.From(r);
+            if (d.PacUrl == null && d.Upstream == null) Log.Info(L.T("proxy.detect.nothing"));
+            else Log.Info(L.T("proxy.detect.atStart", ("pac", d.PacUrl ?? "–"), ("proxy", d.Upstream ?? "–")));
+            Bridge.Emit("settings.detected", null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Warn(L.T("proxy.detect.failed", ("detail", Net.Describe(ex))));
+        }
     }
 
     void OnLog(LogEntry entry)
@@ -110,6 +135,7 @@ public sealed class EmberHost : IDisposable
         mode = AppInfo.Mode,
         language = L.Tag,
         languageSetting = Settings.Language,
+        windowsLanguage = L.Resolve("auto", System.Globalization.CultureInfo.CurrentUICulture).Language,
         user = Elevation.AccountName,
         computer = Environment.MachineName,
         elevated = Elevation.IsElevated,
@@ -300,6 +326,21 @@ public sealed class EmberHost : IDisposable
             return Task.FromResult<object?>(Jobs.Start("software:" + key, "software", L.T("software.jobs.install", ("name", name)),
                 SoftwareSteps(packageId, programId, displayPattern)).Snapshot());
         });
+        // Developer tools: Software Center package if IT deploys one, else straight from the vendor.
+        b.Register("devtools.latest", async (args, ct) => (await DevTools.LatestAsync(args.Req("id"), Effective, Team.Config, ct)).Version);
+        b.Register("devtools.install", (args, _) =>
+        {
+            var id = args.Req("id");
+            var steps = DevToolSteps(id, args.OptStr("packageId"), args.OptStr("programId"), null);
+            return Task.FromResult<object?>(Jobs.Start("devtool:" + id, "devtool", L.T("devtools.jobs.install", ("name", DevTools.NameOf(id))), steps).Snapshot());
+        });
+        b.Register("devtools.installMany", (args, _) =>
+        {
+            var tools = args.Get<List<DevToolRequest>>("tools") ?? new List<DevToolRequest>();
+            if (tools.Count == 0) throw new EmberException("devToolNothingToDo");
+            var steps = tools.SelectMany(t => DevToolSteps(t.Id, t.PackageId, t.ProgramId, DevTools.NameOf(t.Id))).ToList();
+            return Task.FromResult<object?>(Jobs.Start("devtools", "devtool", L.T("devtools.jobs.installMany", ("count", tools.Count)), steps).Snapshot());
+        });
         b.Register("mail.compose", async (args, ct) =>
         {
             var template = args.Req("template");
@@ -432,6 +473,12 @@ public sealed class EmberHost : IDisposable
                 internalDomains = t?.InternalDomains is { } d ? string.Join(", ", d) : null,
                 port = t?.Port,
             },
+            detected = new
+            {
+                usePac = EffectiveSettings.Detected.From(_detected).UsePac,
+                pacUrl = EffectiveSettings.Detected.From(_detected).PacUrl,
+                upstreamProxy = EffectiveSettings.Detected.From(_detected).Upstream,
+            },
             effective = new
             {
                 Effective.UsePac,
@@ -447,14 +494,14 @@ public sealed class EmberHost : IDisposable
         };
     }
 
-    List<SetupStep> SoftwareSteps(string packageId, string programId, string displayPattern) => new()
+    List<SetupStep> SoftwareSteps(string packageId, string programId, string displayPattern, string? titlePrefix = null) => new()
     {
-        new(L.T("software.steps.trigger"), async (step, ct) =>
+        new((titlePrefix != null ? titlePrefix + ": " : "") + L.T("software.steps.trigger"), async (step, ct) =>
         {
             await SoftwareCenter.ExecuteProgramAsync(packageId, programId, ct);
             step.Report(L.T("software.triggered"));
         }),
-        new(L.T("software.steps.wait"), async (step, ct) =>
+        new((titlePrefix != null ? titlePrefix + ": " : "") + L.T("software.steps.wait"), async (step, ct) =>
         {
             step.SetProgress(null);
             var deadline = DateTime.UtcNow.AddMinutes(45);
@@ -480,6 +527,13 @@ public sealed class EmberHost : IDisposable
             throw new EmberException("sccmInstallTimeout");
         }),
     };
+
+    sealed record DevToolRequest(string Id, string? PackageId, string? ProgramId);
+
+    List<SetupStep> DevToolSteps(string id, string? packageId, string? programId, string? titlePrefix) =>
+        packageId is { Length: > 0 } && programId is { Length: > 0 }
+            ? SoftwareSteps(packageId, programId, DevTools.DisplayPattern(id), titlePrefix)
+            : DevTools.DirectSteps(id, Effective, Team.Config, titlePrefix);
 
     public void Dispose()
     {

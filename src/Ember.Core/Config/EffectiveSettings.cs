@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Ember.Core;
 
 /// <summary>
-/// The settings that are actually used: user value ?? team value ?? Ember default.
+/// The settings that are actually used: user value ?? team value ?? detected at start ?? Ember default.
 /// Immutable snapshot, so a running installation is not affected by edits in the UI.
 /// </summary>
 public sealed record EffectiveSettings
@@ -30,14 +30,15 @@ public sealed record EffectiveSettings
     public string UpstreamHostPort => NormalizeHostPort(UpstreamProxy);
     public string NoProxyList => string.Join(",", new[] { "localhost", "127.0.0.1", "::1" }.Concat(InternalDomainList));
 
-    public static EffectiveSettings Build(UserSettings u, TeamConfig team)
+    public static EffectiveSettings Build(UserSettings u, TeamConfig team, ProxyDetectionResult? detected = null)
     {
         var t = team.Proxy;
+        var d = Detected.From(detected);
         return new EffectiveSettings
         {
-            UsePac = u.UsePac ?? t?.UsePac ?? true,
-            PacUrl = u.PacUrl ?? t?.PacUrl ?? "",
-            UpstreamProxy = u.UpstreamProxy ?? t?.Upstream ?? "",
+            UsePac = u.UsePac ?? t?.UsePac ?? d.UsePac ?? true,
+            PacUrl = u.PacUrl ?? t?.PacUrl ?? d.PacUrl ?? "",
+            UpstreamProxy = u.UpstreamProxy ?? t?.Upstream ?? d.Upstream ?? "",
             InternalDomainList = u.InternalDomains != null ? SplitDomains(u.InternalDomains) : (IReadOnlyList<string>?)t?.InternalDomains ?? Array.Empty<string>(),
             Port = u.Port ?? t?.Port ?? DefaultPort,
             InstallDir = string.IsNullOrWhiteSpace(u.InstallDir) ? Paths.DefaultPxDir : u.InstallDir,
@@ -49,6 +50,19 @@ public sealed record EffectiveSettings
             ConfigurePip = u.ConfigurePip,
             ConfigureNuGet = u.ConfigureNuGet,
         };
+    }
+
+    /// <summary>
+    /// What Windows reported at start, as proxy values: the PAC address, the first proxy from the
+    /// PAC file (or the system proxy), and whether PAC is the way.
+    /// </summary>
+    public sealed record Detected(bool? UsePac, string? PacUrl, string? Upstream)
+    {
+        public static Detected From(ProxyDetectionResult? r) =>
+            r == null
+                ? new Detected(null, null, null)
+                : new Detected(r.PacUrl != null ? true : r.SystemProxy != null ? false : null,
+                               r.PacUrl, r.PacProxies.FirstOrDefault() ?? r.SystemProxy);
     }
 
     public static IReadOnlyList<string> SplitDomains(string text) =>

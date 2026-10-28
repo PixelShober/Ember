@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Ember.App;
+namespace Ember.Core;
 
 /// <summary>Checks the Authenticode signature of a downloaded installer (WinVerifyTrust).</summary>
 public static class Authenticode
@@ -9,19 +9,33 @@ public static class Authenticode
     static readonly Guid GenericVerifyV2 = new("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
 
     /// <summary>True if the file has a valid signature whose certificate subject contains "O=&lt;organization&gt;".</summary>
-    public static bool IsSignedBy(string file, string organization)
+    public static bool IsSignedBy(string file, string organization) =>
+        Subject(file) is { } subject && subject.Contains("O=" + organization, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Organization (O=) of a valid signature, else its common name (CN=); null when unsigned or invalid.</summary>
+    public static string? Signer(string file)
     {
-        if (!Verify(file)) return false;
+        var subject = Subject(file);
+        if (subject == null) return null;
+        string? Part(string key) =>
+            subject.Split(',').Select(p => p.Trim()).FirstOrDefault(p => p.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))?[(key.Length + 1)..].Trim('"');
+        return Part("O") ?? Part("CN") ?? subject;
+    }
+
+    /// <summary>Certificate subject of a valid Authenticode signature, or null.</summary>
+    static string? Subject(string file)
+    {
+        if (!OperatingSystem.IsWindows() || !Verify(file)) return null;
         try
         {
 #pragma warning disable SYSLIB0057
             using var cert = new X509Certificate2(X509Certificate.CreateFromSignedFile(file));
 #pragma warning restore SYSLIB0057
-            return cert.Subject.Contains("O=" + organization, StringComparison.OrdinalIgnoreCase);
+            return cert.Subject;
         }
         catch
         {
-            return false;
+            return null;
         }
     }
 

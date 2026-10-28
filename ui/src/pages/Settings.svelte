@@ -21,14 +21,22 @@
 
   const dirty = $derived(s != null && JSON.stringify(s) !== saved);
   const team = $derived(view?.team);
+  const detected = $derived(view?.detected);
+  // What applies without an own value: team.json, else what Windows reported at start.
+  const base = $derived({
+    usePac: team?.usePac ?? detected?.usePac ?? null,
+    pacUrl: team?.pacUrl ?? detected?.pacUrl ?? null,
+    upstreamProxy: team?.upstreamProxy ?? detected?.upstreamProxy ?? null,
+    internalDomains: team?.internalDomains ?? null,
+  });
 
-  // Effective value shown in a field: own value, else team value, else default.
-  const usePac = $derived(s?.usePac ?? team?.usePac ?? true);
+  // Effective value shown in a field: own value, else team/detected value, else default.
+  const usePac = $derived(s?.usePac ?? base.usePac ?? true);
 
   function setTeamManaged<K extends 'pacUrl' | 'upstreamProxy' | 'internalDomains'>(key: K, value: string) {
     if (!s) return;
-    const teamValue = team?.[key] ?? '';
-    s[key] = value === teamValue ? null : value;
+    const baseValue = base[key] ?? '';
+    s[key] = value === baseValue ? null : value;
   }
 
   async function save() {
@@ -78,7 +86,13 @@
   }
 
   const folders = ['logs', 'settings', 'px', 'pxConfig', 'reports'] as const;
-  const languages = ['auto', 'de', 'de-CH', 'en'] as const;
+  // Only Deutsch and English. Picking the Windows language stores "auto" (so de-CH keeps "ss" instead of "ß").
+  const languages = ['de', 'en'] as const;
+  const windowsLanguage = $derived(app.info?.windowsLanguage ?? 'de');
+  const chosenLanguage = $derived(!s || s.language === 'auto' ? windowsLanguage : s.language.startsWith('de') ? 'de' : 'en');
+  function chooseLanguage(l: 'de' | 'en') {
+    if (s) s.language = l === windowsLanguage ? 'auto' : l;
+  }
   const toolKeys = [['configureEnvVars', 'envVars'], ['configureGit', 'git'], ['configureNpm', 'npm'], ['configureNuGet', 'nuget'], ['configurePip', 'pip']] as const;
 </script>
 
@@ -124,19 +138,19 @@
       </div>
       <div class="row">
         <span class="label">{t('settings.proxy.mode')}</span>
-        <label class="check"><input type="radio" name="mode" checked={usePac} onchange={() => (s!.usePac = team?.usePac === true ? null : true)} />{t('settings.proxy.pac')}</label>
-        <label class="check"><input type="radio" name="mode" checked={!usePac} onchange={() => (s!.usePac = team?.usePac === false ? null : false)} />{t('settings.proxy.fixed')}</label>
-        <SourceBadge user={s.usePac} team={team?.usePac} onreset={() => (s!.usePac = null)} />
+        <label class="check"><input type="radio" name="mode" checked={usePac} onchange={() => (s!.usePac = base.usePac === true ? null : true)} />{t('settings.proxy.pac')}</label>
+        <label class="check"><input type="radio" name="mode" checked={!usePac} onchange={() => (s!.usePac = base.usePac === false ? null : false)} />{t('settings.proxy.fixed')}</label>
+        <SourceBadge user={s.usePac} team={team?.usePac} detected={detected?.usePac} onreset={() => (s!.usePac = null)} />
       </div>
 
       <label class="field">
-        <span class="row">{t('settings.proxy.pacUrl')} <SourceBadge user={s.pacUrl} team={team?.pacUrl} onreset={() => (s!.pacUrl = null)} /></span>
-        <input value={s.pacUrl ?? team?.pacUrl ?? ''} oninput={(e) => setTeamManaged('pacUrl', e.currentTarget.value)} spellcheck="false" class="mono"
+        <span class="row">{t('settings.proxy.pacUrl')} <SourceBadge user={s.pacUrl} team={team?.pacUrl} detected={detected?.pacUrl} onreset={() => (s!.pacUrl = null)} /></span>
+        <input value={s.pacUrl ?? base.pacUrl ?? ''} oninput={(e) => setTeamManaged('pacUrl', e.currentTarget.value)} spellcheck="false" class="mono"
           placeholder={t('settings.proxy.pacAuto', { value: view.effective.detectedPac ?? '–' })} />
       </label>
       <label class="field">
-        <span class="row">{t('settings.proxy.upstream')} <SourceBadge user={s.upstreamProxy} team={team?.upstreamProxy} onreset={() => (s!.upstreamProxy = null)} /></span>
-        <input value={s.upstreamProxy ?? team?.upstreamProxy ?? ''} oninput={(e) => setTeamManaged('upstreamProxy', e.currentTarget.value)} spellcheck="false" class="mono" placeholder="proxy.firma.de:8080" />
+        <span class="row">{t('settings.proxy.upstream')} <SourceBadge user={s.upstreamProxy} team={team?.upstreamProxy} detected={detected?.upstreamProxy} onreset={() => (s!.upstreamProxy = null)} /></span>
+        <input value={s.upstreamProxy ?? base.upstreamProxy ?? ''} oninput={(e) => setTeamManaged('upstreamProxy', e.currentTarget.value)} spellcheck="false" class="mono" placeholder="proxy.firma.de:8080" />
         <span class="hint">{t('settings.proxy.upstreamHint')}</span>
       </label>
       <label class="field">
@@ -182,8 +196,8 @@
       <h2>{t('settings.language.title')}</h2>
       <div class="row">
         {#each languages as l (l)}
-          <label class="check lang"><input type="radio" name="lang" value={l} bind:group={s.language} />
-            {l === 'auto' ? t('settings.language.auto', { value: navigator.language }) : t(`settings.language.${l}`)}</label>
+          <label class="check lang"><input type="radio" name="lang" value={l} checked={chosenLanguage === l} onchange={() => chooseLanguage(l)} />
+            {t(`settings.language.${l}`)}{#if l === windowsLanguage}<span class="small muted">&nbsp;· {t('settings.language.windows')}</span>{/if}</label>
         {/each}
       </div>
     </section>

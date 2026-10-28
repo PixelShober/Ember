@@ -91,6 +91,24 @@ public sealed class TeamPower
     public List<PowerProfileDefinition>? Profiles { get; set; }
 }
 
+/// <summary>Developer tools (Software tab): which ones to show and whether Ember may install them straight from the vendor.</summary>
+public sealed class TeamDevTools
+{
+    /// <summary>Ids to show (nodejs, git, vscode, python, visualstudio, dotnet, pwsh). Default: all.</summary>
+    public List<string>? Tools { get; set; }
+    /// <summary>false: only through Software Center or the service center, never directly from the vendor. Default: true.</summary>
+    public bool? AllowDirect { get; set; }
+    public TeamVisualStudio? VisualStudio { get; set; }
+}
+
+public sealed class TeamVisualStudio
+{
+    /// <summary>Bootstrapper to use, e.g. https://aka.ms/vs/17/release/vs_professional.exe (default).</summary>
+    public string? BootstrapperUrl { get; set; }
+    /// <summary>Workload ids for --add. Default: ManagedDesktop and NetWeb.</summary>
+    public List<string>? Workloads { get; set; }
+}
+
 /// <summary>Who counts as admin and sees the advanced modules (KI, Energie). Accounts and AD groups, with or without domain.</summary>
 public sealed class TeamAdmins
 {
@@ -116,6 +134,7 @@ public sealed class TeamConfig
     public TeamServiceCenter? ServiceCenter { get; set; }
     public Dictionary<string, MailTemplate>? MailTemplates { get; set; }
     public List<TeamSoftware>? Software { get; set; }
+    public TeamDevTools? DevTools { get; set; }
     public TeamPower? Power { get; set; }
     public TeamAdmins? Admins { get; set; }
     public List<ModelEntry>? Models { get; set; }
