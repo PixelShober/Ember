@@ -62,7 +62,7 @@
   .step.failed { background: var(--error-soft); }
   .icon { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--surface-2); color: var(--text-muted); }
   .step.done .icon { background: var(--ok-soft); color: var(--ok); }
-  .step.failed .icon { background: var(--error); color: #fff; }
+  .step.failed .icon { background: var(--error); color: var(--surface); }
   .step.running .icon { background: var(--accent); color: var(--accent-text); }
   .step.running .icon :global(svg) { animation: spin 1.2s linear infinite; }
   .step.skipped { opacity: 0.6; }

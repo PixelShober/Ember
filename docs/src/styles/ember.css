@@ -1,35 +1,37 @@
-/* Ember colours for Starlight (warm orange accent, like the app). */
+/* Ember colours for Starlight: the same Calcifer palette as the app (charcoal at night, warm paper by day). */
 :root {
-  --sl-color-accent-low: #3b291d;
-  --sl-color-accent: #e0702f;
-  --sl-color-accent-high: #f6c3a1;
-  --sl-color-white: #f8f6f3;
-  --sl-color-gray-1: #ebe7e2;
-  --sl-color-gray-2: #c9c2ba;
-  --sl-color-gray-3: #9b9289;
-  --sl-color-gray-4: #5f5851;
-  --sl-color-gray-5: #3a3632;
-  --sl-color-gray-6: #272421;
-  --sl-color-black: #1c1b1a;
+  --sl-color-accent-low: #492517;
+  --sl-color-accent: #f48645;
+  --sl-color-accent-high: #ffd5bb;
+  --sl-color-white: #f3ede6;
+  --sl-color-gray-1: #e9e0d8;
+  --sl-color-gray-2: #c8bab0;
+  --sl-color-gray-3: #a39388;
+  --sl-color-gray-4: #5f5048;
+  --sl-color-gray-5: #3c302a;
+  --sl-color-gray-6: #251c18;
+  --sl-color-black: #1a1310;
 }
 
 :root[data-theme='light'] {
-  --sl-color-accent-low: #fbe3d6;
-  --sl-color-accent: #b03a0a;
-  --sl-color-accent-high: #5e2105;
-  --sl-color-white: #1c1b1a;
-  --sl-color-gray-1: #272421;
-  --sl-color-gray-2: #3a3632;
-  --sl-color-gray-3: #5f5851;
-  --sl-color-gray-4: #9b9289;
-  --sl-color-gray-5: #c9c2ba;
-  --sl-color-gray-6: #ebe7e2;
-  --sl-color-gray-7: #f6f5f3;
-  --sl-color-black: #ffffff;
+  --sl-color-accent-low: #ffe3d5;
+  --sl-color-accent: #af2f09;
+  --sl-color-accent-high: #5c1a06;
+  --sl-color-white: #271b16;
+  --sl-color-gray-1: #33251f;
+  --sl-color-gray-2: #4a3a32;
+  --sl-color-gray-3: #6d5b52;
+  --sl-color-gray-4: #9b8a80;
+  --sl-color-gray-5: #d5c6bc;
+  --sl-color-gray-6: #f6efe9;
+  --sl-color-gray-7: #faf5f0;
+  --sl-color-black: #fffefd;
 }
+
+::selection { background: color-mix(in srgb, #f39340 38%, transparent); }
 
 .sl-markdown-content img {
   border: 1px solid var(--sl-color-gray-5);
   border-radius: 10px;
-  box-shadow: 0 4px 18px rgb(0 0 0 / 0.08);
+  box-shadow: 0 4px 18px -4px rgb(64 32 16 / 0.14);
 }

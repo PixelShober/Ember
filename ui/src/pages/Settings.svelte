@@ -244,6 +244,6 @@
   .savebar {
     position: sticky; bottom: 0; margin-top: 16px; display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: var(--radius); background: var(--surface);
-    border: 1px solid var(--border); box-shadow: 0 -4px 20px rgb(0 0 0 / 0.08);
+    border: 1px solid var(--border); box-shadow: 0 -6px 20px -8px rgb(64 32 16 / 0.16);
   }
 </style>

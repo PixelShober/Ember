@@ -96,11 +96,11 @@
 
 <style>
   .layer { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center; padding-top: 8vh; }
-  .backdrop { position: absolute; inset: 0; background: rgb(0 0 0 / 0.35); }
+  .backdrop { position: absolute; inset: 0; background: var(--backdrop); }
   .dialog {
     position: relative; width: min(620px, calc(100vw - 40px)); max-height: 84vh; overflow: auto;
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: 0 24px 60px rgb(0 0 0 / 0.3); padding: 22px 24px;
+    box-shadow: var(--shadow-lift), 0 24px 60px -12px rgb(0 0 0 / 0.3); padding: 22px 24px;
     display: flex; flex-direction: column; gap: 12px;
   }
   .preview { background: var(--surface-2); border-radius: var(--radius-small); padding: 10px 14px; }

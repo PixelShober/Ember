@@ -136,8 +136,10 @@
   @media (prefers-reduced-motion: reduce) { .loading img { animation: none; } }
 
   .shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+  /* The sidebar is the hearth: a soft glow behind Calcifer, fading out further down. */
   .sidebar {
-    background: var(--sidebar); border-right: 1px solid var(--border);
+    background: radial-gradient(ellipse 150% 38% at 12% 0%, var(--hearth), transparent 72%), var(--sidebar);
+    border-right: 1px solid var(--border);
     display: flex; flex-direction: column; padding: 16px 12px; gap: 18px; min-height: 0;
   }
   .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
@@ -149,10 +151,10 @@
     display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-small);
     color: var(--text); text-decoration: none; font-weight: 500; position: relative;
   }
-  nav a:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
-  nav a.active { background: var(--surface); box-shadow: var(--shadow); }
+  nav a:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  nav a.active { background: var(--accent-soft); }
   nav a.active::before {
-    content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--accent);
+    content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; border-radius: 2px; background: var(--ember-up);
   }
   nav a :global(svg) { color: var(--text-muted); }
   nav a.active :global(svg) { color: var(--accent-fg); }

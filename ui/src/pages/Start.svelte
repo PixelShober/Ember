@@ -97,7 +97,7 @@
     display: flex; flex-direction: column; gap: 8px; border-top: 3px solid var(--border-strong);
     transition: transform 0.15s, box-shadow 0.15s;
   }
-  .status:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgb(0 0 0 / 0.08); }
+  .status:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
   .status.ok { border-top-color: var(--ok); }
   .status.warn { border-top-color: var(--warn); }
   .icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--text-muted); }

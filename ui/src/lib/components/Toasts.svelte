@@ -25,12 +25,12 @@
   .toasts { position: fixed; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 50; max-width: min(460px, calc(100vw - 40px)); }
   .toast {
     display: flex; align-items: flex-start; gap: 10px; padding: 10px 10px 10px 14px;
-    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--info);
-    border-radius: var(--radius-small); box-shadow: 0 8px 28px rgb(0 0 0 / 0.16);
+    background: var(--surface); border: 1px solid color-mix(in srgb, var(--info) 30%, var(--border));
+    border-radius: var(--radius-small); box-shadow: var(--shadow-lift);
   }
-  .toast.ok { border-left-color: var(--ok); }
+  .toast.ok { border-color: color-mix(in srgb, var(--ok) 35%, var(--border)); }
   .toast.ok > :global(svg) { color: var(--ok); }
-  .toast.error { border-left-color: var(--error); }
+  .toast.error { border-color: color-mix(in srgb, var(--error) 40%, var(--border)); background: var(--error-soft); }
   .toast.error > :global(svg) { color: var(--error); }
   .toast > :global(svg) { flex: none; margin-top: 2px; color: var(--info); }
   p { flex: 1; }
