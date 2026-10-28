@@ -211,6 +211,8 @@ export interface SoftwareItem {
   sccm: SccmItem | null;
   link: string | null;
   canInstall: boolean;
+  /** team: from team.json (category, note) · sccm: everything else Software Center offers */
+  source: 'team' | 'sccm';
 }
 
 export interface DevToolState {

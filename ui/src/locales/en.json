@@ -71,7 +71,8 @@
     "askServiceCenter": "Ask the service center",
     "saved": "Saved",
     "cancelled": "Cancelled",
-    "resetToDetected": "Use detected value"
+    "resetToDetected": "Use detected value",
+    "admin": "Admin"
   },
   "errors": {
     "internal": "Internal error: {message}",
@@ -376,7 +377,7 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Programs from Software Center, with your IT's rights and approvals.",
+    "subtitle": "Developer tools, Playwright browsers and everything Software Center offers.",
     "client": "Software Center client {version}",
     "noClient": "No Software Center client found. Installing then only works through the service center.",
     "empty": "The team configuration does not list any programs yet (section \"software\").",
@@ -407,7 +408,13 @@
       "installed": "installed",
       "error": "error",
       "unknown": "unknown status"
-    }
+    },
+    "center": "Software Center",
+    "centerHint": "Everything Software Center offers on this machine. Installing runs through the Configuration Manager client, with your IT's approvals.",
+    "filter": "Search …",
+    "more": "More in Software Center",
+    "nothingOffered": "Software Center offers nothing to this machine right now.",
+    "openShort": "Software Center"
   },
   "mail": {
     "title": "Message to the service center",
@@ -890,7 +897,11 @@
     "installMissing": "Install missing",
     "confirmInstall": "Install {name}? Ember downloads the installer through px, checks it and installs. Close the program first if it is already running.",
     "confirmMany": "Install these tools: {names}. For Visual Studio, .NET SDK and PowerShell 7 Windows asks for admin rights.",
-    "allInstalled": "All there."
+    "allInstalled": "All there.",
+    "bruno": {
+      "description": "API client like Postman, without an account; collections live as files in the repo. For your account, no admin rights needed."
+    },
+    "unsigned": "not signed, checksum from GitHub matches"
   },
   "playwright": {
     "title": "Playwright browsers",

@@ -122,7 +122,7 @@
         "tools": {
           "type": "array",
           "description": "Welche Werkzeuge erscheinen. Standard: alle.",
-          "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh"] }
+          "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh", "bruno"] }
         },
         "allowDirect": { "type": "boolean", "description": "false: nie direkt vom Hersteller installieren, nur über das Softwarecenter oder das Service-Center. Standard: true." },
         "visualStudio": {

@@ -71,7 +71,8 @@
     "askServiceCenter": "Beim Service-Center anfragen",
     "saved": "Gespeichert",
     "cancelled": "Abgebrochen",
-    "resetToDetected": "Erkannten Wert nutzen"
+    "resetToDetected": "Erkannten Wert nutzen",
+    "admin": "Admin"
   },
   "errors": {
     "internal": "Interner Fehler: {message}",
@@ -376,7 +377,7 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Programme aus dem Softwarecenter, mit den Rechten und Freigaben deiner IT.",
+    "subtitle": "Entwicklerwerkzeuge, Playwright-Browser und alles, was das Softwarecenter anbietet.",
     "client": "Softwarecenter-Client {version}",
     "noClient": "Kein Softwarecenter-Client gefunden. Installieren geht dann nur über das Service-Center.",
     "empty": "In der Team-Konfiguration stehen noch keine Programme (Abschnitt „software“).",
@@ -407,7 +408,13 @@
       "installed": "installiert",
       "error": "Fehler",
       "unknown": "unbekannter Status"
-    }
+    },
+    "center": "Softwarecenter",
+    "centerHint": "Alles, was das Softwarecenter auf diesem Rechner anbietet. Installiert wird über den Configuration-Manager-Client, mit den Freigaben eurer IT.",
+    "filter": "Suchen …",
+    "more": "Weitere im Softwarecenter",
+    "nothingOffered": "Das Softwarecenter bietet diesem Rechner gerade nichts an.",
+    "openShort": "Softwarecenter"
   },
   "mail": {
     "title": "Nachricht ans Service-Center",
@@ -890,7 +897,11 @@
     "installMissing": "Fehlende installieren",
     "confirmInstall": "{name} installieren? Ember lädt den Installer über px, prüft ihn und installiert. Schließ das Programm vorher, falls es schon läuft.",
     "confirmMany": "Diese Werkzeuge installieren: {names}. Bei Visual Studio, .NET SDK und PowerShell 7 fragt Windows nach Adminrechten.",
-    "allInstalled": "Alles da."
+    "allInstalled": "Alles da.",
+    "bruno": {
+      "description": "API-Client wie Postman, ohne Konto; Sammlungen liegen als Dateien im Repo. Für dein Konto, ohne Adminrechte."
+    },
+    "unsigned": "nicht signiert, Prüfsumme von GitHub stimmt"
   },
   "playwright": {
     "title": "Playwright-Browser",

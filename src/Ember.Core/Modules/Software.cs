@@ -10,9 +10,10 @@ public sealed record InstalledApp(string Name, string? Version, string? Publishe
 public sealed record SccmItem(string Kind, string Name, string? PackageId, string? ProgramId, string? AppId,
                               string? Version, string? InstallState, int? EvaluationState, string? LastRunStatus);
 
+/// <param name="Source">"team": from team.json (with category and note), "sccm": everything else Software Center offers.</param>
 public sealed record SoftwareItem(
     string Key, string Name, string? Category, string? Note,
-    InstalledApp? Installed, SccmItem? Sccm, string? Link, bool CanInstall);
+    InstalledApp? Installed, SccmItem? Sccm, string? Link, bool CanInstall, string Source = "team");
 
 public sealed record SoftwareList(bool ClientPresent, string? ClientVersion, IReadOnlyList<DevToolState> DevTools,
                                   IReadOnlyList<SoftwareItem> Items, IReadOnlyList<string> Errors);
@@ -111,6 +112,19 @@ public static class SoftwareCenter
         }
 
         var installed = await Task.Run(InstalledSoftware.Read, ct);
+        var devTools = DevTools.States(team, installed, sccm, clientVersion != null);
+        var items = BuildItems(team, sccm, installed, devTools);
+        return new SoftwareList(clientVersion != null, clientVersion, devTools, items, errors);
+    }
+
+    /// <summary>
+    /// Tiles: the team.json entries (with category and note) first, then everything else Software
+    /// Center offers. Packages that a developer-tool tile already covers are not shown twice.
+    /// </summary>
+    internal static List<SoftwareItem> BuildItems(TeamConfig team, List<SccmItem> sccm, List<InstalledApp> installed, List<DevToolState> devTools)
+    {
+        var offered = OnePerPackage(sccm);
+        var used = new HashSet<SccmItem>(devTools.Where(d => d.Sccm != null).Select(d => d.Sccm!));
         var items = new List<SoftwareItem>();
         foreach (var entry in team.Software ?? new List<TeamSoftware>())
         {
@@ -121,13 +135,70 @@ public static class SoftwareCenter
             var app = installed.Where(a => InstalledSoftware.Matches(a.Name, displayPattern))
                                .OrderByDescending(a => a.Version, Comparer<string?>.Create((x, y) => AppInfo.CompareVersions(x ?? "0", y ?? "0")))
                                .FirstOrDefault();
+            if (match != null) used.Add(match);
             items.Add(new SoftwareItem(entry.Key, entry.Name, entry.Category, entry.Note?.Get(), app, match,
                                        LinkFor(entry, match), match is { Kind: "package", PackageId: not null, ProgramId: not null }));
         }
 
-        var devTools = DevTools.States(team, installed, sccm, clientVersion != null);
-        return new SoftwareList(clientVersion != null, clientVersion, devTools, items, errors);
+        foreach (var s in offered.Where(s => !used.Contains(s) && !used.Any(u => u.PackageId != null && u.PackageId == s.PackageId))
+                                 .OrderBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var key = "sccm:" + (s.PackageId != null ? s.PackageId + "/" + s.ProgramId : s.AppId ?? s.Name);
+            var app = FindInstalled(s.Name, installed);
+            if (app == null && s.EvaluationState == 12 && s.Kind == "application") app = new InstalledApp(s.Name, s.Version, null);
+            items.Add(new SoftwareItem(key, CleanName(s.Name), null, null, app, s,
+                                       s.AppId is { Length: > 0 } id ? "softwarecenter:SoftwareID=" + id : null,
+                                       s is { Kind: "package", PackageId: not null, ProgramId: not null }, "sccm"));
+        }
+        return items;
     }
+
+    /// <summary>
+    /// CCM_Program lists every program of a package (install, uninstall, repair …). One tile per
+    /// package: the install program, else the first that is not an uninstall/repair.
+    /// </summary>
+    internal static List<SccmItem> OnePerPackage(IEnumerable<SccmItem> sccm)
+    {
+        static bool NotInstall(SccmItem s) =>
+            Regex.IsMatch($"{s.ProgramId} {s.Name}", @"\b(un|de)-?install|\bremove\b|\bentfern|\brepair\b|\breparier", RegexOptions.IgnoreCase);
+        var result = new List<SccmItem>();
+        foreach (var group in sccm.GroupBy(s => s.Kind == "package" && s.PackageId != null ? s.PackageId : "app:" + (s.AppId ?? s.Name)))
+        {
+            var list = group.ToList();
+            result.Add(list.FirstOrDefault(s => !NotInstall(s) && Regex.IsMatch(s.ProgramId ?? "", "install", RegexOptions.IgnoreCase))
+                       ?? list.FirstOrDefault(s => !NotInstall(s))
+                       ?? list[0]);
+        }
+        return result;
+    }
+
+    /// <summary>Installed program for a Software Center name ("alfaview 9" finds "alfaview"), versions and editions aside.</summary>
+    internal static InstalledApp? FindInstalled(string sccmName, List<InstalledApp> installed)
+    {
+        var wanted = Normalize(sccmName);
+        if (wanted.Length < 3) return null;
+        return installed.Where(a =>
+            {
+                var have = Normalize(a.Name);
+                return have.Length >= 3 &&
+                       (have == wanted || have.StartsWith(wanted + " ", StringComparison.Ordinal) || wanted.StartsWith(have + " ", StringComparison.Ordinal));
+            })
+            .OrderByDescending(a => a.Version ?? "0", Comparer<string>.Create(AppInfo.CompareVersions))
+            .FirstOrDefault();
+    }
+
+    /// <summary>Lower case, without version numbers, architecture and punctuation.</summary>
+    internal static string Normalize(string name)
+    {
+        var s = name.ToLowerInvariant();
+        s = Regex.Replace(s, @"\((x64|x86|64-bit|32-bit|user|machine)\)|\b(x64|x86|64-bit|32-bit)\b", " ");
+        s = Regex.Replace(s, @"\bv?\d+(\.\d+)*\b", " ");
+        s = Regex.Replace(s, @"[^\p{L}\p{Nd}]+", " ");
+        return Regex.Replace(s, @"\s+", " ").Trim();
+    }
+
+    /// <summary>Software Center names often carry the program after a dash ("7-Zip – Install"); the tile shows the product.</summary>
+    static string CleanName(string name) => Regex.Replace(name, @"\s+[-–]\s+(install(ieren)?|installation|setup)$", "", RegexOptions.IgnoreCase).Trim();
 
     static string? LinkFor(TeamSoftware entry, SccmItem? sccm) =>
         !string.IsNullOrWhiteSpace(entry.SoftwareCenterLink) ? entry.SoftwareCenterLink

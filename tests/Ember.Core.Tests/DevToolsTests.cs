@@ -98,3 +98,51 @@ public class DevToolsTests
         Assert.All(only, s => Assert.Equal("mail", s.Method));
     }
 }
+
+public class SoftwareTilesTests
+{
+    static SccmItem Package(string name, string id, string program, int? state = 1) =>
+        new("package", name, id, program, null, null, null, state, null);
+
+    [Fact]
+    public void One_tile_per_package_with_its_install_program()
+    {
+        var list = SoftwareCenter.OnePerPackage(new[]
+        {
+            Package("7-Zip Uninstall", "FIR001", "Uninstall"),
+            Package("7-Zip", "FIR001", "Install"),
+            Package("Notepad++ Reparieren", "FIR002", "Reparieren"),
+            Package("Notepad++", "FIR002", "Setup"),
+        });
+        Assert.Equal(new[] { "Install", "Setup" }, list.Select(s => s.ProgramId));
+    }
+
+    [Theory]
+    [InlineData("alfaview 9", "alfaview", true)]
+    [InlineData("Mozilla Firefox (x64 de)", "Mozilla Firefox (x64 de)", true)]
+    [InlineData("Notepad++ 8.6", "Notepad++ (64-bit x64)", true)]
+    [InlineData("Git", "GitHub CLI", false)]
+    [InlineData("Teams", "Microsoft Teams", false)]
+    public void Installed_programs_are_matched_without_versions(string sccmName, string displayName, bool found) =>
+        Assert.Equal(found, SoftwareCenter.FindInstalled(sccmName, new List<InstalledApp> { new(displayName, "1.0", null) }) != null);
+
+    [Fact]
+    public void Everything_from_software_center_becomes_a_tile_but_nothing_twice()
+    {
+        var team = TeamConfig.Parse("""{ "software": [ { "name": "Alfaview", "sccmName": "alfaview*", "category": "Kommunikation" } ] }""");
+        var sccm = new List<SccmItem>
+        {
+            Package("alfaview 9", "FIR010", "Install"),
+            Package("Git for Windows 2.47", "FIR011", "Install"),
+            Package("7-Zip – Install", "FIR012", "Install"),
+        };
+        var devTools = DevTools.States(new TeamConfig(), new List<InstalledApp>(), sccm, clientPresent: true);
+        var items = SoftwareCenter.BuildItems(team, sccm, new List<InstalledApp> { new("7-Zip 24.08 (x64)", "24.08", null) }, devTools);
+
+        Assert.Equal(new[] { "Alfaview", "7-Zip" }, items.Select(i => i.Name));          // git is a developer-tool tile
+        Assert.Equal("team", items[0].Source);
+        Assert.Equal("sccm", items[1].Source);
+        Assert.Equal("24.08", items[1].Installed!.Version);
+        Assert.True(items[1].CanInstall);
+    }
+}

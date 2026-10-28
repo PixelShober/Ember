@@ -14,7 +14,7 @@ public sealed record DevToolState(
 
 /// <summary>
 /// The developer stack Ember sets up: Node.js LTS (npm), Git for Windows, VS Code, Python,
-/// Visual Studio, .NET SDK and PowerShell 7. If IT deploys a tool in Software Center, that
+/// Visual Studio, .NET SDK, PowerShell 7 and Bruno. If IT deploys a tool in Software Center, that
 /// package is used. Otherwise Ember downloads the official installer through px, checks the
 /// published checksum and the vendor's signature, and installs per user where the vendor
 /// allows it (Node.js, Git, VS Code, Python). Visual Studio, the .NET SDK and PowerShell 7
@@ -22,10 +22,13 @@ public sealed record DevToolState(
 /// </summary>
 public static class DevTools
 {
+    /// <param name="Signer">Expected organization in the Authenticode signature; null = any valid signature.</param>
+    /// <param name="SignatureRequired">false: an unsigned installer is accepted when the vendor publishes its SHA-256.</param>
     sealed record Recipe(
         string Id, string Name, string[] DisplayNames, string[] SccmNames, bool NeedsAdmin, string? Signer,
         Func<HttpClient, TeamConfig, CancellationToken, Task<DevToolRelease>> Resolve,
-        Func<string, DevToolRelease, TeamConfig, SetupStep, CancellationToken, Task> Install);
+        Func<string, DevToolRelease, TeamConfig, SetupStep, CancellationToken, Task> Install,
+        bool SignatureRequired = true);
 
     const int InstallTimeoutSec = 2 * 60 * 60;   // Visual Studio can take a long time
     static readonly TimeSpan LatestCacheTime = TimeSpan.FromHours(1);
@@ -43,6 +46,7 @@ public static class DevTools
         new("visualstudio", "Visual Studio Professional", new[] { "Visual Studio Professional 20*", "Visual Studio Enterprise 20*", "Visual Studio Community 20*" }, new[] { "*Visual Studio*Professional*" }, true, "Microsoft Corporation", VisualStudioReleaseAsync, InstallVisualStudioAsync),
         new("dotnet", ".NET SDK (LTS)", new[] { "Microsoft .NET SDK *" }, new[] { "*.NET SDK*", "*NET Core SDK*" }, true, "Microsoft Corporation", DotnetReleaseAsync, InstallDotnetAsync),
         new("pwsh", "PowerShell 7", new[] { "PowerShell 7*" }, new[] { "PowerShell 7*" }, true, "Microsoft Corporation", PwshReleaseAsync, InstallPwshAsync),
+        new("bruno", "Bruno", new[] { "Bruno*" }, new[] { "Bruno*" }, false, null, BrunoReleaseAsync, InstallBrunoAsync, SignatureRequired: false),
     };
 
     public static IReadOnlyList<string> Ids => All.Select(r => r.Id).ToList();
@@ -176,10 +180,18 @@ public static class DevTools
                 if (!file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 {
                     var signer = Authenticode.Signer(file);
-                    if (signer == null) Reject("devToolUnsigned", ("file", release.FileName));
-                    if (r.Signer != null && !signer!.Contains(r.Signer, StringComparison.OrdinalIgnoreCase))
-                        Reject("devToolSigner", ("file", release.FileName), ("signer", signer), ("expected", r.Signer));
-                    parts.Add(L.T("devtools.signedBy", ("signer", signer!)));
+                    if (signer == null)
+                    {
+                        // Unsigned is only acceptable when the published checksum matched above.
+                        if (r.SignatureRequired || parts.Count == 0) Reject("devToolUnsigned", ("file", release.FileName));
+                        parts.Add(L.T("devtools.unsigned"));
+                    }
+                    else
+                    {
+                        if (r.Signer != null && !signer.Contains(r.Signer, StringComparison.OrdinalIgnoreCase))
+                            Reject("devToolSigner", ("file", release.FileName), ("signer", signer), ("expected", r.Signer));
+                        parts.Add(L.T("devtools.signedBy", ("signer", signer)));
+                    }
                 }
                 if (parts.Count == 0) parts.Add(L.T("devtools.noChecksum"));
                 step.Report(string.Join(" · ", parts));
@@ -426,6 +438,22 @@ public static class DevTools
 
     static Task InstallDotnetAsync(string file, DevToolRelease r, TeamConfig team, SetupStep step, CancellationToken ct) =>
         RunInstallerAsync(file, "/install /quiet /norestart", admin: true, ".NET SDK", step, ct);
+
+    // ------------------------------------------------------------------ Bruno (API client, per user)
+
+    static async Task<DevToolRelease> BrunoReleaseAsync(HttpClient http, TeamConfig team, CancellationToken ct)
+    {
+        var rel = await Net.GetLatestReleaseAsync(http, "usebruno/bruno", ct);
+        var url = rel.AssetUrls.FirstOrDefault(u => Regex.IsMatch(Net.FileName(u), @"^bruno_[\d.]+_x64_win\.exe$", RegexOptions.IgnoreCase))
+                  ?? throw new EmberException("devToolNoRelease", ("tool", "Bruno"));
+        var file = Net.FileName(url);
+        var version = Regex.Match(file, @"^bruno_([\d.]+)_", RegexOptions.IgnoreCase).Groups[1].Value;
+        return new DevToolRelease(version, url, file, rel.Sha256?.GetValueOrDefault(file));
+    }
+
+    /// <summary>NSIS installer from electron-builder: /S installs silently for the current user.</summary>
+    static Task InstallBrunoAsync(string file, DevToolRelease r, TeamConfig team, SetupStep step, CancellationToken ct) =>
+        RunInstallerAsync(file, "/S", admin: false, "Bruno", step, ct);
 
     // ------------------------------------------------------------------ PowerShell 7 (admin, MSI)
 
