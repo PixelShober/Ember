@@ -223,6 +223,24 @@ export interface DevToolState {
   needsAdmin: boolean;
 }
 
+export interface PlaywrightProject {
+  dir: string;
+  hasPackageJson: boolean;
+  package: string | null;
+  version: string | null;
+  wanted: string | null;
+  hasLockFile: boolean;
+}
+
+export interface PlaywrightState {
+  browsersDir: string;
+  browsers: { name: string; path: string }[];
+  downloadHost: string | null;
+  nodeCerts: boolean;
+  nodeFound: boolean;
+  project: PlaywrightProject | null;
+}
+
 export interface SoftwareList {
   clientPresent: boolean;
   clientVersion: string | null;

@@ -188,6 +188,8 @@ public sealed class EmberHost : IDisposable
                 "reports" => Paths.ReportDir,
                 "models" => Models.Dir(Settings),
                 "llama" => Paths.LlamaDir,
+                "playwright" => Playwright.BrowsersDir,
+                "root" => Paths.Root,
                 var other => throw new EmberException("unknownFolder", ("key", other)),
             };
             if (!Directory.Exists(dir)) throw new EmberException("folderMissing", ("path", dir));
@@ -340,6 +342,23 @@ public sealed class EmberHost : IDisposable
             if (tools.Count == 0) throw new EmberException("devToolNothingToDo");
             var steps = tools.SelectMany(t => DevToolSteps(t.Id, t.PackageId, t.ProgramId, DevTools.NameOf(t.Id))).ToList();
             return Task.FromResult<object?>(Jobs.Start("devtools", "devtool", L.T("devtools.jobs.installMany", ("count", tools.Count)), steps).Snapshot());
+        });
+        // Playwright browsers for one project (versions follow the project's Playwright package).
+        b.Register("playwright.state", () => Playwright.State(Team.Config, Settings.PlaywrightProject));
+        b.Register("playwright.inspect", (args, _) =>
+        {
+            var dir = args.Req("dir");
+            if (!Directory.Exists(dir)) throw new EmberException("folderMissing", ("path", dir));
+            Settings.PlaywrightProject = dir;
+            Settings.Save();
+            return Task.FromResult<object?>(Playwright.State(Team.Config, dir));
+        });
+        b.Register("playwright.install", (args, _) =>
+        {
+            var dir = args.Req("dir");
+            var browsers = args.OptStr("browsers") == "all" ? "all" : "chromium";
+            return Task.FromResult<object?>(Jobs.Start("playwright", "playwright", L.T("playwright.jobs.install", ("path", dir)),
+                Playwright.InstallSteps(dir, browsers, Effective, Team.Config)).Snapshot());
         });
         b.Register("mail.compose", async (args, ct) =>
         {

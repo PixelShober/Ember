@@ -147,7 +147,16 @@
     "devToolNoRelease": "No suitable version of {tool} was found.",
     "devToolNoChecksum": "There is no checksum for {file}, so Ember does not install it.",
     "nodeInUse": "Node.js is in use right now ({path}). Close all terminals and editors that use node and try again.",
-    "devToolNothingToDo": "Nothing is missing."
+    "devToolNothingToDo": "Nothing is missing.",
+    "certsNone": "No valid certificate was found in the Windows certificate store.",
+    "playwrightNoNode": "Node.js with npm is missing. Install it above under Developer tools.",
+    "playwrightNoProject": "{path} has no package.json.",
+    "playwrightNotInProject": "The project in {path} does not use Playwright. Add it with “npm install -D @playwright/test”.",
+    "playwrightPackageJson": "package.json is not valid JSON: {detail}",
+    "playwrightNoBrowsers": "After the installation there are no browsers in {path}.",
+    "playwrightCertificates": "The download failed on the certificate: the company proxy inspects TLS and Node.js does not know the company certificate. Set up “Node.js certificates” under Proxy → Diagnosis and try again.",
+    "playwrightProxyAuth": "The proxy asks for authentication (407). Is px running? The Proxy page shows its status; without px, npx and Playwright do not get through.",
+    "playwrightBlocked": "The download server cannot be reached or is blocked. Is px running? Otherwise cdn.playwright.dev is probably blocked: ask for an internal mirror in the team configuration (playwright.downloadHost) or test with Edge (channel: 'msedge')."
   },
   "jobs": {
     "started": "started",
@@ -252,7 +261,8 @@
       "npm": "npm",
       "nuget": "NuGet / .NET",
       "pip": "pip",
-      "vscode": "VS Code"
+      "vscode": "VS Code",
+      "nodeCerts": "Node.js certificates (NODE_EXTRA_CA_CERTS)"
     },
     "states": {
       "px": "points to px",
@@ -264,7 +274,8 @@
     "hints": {
       "windows": "Stays unchanged: px reads exactly this setting to find the company proxy.",
       "nuget": "dotnet restore and Visual Studio read http_proxy from %APPDATA%\\NuGet\\NuGet.Config.",
-      "vscode": "Ember only changes \"http.proxy\" in settings.json; comments and other entries stay."
+      "vscode": "Ember only changes \"http.proxy\" in settings.json; comments and other entries stay.",
+      "nodeCerts": "Node.js, npm, npx and Playwright do not use the Windows certificate store. If the company proxy inspects TLS, downloads fail with “unable to get local issuer certificate”. “Set up” exports the trusted certificates from Windows to C:\\Ember\\Certs and sets NODE_EXTRA_CA_CERTS."
     },
     "none": "none",
     "toolMissing": "not installed",
@@ -277,6 +288,18 @@
       "atStart": "Company proxy detected at start: PAC {pac}, proxy {proxy}. These values apply as long as neither you nor the team configuration sets something else.",
       "nothing": "No company proxy detected at start (no PAC address, no system proxy).",
       "failed": "Proxy detection at start failed: {detail}"
+    },
+    "nodeCerts": {
+      "done": "Exported {count} certificates from Windows to {path}; NODE_EXTRA_CA_CERTS is set. Applies to newly opened terminals.",
+      "set": "Set up",
+      "renew": "Renew",
+      "states": {
+        "px": "set up",
+        "other": "file missing",
+        "unset": "not set",
+        "missing": "–",
+        "info": "–"
+      }
     }
   },
   "px": {
@@ -863,5 +886,38 @@
     "confirmInstall": "Install {name}? Ember downloads the installer through px, checks it and installs. Close the program first if it is already running.",
     "confirmMany": "Install these tools: {names}. For Visual Studio, .NET SDK and PowerShell 7 Windows asks for admin rights.",
     "allInstalled": "All there."
+  },
+  "playwright": {
+    "title": "Playwright browsers",
+    "subtitle": "Playwright belongs to the project; its browsers live in a shared cache. Ember installs exactly the browsers your project's Playwright version needs, through px and with the company certificates.",
+    "project": "Project folder",
+    "pick": "Choose folder",
+    "noProject": "Choose the folder with your project's package.json.",
+    "found": "{package} {version} in the project",
+    "foundWanted": "{package} {wanted} according to package.json, npm install still to do",
+    "notInProject": "package.json lists no Playwright (@playwright/test or playwright).",
+    "noPackageJson": "This folder has no package.json.",
+    "browsersChromium": "Chromium only (enough for most tests)",
+    "browsersAll": "All browsers (Chromium, Firefox, WebKit)",
+    "install": "Install browsers",
+    "cache": "Installed browsers",
+    "cacheEmpty": "No browsers in the cache yet.",
+    "openCache": "Open cache folder",
+    "certsMissing": "Node.js does not know the company certificates yet. If the download stops with a certificate error, set up “Node.js certificates” under Proxy → Diagnosis.",
+    "mirror": "Downloads through the mirror {host}",
+    "edgeTitle": "Without a download: use Edge",
+    "edgeText": "Microsoft Edge is installed on every Windows machine. With this setting Playwright tests in Edge, and Chromium tests need no browser download:",
+    "steps": {
+      "project": "Check the project",
+      "environment": "Prepare proxy and certificates",
+      "npm": "Install npm packages",
+      "browsers": "Download browsers",
+      "check": "Check the installation"
+    },
+    "jobs": {
+      "install": "Playwright browsers for {path}"
+    },
+    "alreadyInstalled": "Playwright {version} is already installed",
+    "browsers": "In the cache: {list} ({path})"
   }
 }

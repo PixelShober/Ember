@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AiStatus, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -47,6 +47,7 @@ export function createMockBridge(): Bridge {
     { tool: 'env', label: t('proxy.tools.env'), value: `HTTP_PROXY=${pxUrl} · HTTPS_PROXY=${pxUrl} · NO_PROXY=localhost,127.0.0.1,::1,firma.local`, state: 'px', canSet: false, canRemove: true, hint: null },
     { tool: 'git', label: 'git', value: pxUrl, state: 'px', canSet: false, canRemove: true, hint: null },
     { tool: 'npm', label: 'npm', value: `proxy=${pxUrl} · https-proxy=${pxUrl}`, state: 'px', canSet: false, canRemove: true, hint: null },
+    { tool: 'nodeCerts', label: t('proxy.tools.nodeCerts'), value: '–', state: 'unset', canSet: true, canRemove: false, hint: t('proxy.hints.nodeCerts') },
     { tool: 'nuget', label: t('proxy.tools.nuget'), value: '–', state: 'unset', canSet: true, canRemove: false, hint: t('proxy.hints.nuget') },
     { tool: 'pip', label: 'pip', value: 'http://proxy.firma.example:8080', state: 'other', canSet: true, canRemove: false, hint: null },
     { tool: 'vscode', label: 'VS Code', value: '–', state: 'unset', canSet: true, canRemove: false, hint: t('proxy.hints.vscode') },
@@ -201,6 +202,13 @@ export function createMockBridge(): Bridge {
     modelsDir: 'C:\\Ember\\Models',
   };
 
+  const playwright: PlaywrightState = {
+    browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
+    browsers: [{ name: 'chromium-1194', path: '' }, { name: 'chromium_headless_shell-1194', path: '' }, { name: 'ffmpeg-1011', path: '' }],
+    downloadHost: null, nodeCerts: false, nodeFound: true,
+    project: { dir: 'C:\\Users\\jmoessner\\source\\repos\\kundenportal', hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true },
+  };
+
   const git: GitIdentityInfo = { gitFound: true, name: null, email: null, suggestedName: 'Jürgen Mößner', suggestedEmail: 'juergen.moessner@firma.example', source: 'ad' };
 
   const logs: LogEntry[] = [
@@ -252,6 +260,9 @@ export function createMockBridge(): Bridge {
     'git.set': (p) => { git.name = p.name; git.email = p.email; return git; },
     'software.list': () => software,
     'software.open': () => null,
+    'playwright.state': () => playwright,
+    'playwright.inspect': (p) => { playwright.project = { dir: p.dir, hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true }; return playwright; },
+    'playwright.install': (p) => { void simulate('playwright', 'playwright', t('playwright.jobs.install', { path: p.dir }), [t('playwright.steps.project'), t('playwright.steps.environment'), t('playwright.steps.npm'), t('playwright.steps.browsers'), t('playwright.steps.check')]); return null; },
     'devtools.latest': (p) => ({ nodejs: '26.12.1', git: '2.47.1', vscode: '1.106.2', python: '3.14.2', visualstudio: t('devtools.channel'), dotnet: '10.0.105', pwsh: '7.5.4' } as Record<string, string>)[p.id],
     'devtools.install': (p) => { void simulate('devtool:' + p.id, 'devtool', t('devtools.jobs.install', { name: p.id }), [t('devtools.steps.resolve'), t('devtools.steps.download'), t('devtools.steps.verify'), t('devtools.steps.install'), t('devtools.steps.check')]); return null; },
     'devtools.installMany': (p) => { void simulate('devtools', 'devtool', t('devtools.jobs.installMany', { count: p.tools.length }), p.tools.flatMap((x: { id: string }) => [x.id + ': ' + t('devtools.steps.download'), x.id + ': ' + t('devtools.steps.install')])); return null; },

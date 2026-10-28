@@ -48,6 +48,8 @@ public sealed class UserSettings
     /// <summary>UNC path of team.json; empty = ember-team.txt next to the exe or EMBER_TEAM_CONFIG.</summary>
     public string TeamConfigPath { get; set; } = "";
     public bool AutoUpdate { get; set; } = true;
+    /// <summary>Last project folder used for "Install Playwright browsers".</summary>
+    public string PlaywrightProject { get; set; } = "";
 
     // --- AI module ------------------------------------------------------------------
     public string ModelsDir { get; set; } = "";

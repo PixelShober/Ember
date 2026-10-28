@@ -97,9 +97,9 @@
                 <code class="break">{row.value}</code>
                 {#if row.hint}<p class="hint">{host(row.hint)}</p>{/if}
               </td>
-              <td><span class="badge {stateTone[row.state]}">{t(`proxy.states.${row.state}`)}</span></td>
+              <td><span class="badge {stateTone[row.state]}">{row.tool === 'nodeCerts' ? t(`proxy.nodeCerts.states.${row.state}`) : t(`proxy.states.${row.state}`)}</span></td>
               <td class="nowrap right">
-                {#if row.canSet}<button class="btn small" onclick={() => setTool(row)}>{t('proxy.diag.set')}</button>{/if}
+                {#if row.canSet}<button class="btn small" onclick={() => setTool(row)}>{row.tool !== 'nodeCerts' ? t('proxy.diag.set') : row.state === 'px' ? t('proxy.nodeCerts.renew') : t('proxy.nodeCerts.set')}</button>{/if}
                 {#if row.canRemove}<button class="btn small ghost" onclick={() => removeTool(row)}>{t('proxy.diag.remove')}</button>{/if}
               </td>
             </tr>

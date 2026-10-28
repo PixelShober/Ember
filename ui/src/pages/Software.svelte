@@ -7,6 +7,7 @@
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
+  import PlaywrightCard from '../lib/components/PlaywrightCard.svelte';
 
   let list = $state<SoftwareList | null>(null);
   let loading = $state(false);
@@ -129,6 +130,8 @@
     </ul>
   </section>
 
+  <div class="gap"><PlaywrightCard /></div>
+
   {#if list.items.length === 0}
     <div class="note"><Calcifer /><p>{t('software.empty')}</p></div>
   {/if}
@@ -180,6 +183,7 @@
   .job { grid-column: 1 / -1; }
   .job:empty { display: none; }
   .tools { margin-bottom: 18px; }
+  .gap { margin-bottom: 18px; }
   .tools ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
   .tools li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 0; border-top: 1px solid var(--border); }
   .tools li:first-child { border-top: none; }

@@ -21,7 +21,7 @@ public sealed record ProxyRow(string Tool, string Label, string Value, ProxyStat
 /// </summary>
 public static class ProxyTools
 {
-    public static readonly string[] Ids = { "windows", "env", "git", "npm", "nuget", "pip", "vscode" };
+    public static readonly string[] Ids = { "windows", "env", "git", "npm", "nodeCerts", "nuget", "pip", "vscode" };
 
     public static bool IsOurs(string? value, EffectiveSettings s)
     {
@@ -94,6 +94,14 @@ public static class ProxyTools
                 return new ProxyRow(id, label, $"proxy={Shown(p)} · https-proxy={Shown(hp)}", state,
                                     state != ProxyState.Px, state == ProxyState.Px, null);
             }
+            case "nodeCerts":
+            {
+                // Not a proxy, but the second half of "npm & co. through the company proxy" (TLS inspection).
+                var path = UserEnvironment.Get(NodeCertificates.Variable);
+                var state = path == null ? ProxyState.Unset : NodeCertificates.Configured ? ProxyState.Px : ProxyState.Other;
+                bool ours = path != null && path.Equals(NodeCertificates.BundleFile, StringComparison.OrdinalIgnoreCase);
+                return new ProxyRow(id, label, Shown(path), state, state != ProxyState.Px || ours, ours, L.T("proxy.hints.nodeCerts"));
+            }
             case "nuget":
             {
                 var value = NuGetConfigEditor.Get(Tools.NuGetConfig, "http_proxy");
@@ -128,6 +136,8 @@ public static class ProxyTools
     {
         switch (id)
         {
+            case "nodeCerts":
+                return L.T("proxy.nodeCerts.done", ("count", NodeCertificates.Setup()), ("path", NodeCertificates.BundleFile));
             case "env":
                 // SetEnvironmentVariable(User) notifies all windows and can block for a moment.
                 await Task.Run(() =>
@@ -183,6 +193,8 @@ public static class ProxyTools
     {
         switch (id)
         {
+            case "nodeCerts":
+                return NodeCertificates.Remove() ? L.T("proxy.removed", ("items", NodeCertificates.Variable)) : L.T("proxy.nothingToRemove");
             case "env":
             {
                 var removed = new List<string>();

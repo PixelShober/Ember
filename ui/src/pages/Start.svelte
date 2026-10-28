@@ -18,7 +18,8 @@
   });
 
   const name = $derived(firstName(git?.name ?? git?.suggestedName, app.info?.user ?? ''));
-  const relevant = $derived(rows?.filter((r) => r.state !== 'info' && r.state !== 'missing') ?? []);
+  // Tools that should point to px (the Node.js certificates are no proxy setting).
+  const relevant = $derived(rows?.filter((r) => r.state !== 'info' && r.state !== 'missing' && r.tool !== 'nodeCerts') ?? []);
   const okCount = $derived(relevant.filter((r) => r.state === 'px').length);
   const team = $derived(app.info?.team);
 
