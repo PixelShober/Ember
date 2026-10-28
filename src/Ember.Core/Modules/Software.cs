@@ -156,6 +156,7 @@ public static class SoftwareCenter
             @{ returnValue = $r.ReturnValue } | ConvertTo-Json -Compress
             """, ct, 60);
         var code = json.Num("returnValue") ?? 0;
+        Log.Info($"ExecuteProgram {packageId}/{programId}: ReturnValue {code}");
         if (code != 0) throw new EmberException("sccmExecuteFailed", ("code", code));
     }
 

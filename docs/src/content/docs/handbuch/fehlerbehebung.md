@@ -5,6 +5,8 @@ description: Die häufigsten Probleme und was dagegen hilft.
 
 Erste Anlaufstelle ist immer der Log-Tab. Mit „Debug“ siehst du jeden Befehl, den Ember ausführt, samt Ausgabe. Hilft das nicht weiter: Diagnosebericht erstellen und ans Service-Center schicken.
 
+Die Logdatei liegt unter `%APPDATA%\Ember\logs\ember-JJJJ-MM-TT.log`, eine pro Tag, 30 Tage lang. Sie enthält immer alles, auch die Debug-Zeilen: jeden Befehl, jedes PowerShell-Skript, Exitcodes und die Antworten von Windows. Wenn du einen Fehler meldest, häng diese Datei an. Der Diagnosebericht hat nur die letzten Info-Zeilen.
+
 ## px-Installation bricht bei „Verbindungstest über px“ ab
 
 Meist kommt HTTP 407 zurück: Der Firmenproxy hat die Kerberos-Anmeldung von px abgelehnt. Starte „px-Debug“ unter Proxy und schau im Log nach, was px versucht. Häufige Ursachen sind eine falsche PAC-Adresse, ein Proxy, der nur NTLM kann, oder kein Kontakt zum Domänencontroller (VPN aus).

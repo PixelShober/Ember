@@ -69,7 +69,11 @@ public static class PowerCfg
     {
         var r = await ProcessRunner.RunAsync(Exe, new[] { "/qh", scheme }, ct, 60, OutputKind.Oem, logOutput: false);
         if (!r.Ok) throw new EmberException("commandFailed", ("command", "powercfg /qh"), ("detail", r.Output));
-        return Parse(r.StdOut);
+        var settings = Parse(r.StdOut);
+        Log.Debug($"powercfg /qh {scheme}: {settings.Count} settings parsed");
+        // If nothing could be parsed, the raw output tells why (unexpected format or language).
+        if (settings.Count == 0) Log.Debug(r.StdOut.Length > 4000 ? r.StdOut[..4000] : r.StdOut);
+        return settings;
     }
 
     /// <summary>Parses the output of powercfg /q or /qh (any display language).</summary>

@@ -43,7 +43,9 @@ public static class PowerShell
             var result = await RunAsync(wrapped, ct, timeoutSec, logOutput: false);
             if (!result.Ok)
                 throw new EmberException("powershell", ("detail", FirstErrorLine(result)));
-            return File.Exists(resultFile) ? ParseJson(await File.ReadAllTextAsync(resultFile, ct)) : ParseJson(result.StdOut);
+            var text = File.Exists(resultFile) ? await File.ReadAllTextAsync(resultFile, ct) : result.StdOut;
+            LogResult(text);
+            return ParseJson(text);
         }
         finally
         {
@@ -101,7 +103,9 @@ public static class PowerShell
         try
         {
             if (!File.Exists(resultFile)) throw new EmberException("elevatedNoResult");
-            var json = ParseJson(await File.ReadAllTextAsync(resultFile, ct));
+            var text = await File.ReadAllTextAsync(resultFile, ct);
+            LogResult(text);
+            var json = ParseJson(text);
             if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("error", out var err))
                 throw new EmberException("powershell", ("detail", err.GetString()));
             return json;
@@ -110,6 +114,13 @@ public static class PowerShell
         {
             try { File.Delete(resultFile); } catch { }
         }
+    }
+
+    /// <summary>What Windows answered, so a log from a test machine shows the actual data (debug level).</summary>
+    static void LogResult(string text)
+    {
+        text = text.Trim().TrimStart('\uFEFF');
+        Log.Debug("PowerShell result: " + (text.Length > 6000 ? text[..6000] + " …" : text));
     }
 
     internal static JsonElement ParseJson(string text)
