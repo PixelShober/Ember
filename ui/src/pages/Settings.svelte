@@ -137,6 +137,7 @@
         <h2>{t('settings.proxy.title')}</h2>
         <button class="btn small" onclick={detect}><Icon name="proxy" size={14} />{t('settings.proxy.detect')}</button>
       </div>
+      <p class="muted">{t('settings.proxy.autoHint')}</p>
       <div class="row">
         <span class="label">{t('settings.proxy.mode')}</span>
         <label class="check"><input type="radio" name="mode" checked={usePac} onchange={() => (s!.usePac = base.usePac === true ? null : true)} />{t('settings.proxy.pac')}</label>

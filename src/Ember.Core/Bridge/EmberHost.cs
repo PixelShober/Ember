@@ -523,9 +523,9 @@ public sealed class EmberHost : IDisposable
             user = Settings,
             team = new
             {
-                usePac = t?.UsePac,
-                pacUrl = t?.PacUrl,
-                upstreamProxy = t?.Upstream,
+                usePac = (bool?)null,
+                pacUrl = (string?)null,
+                upstreamProxy = (string?)null,
                 internalDomains = t?.InternalDomains is { } d ? string.Join(", ", d) : null,
                 port = t?.Port,
             },

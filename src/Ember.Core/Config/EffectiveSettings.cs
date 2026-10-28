@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 namespace Ember.Core;
 
 /// <summary>
-/// The settings that are actually used: user value ?? team value ?? detected at start ?? Ember default.
+/// The settings that are actually used. Company proxy (PAC, proxy host): user value ?? detected at start
+/// ?? Ember default. Internal domains and port: user value ?? team value ?? default.
 /// Immutable snapshot, so a running installation is not affected by edits in the UI.
 /// </summary>
 public sealed record EffectiveSettings
@@ -36,9 +37,9 @@ public sealed record EffectiveSettings
         var d = Detected.From(detected);
         return new EffectiveSettings
         {
-            UsePac = u.UsePac ?? t?.UsePac ?? d.UsePac ?? true,
-            PacUrl = u.PacUrl ?? t?.PacUrl ?? d.PacUrl ?? "",
-            UpstreamProxy = u.UpstreamProxy ?? t?.Upstream ?? d.Upstream ?? "",
+            UsePac = u.UsePac ?? d.UsePac ?? true,
+            PacUrl = u.PacUrl ?? d.PacUrl ?? "",
+            UpstreamProxy = u.UpstreamProxy ?? d.Upstream ?? "",
             InternalDomainList = u.InternalDomains != null ? SplitDomains(u.InternalDomains) : (IReadOnlyList<string>?)t?.InternalDomains ?? Array.Empty<string>(),
             Port = u.Port ?? t?.Port ?? DefaultPort,
             InstallDir = string.IsNullOrWhiteSpace(u.InstallDir) ? Paths.DefaultPxDir : u.InstallDir,

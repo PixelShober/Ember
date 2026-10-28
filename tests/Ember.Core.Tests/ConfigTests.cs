@@ -10,8 +10,7 @@ public class ConfigTests
     {
         var team = Example;
         Assert.Equal("Team Entwicklung", team.Name);
-        Assert.Equal("http://pac.firma.example/proxy.pac", team.Proxy!.PacUrl);
-        Assert.Equal(2, team.Proxy.InternalDomains!.Count);
+        Assert.Equal(2, team.Proxy!.InternalDomains!.Count);
         Assert.Equal("servicecenter@firma.example", team.ServiceCenter!.Email);
         Assert.Contains(team.Software!, s => s.Name == "Alfaview" && s.SccmName == "alfaview*");
         Assert.Single(team.Admins!.Groups!);
@@ -22,7 +21,8 @@ public class ConfigTests
     {
         var team = Example;
         var user = new UserSettings();
-        var eff = EffectiveSettings.Build(user, team);
+        var detected = new ProxyDetectionResult("http://pac.firma.example/proxy.pac", null, new[] { "proxy.firma.example:8080" });
+        var eff = EffectiveSettings.Build(user, team, detected);
         Assert.True(eff.UsePac);
         Assert.Equal("proxy.firma.example:8080", eff.UpstreamHostPort);
         Assert.Equal("localhost,127.0.0.1,::1,firma.local,intranet.firma.example", eff.NoProxyList);
@@ -31,7 +31,7 @@ public class ConfigTests
         user.UpstreamProxy = "http://anderer.proxy.example:3129/";
         user.InternalDomains = "a.local; b.local  a.local";
         user.Port = 3130;
-        eff = EffectiveSettings.Build(user, team);
+        eff = EffectiveSettings.Build(user, team, detected);
         Assert.Equal("anderer.proxy.example:3129", eff.UpstreamHostPort);
         Assert.Equal(new[] { "a.local", "b.local" }, eff.InternalDomainList);
         Assert.Equal("http://127.0.0.1:3130", eff.PxUrl);
@@ -42,7 +42,7 @@ public class ConfigTests
     }
 
     [Fact]
-    public void Detected_proxy_fills_the_gaps_but_team_and_user_win()
+    public void Company_proxy_is_always_detected_and_only_the_user_overrides_it()
     {
         var detected = new ProxyDetectionResult("http://pac.erkannt.example/proxy.pac", null, new[] { "proxy.erkannt.example:8080" });
         var eff = EffectiveSettings.Build(new UserSettings(), new TeamConfig(), detected);
@@ -50,7 +50,7 @@ public class ConfigTests
         Assert.Equal("http://pac.erkannt.example/proxy.pac", eff.PacUrl);
         Assert.Equal("proxy.erkannt.example:8080", eff.UpstreamHostPort);
 
-        Assert.Equal("http://pac.firma.example/proxy.pac", EffectiveSettings.Build(new UserSettings(), Example, detected).PacUrl);
+        Assert.Equal("http://pac.erkannt.example/proxy.pac", EffectiveSettings.Build(new UserSettings(), Example, detected).PacUrl);   // team.json has no proxy any more
         Assert.Equal("eigener.example:1", EffectiveSettings.Build(new UserSettings { UpstreamProxy = "eigener.example:1" }, new TeamConfig(), detected).UpstreamHostPort);
 
         var systemOnly = EffectiveSettings.Build(new UserSettings(), new TeamConfig(), new ProxyDetectionResult(null, "sys.proxy.example:3128", Array.Empty<string>()));

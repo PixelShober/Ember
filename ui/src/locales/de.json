@@ -693,7 +693,7 @@
     "loadFailed": "Einstellungen konnten nicht gelesen werden, Ember nimmt die Standardwerte: {detail}",
     "team": {
       "title": "Team-Konfiguration",
-      "description": "Eine gemeinsame team.json auf dem Netzlaufwerk liefert Proxy, interne Domains, Softwareliste, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start.",
+      "description": "Eine gemeinsame team.json auf dem Netzlaufwerk liefert interne Domains, Softwareliste, Admins, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start. Den Firmenproxy erkennt Ember selbst.",
       "path": "Pfad zur team.json",
       "placeholder": "\\\\server\\freigabe\\ember\\team.json",
       "reload": "Neu laden",
@@ -721,7 +721,8 @@
       "port": "px-Port",
       "detect": "Automatisch erkennen",
       "detected": "Gefunden: {items}. Zum Übernehmen speichern.",
-      "notDetected": "Keine Proxy-Einstellungen gefunden. Bitte von Hand eintragen."
+      "notDetected": "Keine Proxy-Einstellungen gefunden. Bitte von Hand eintragen.",
+      "autoHint": "Ember erkennt den Firmenproxy bei jedem Start aus Windows (PAC-Adresse, Proxy aus der PAC-Datei, Systemproxy). Trag nur etwas ein, wenn die Erkennung danebenliegt."
     },
     "px": {
       "title": "px",

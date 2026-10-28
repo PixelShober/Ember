@@ -43,12 +43,12 @@ public sealed class LocalizedTextConverter : JsonConverter<LocalizedText>
     }
 }
 
+/// <summary>
+/// What the team shares about the network. The company proxy itself (PAC address, proxy host) is no
+/// longer configured here: Ember detects it at every start from Windows.
+/// </summary>
 public sealed class TeamProxy
 {
-    public bool? UsePac { get; set; }
-    public string? PacUrl { get; set; }
-    /// <summary>host:port of the company proxy (used for downloads and when UsePac is false).</summary>
-    public string? Upstream { get; set; }
     public List<string>? InternalDomains { get; set; }
     public int? Port { get; set; }
 }

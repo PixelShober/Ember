@@ -29,10 +29,8 @@
     "proxy": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Den Firmenproxy selbst (PAC-Adresse, Proxy) erkennt Ember bei jedem Start aus Windows.",
       "properties": {
-        "usePac": { "type": "boolean", "description": "true: px nutzt die PAC-Datei, false: den festen Proxy." },
-        "pacUrl": { "type": "string", "description": "Leer = automatisch aus den Windows-Internetoptionen." },
-        "upstream": { "type": "string", "pattern": "^$|^[\\w.\\-]+:\\d{1,5}$", "description": "Firmenproxy als host:port." },
         "internalDomains": { "type": "array", "items": { "type": "string" }, "description": "Domains, die nicht über den Proxy laufen." },
         "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Port von px (Standard 3128)." }
       }

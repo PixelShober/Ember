@@ -4,9 +4,6 @@
   "name": "Team Entwicklung",
 
   "proxy": {
-    "usePac": true,
-    "pacUrl": "http://pac.firma.example/proxy.pac",
-    "upstream": "proxy.firma.example:8080",
     "internalDomains": ["firma.local", "intranet.firma.example"],
     "port": 3128
   },

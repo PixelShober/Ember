@@ -693,7 +693,7 @@
     "loadFailed": "Settings could not be read, Ember uses the defaults: {detail}",
     "team": {
       "title": "Team configuration",
-      "description": "A shared team.json on a network share provides proxy, internal domains, software list, service center address and mail templates. When something changes there, Ember picks it up at the next start.",
+      "description": "A shared team.json on a network share provides internal domains, software list, admins, service center address and mail templates. When something changes there, Ember picks it up at the next start. Ember detects the company proxy itself.",
       "path": "Path to team.json",
       "placeholder": "\\\\server\\share\\ember\\team.json",
       "reload": "Reload",
@@ -721,7 +721,8 @@
       "port": "px port",
       "detect": "Detect automatically",
       "detected": "Found: {items}. Save to apply.",
-      "notDetected": "No proxy settings found. Please enter them manually."
+      "notDetected": "No proxy settings found. Please enter them manually.",
+      "autoHint": "Ember detects the company proxy from Windows at every start (PAC address, proxy from the PAC file, system proxy). Only enter something if the detection is wrong."
     },
     "px": {
       "title": "px",

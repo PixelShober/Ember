@@ -221,7 +221,7 @@ export function createMockBridge(): Bridge {
 
   const settingsView = (): SettingsView => ({
     user,
-    team: { usePac: true, pacUrl: 'http://pac.firma.example/proxy.pac', upstreamProxy: 'proxy.firma.example:8080', internalDomains: 'firma.local, intranet.firma.example', port: null },
+    team: { usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: 'firma.local, intranet.firma.example', port: null },
     detected: { usePac: true, pacUrl: 'http://pac.firma.example/proxy.pac', upstreamProxy: 'proxy.firma.example:8080' },
     effective: { usePac: user.usePac ?? true, pacUrl: user.pacUrl ?? 'http://pac.firma.example/proxy.pac', upstreamProxy: user.upstreamProxy ?? 'proxy.firma.example:8080', internalDomains: user.internalDomains ?? 'firma.local, intranet.firma.example', port: user.port ?? 3128, pxUrl, detectedPac: 'http://pac.firma.example/proxy.pac' },
     teamStatus: team,
