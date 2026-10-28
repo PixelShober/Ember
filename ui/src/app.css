@@ -177,6 +177,7 @@ input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width
 .note.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 25%, transparent); }
 .note.error { background: var(--error-soft); border-color: color-mix(in srgb, var(--error) 25%, transparent); }
 .note > svg { flex: none; margin-top: 2px; }
+.note:has(> .calcifer) { align-items: center; }
 
 /* ---- tables ---- */
 table.table { width: 100%; border-collapse: collapse; }

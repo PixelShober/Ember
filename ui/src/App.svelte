@@ -68,12 +68,12 @@
 {#if failed}
   <main class="center"><div class="note error"><Icon name="alert" /><p>{failed}</p></div></main>
 {:else if !app.ready}
-  <main class="center" in:fade><div class="loading"><Icon name="flame" size={36} /><p>{t('app.loading')}</p></div></main>
+  <main class="center" in:fade><div class="loading"><img src="./favicon.svg" alt="" width="64" height="64" /><p>{t('app.loading')}</p></div></main>
 {:else}
   <div class="shell">
     <aside class="sidebar">
       <div class="brand">
-        <img src="./favicon.svg" alt="" width="30" height="30" />
+        <img src="./favicon.svg" alt="" width="32" height="32" />
         <div>
           <strong>Ember</strong>
           <span class="small muted">{app.info?.teamName ?? t('app.tagline')}</span>
@@ -131,8 +131,9 @@
 <style>
   .center { height: 100%; display: grid; place-items: center; padding: 24px; }
   .loading { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); }
-  .loading :global(svg) { color: var(--accent); animation: glow 1.6s ease-in-out infinite; }
-  @keyframes glow { 50% { opacity: 0.45; transform: scale(0.94); } }
+  .loading img { animation: glow 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
+  @keyframes glow { 50% { opacity: 0.7; transform: scale(0.94, 1.04); } }
+  @media (prefers-reduced-motion: reduce) { .loading img { animation: none; } }
 
   .shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
   .sidebar {

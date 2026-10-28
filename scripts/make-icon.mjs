@@ -1,5 +1,6 @@
-// Renders src/Ember.App/Assets/ember.svg into ember.ico (PNG-compressed entries, 16–256 px)
-// and the UI/docs favicons. Needs Playwright with Chromium:  node scripts/make-icon.mjs
+// Renders the pixel-art logo src/Ember.App/Assets/ember.svg (32 x 32 grid) into ember.ico
+// (PNG-compressed entries, 16–256 px) and copies it as logo/favicon for the UI and the docs.
+// Needs Playwright with Chromium:  node scripts/make-icon.mjs
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -15,16 +16,30 @@ const sizes = [16, 20, 24, 32, 40, 48, 64, 128, 256];
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-const pngs = [];
-for (const size of sizes) {
-  await page.setViewportSize({ width: size, height: size });
-  await page.setContent(
-    `<html><body style="margin:0;background:transparent">` +
-      `<img src="data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}" width="${size}" height="${size}"></body></html>`,
-  );
-  pngs.push(await page.screenshot({ omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } }));
-}
+const encoded = await page.evaluate(
+  async ({ svg, sizes }) => {
+    // 256 px is exactly 8 screen pixels per art pixel. Multiples of 32 are scaled from there
+    // without smoothing (crisp pixels), the in-between sizes with smoothing.
+    const img = new Image();
+    img.src = 'data:image/svg+xml;base64,' + btoa(svg);
+    await img.decode();
+    const master = document.createElement('canvas');
+    master.width = master.height = 256;
+    master.getContext('2d').drawImage(img, 0, 0, 256, 256);
+    return sizes.map((size) => {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = size % 32 !== 0;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(master, 0, 0, size, size);
+      return c.toDataURL('image/png').split(',')[1];
+    });
+  },
+  { svg, sizes },
+);
 await browser.close();
+const pngs = encoded.map((b64) => Buffer.from(b64, 'base64'));
 
 // ICO: 6-byte header, 16-byte directory entry per image, then the PNG data.
 const header = Buffer.alloc(6);
@@ -45,8 +60,8 @@ const entries = sizes.map((size, i) => {
 });
 writeFileSync(join(root, 'src/Ember.App/Assets/ember.ico'), Buffer.concat([header, ...entries, ...pngs]));
 
-for (const dir of ['ui/public', 'docs/public']) {
-  mkdirSync(join(root, dir), { recursive: true });
-  copyFileSync(svgPath, join(root, dir, 'favicon.svg'));
+for (const target of ['ui/public/favicon.svg', 'docs/public/favicon.svg', 'docs/src/assets/ember.svg']) {
+  mkdirSync(dirname(join(root, target)), { recursive: true });
+  copyFileSync(svgPath, join(root, target));
 }
 console.log('ember.ico written with sizes', sizes.join(', '));

@@ -5,6 +5,7 @@
   import { formatDate } from '../lib/format';
   import type { ProxyDetection, SettingsView, UpdateStatus, UserSettings } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
   import SourceBadge from '../lib/components/SourceBadge.svelte';
 
   let view = $state<SettingsView | null>(null);
@@ -111,7 +112,7 @@
           {#if view.teamStatus.source}<span class="muted"> · {t(`settings.team.source.${view.teamStatus.source}`)}</span>{/if}
         </p>
       {:else}
-        <p class="small muted">{t('settings.team.none')}</p>
+        <div class="note"><Calcifer /><p>{t('settings.team.none')}</p></div>
       {/if}
     </section>
 

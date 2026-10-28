@@ -5,6 +5,7 @@
   import type { MailRequest } from '../app.svelte';
   import type { MailResult } from '../types';
   import Icon from './Icon.svelte';
+  import Calcifer from './Calcifer.svelte';
 
   const templates: MailRequest['template'][] = ['softwareRequest', 'adminAction', 'problem'];
 
@@ -59,7 +60,7 @@
       <p class="muted">{t('mail.subtitle')}</p>
 
       {#if !app.info?.serviceCenter}
-        <div class="note warn"><Icon name="alert" /><p>{t('mail.noServiceCenter')}</p></div>
+        <div class="note warn"><Calcifer /><p>{t('mail.noServiceCenter')}</p></div>
       {/if}
 
       <label class="field">

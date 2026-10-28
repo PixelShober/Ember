@@ -90,3 +90,7 @@ Ember speichert keine Passwörter, sendet keine Telemetrie und verschickt keine 
 Ember steht unter der [MIT-Lizenz](LICENSE). Du darfst es nutzen, ändern und weitergeben, auch in der Firma, solange der Lizenzhinweis erhalten bleibt.
 
 px ist ein eigenes Projekt unter MIT-Lizenz und wird zur Laufzeit von GitHub geladen, nicht mit Ember ausgeliefert. Dasselbe gilt für llama.cpp (MIT). Microsoft WebView2 unterliegt den Lizenzbedingungen von Microsoft.
+
+### Grafiken
+
+Logo und Hinweisfigur zeigen Calcifer aus „Das wandelnde Schloss“. Die Figur gehört Studio Ghibli, die Pixel-Grafiken stammen aus dem Cursor-Pack „Color Pixels Calcifer“ von [custom-cursor.com](https://custom-cursor.com). Sie fallen **nicht** unter die MIT-Lizenz. Das betrifft `src/Ember.App/Assets/ember.svg` und `ember.ico`, `ui/src/assets/calcifer-hint.png` sowie deren Kopien als Favicon und Doku-Logo. Wer Ember weitergibt oder darauf aufbaut, sollte sie durch eigene Grafiken ersetzen: `ember.svg` austauschen und `node scripts/make-icon.mjs` ausführen.

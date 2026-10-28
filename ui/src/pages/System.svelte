@@ -5,6 +5,7 @@
   import { host, t } from '../lib/i18n.svelte';
   import type { CheckAction, CheckResult } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
 
   let checks = $state<CheckResult[] | null>(null);
   let loading = $state(false);
@@ -49,6 +50,7 @@
     {#each checks as c (c.id)}
       <section class="card check">
         <div class="row">
+          {#if c.status === 'warn'}<Calcifer size={28} />{/if}
           <span class="badge {tone[c.status]}">{t(`system.status.${c.status}`)}</span>
           <h3>{host(c.title)}</h3>
           <span class="muted">{host(c.value)}</span>

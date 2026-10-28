@@ -6,6 +6,7 @@
   import { formatPowerValue } from '../lib/format';
   import type { PowerApplyResult, PowerProfileState, PowerSettingState, PowerState, PowerValue, WolLocalState } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
 
   let power = $state<PowerState | null>(null);
   let wol = $state<WolLocalState | null>(null);
@@ -81,7 +82,7 @@
     <button class="btn small" onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
   </div>
   {#if !power.activeIsTarget}
-    <div class="note warn"><Icon name="alert" /><p>{t('power.notActive', { scheme: power.schemeName })}</p></div>
+    <div class="note warn"><Calcifer /><p>{t('power.notActive', { scheme: power.schemeName })}</p></div>
   {/if}
 
   <div class="stack">
@@ -158,7 +159,7 @@
 
   {#if wol}
     {#if wol.adapters.length === 0}
-      <div class="note warn"><Icon name="alert" /><p>{t('wol.noAdapters')}</p></div>
+      <div class="note warn"><Calcifer /><p>{t('wol.noAdapters')}</p></div>
     {/if}
     <div class="adapters">
       {#each wol.adapters as a (a.name)}

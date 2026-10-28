@@ -4,6 +4,7 @@
   import { t } from '../lib/i18n.svelte';
   import type { GitIdentityInfo } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
 
   let info = $state<GitIdentityInfo | null>(null);
   let name = $state('');
@@ -36,7 +37,7 @@
 </header>
 
 {#if info && !info.gitFound}
-  <div class="note warn"><Icon name="alert" /><p>{t('git.gitMissing')}</p>
+  <div class="note warn"><Calcifer /><p>{t('git.gitMissing')}</p>
     <button class="btn small" onclick={() => navigate('software')}>{t('nav.software')}</button></div>
 {:else if info}
   <div class="grid two">

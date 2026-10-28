@@ -7,6 +7,8 @@ description: Ein Rundgang durch Ember, vom leeren Rechner bis zu git, npm und Nu
 
 Die Startseite zeigt in fünf Karten, was noch fehlt: px, die Proxy-Diagnose, die git-Identität, die Team-Konfiguration und Updates. Grün heißt erledigt, Orange heißt, da ist noch etwas zu tun. Ein Klick auf eine Karte öffnet die passende Seite.
 
+Wo etwas fehlt oder falsch eingestellt ist, sitzt Calcifer, der kleine Feuerdämon, auf der Karte. Du triffst ihn auch in den anderen Tabs, überall dort, wo noch etwas einzurichten ist: neben Hinweisen, bei Prüfungen unter System und bei leeren Listen.
+
 Auf einem frischen Rechner geht es in dieser Reihenfolge am schnellsten:
 
 1. Unter Einstellungen den Pfad zur `team.json` eintragen. Danach kennt Ember den Firmenproxy und die internen Domains.

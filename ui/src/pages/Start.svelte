@@ -5,6 +5,7 @@
   import { firstName, formatDate } from '../lib/format';
   import type { GitIdentityInfo, ProxyRow, Route } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
   let rows = $state<ProxyRow[] | null>(null);
@@ -21,27 +22,32 @@
   const okCount = $derived(relevant.filter((r) => r.state === 'px').length);
   const team = $derived(app.info?.team);
 
-  type Card = { route: Route; icon: string; title: string; text: string; tone: 'ok' | 'warn' | 'muted' };
+  // todo: something is missing or set up wrong (an available update is not one of those).
+  type Card = { route: Route; icon: string; title: string; text: string; tone: 'ok' | 'warn' | 'muted'; todo?: boolean };
   const cards = $derived<Card[]>([
     {
       route: 'proxy', icon: 'proxy', title: t('start.cards.px'),
       text: app.px?.portOpen ? t('start.pxRunning', { url: app.px.url }) : app.px?.installed ? t('start.pxStopped') : t('start.pxMissing'),
       tone: app.px?.portOpen ? 'ok' : 'warn',
+      todo: !!app.px && !app.px.portOpen,
     },
     {
       route: 'proxy', icon: 'check', title: t('start.cards.proxy'),
       text: rows ? t('start.proxySummary', { ok: okCount, total: relevant.length }) : t('common.loading'),
       tone: !rows ? 'muted' : okCount === relevant.length ? 'ok' : 'warn',
+      todo: !!rows && okCount !== relevant.length,
     },
     {
       route: 'git', icon: 'git', title: t('start.cards.git'),
       text: git?.name && git?.email ? t('start.gitSet', { name: git.name, email: git.email }) : t('start.gitMissing'),
       tone: git?.name && git?.email ? 'ok' : 'warn',
+      todo: !!git && !(git.name && git.email),
     },
     {
       route: 'settings', icon: 'folder', title: t('start.cards.team'),
       text: !team?.path ? t('start.teamNone') : team.fromCache ? t('start.teamCache', { date: formatDate(team.loadedAt) }) : t('start.teamOk', { date: formatDate(team.loadedAt) }),
       tone: !team?.path ? 'warn' : team.fromCache || team.error ? 'warn' : 'ok',
+      todo: !team?.path || !!team.fromCache || !!team.error,
     },
     {
       route: 'settings', icon: 'sparkle', title: t('start.cards.update'),
@@ -68,7 +74,7 @@
   {#each cards as card, i (i)}
     <button class="card status {card.tone}" onclick={() => navigate(card.route)}>
       <div class="row">
-        <span class="icon"><Icon name={card.icon} /></span>
+        {#if card.todo}<Calcifer size={32} />{:else}<span class="icon"><Icon name={card.icon} /></span>{/if}
         <h3>{card.title}</h3>
       </div>
       <p class="break">{card.text}</p>

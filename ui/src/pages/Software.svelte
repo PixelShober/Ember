@@ -4,6 +4,7 @@
   import { t } from '../lib/i18n.svelte';
   import type { SoftwareItem, SoftwareList } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
 
   let list = $state<SoftwareList | null>(null);
@@ -47,14 +48,14 @@
     {#if list.clientPresent}
       <span class="badge ok"><Icon name="check" size={13} />{t('software.client', { version: list.clientVersion })}</span>
     {:else}
-      <div class="note warn"><Icon name="alert" /><p>{t('software.noClient')}</p></div>
+      <div class="note warn"><Calcifer /><p>{t('software.noClient')}</p></div>
     {/if}
     <span class="spacer"></span>
     <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
   </div>
 
   {#if list.items.length === 0}
-    <div class="note"><Icon name="info" /><p>{t('software.empty')}</p></div>
+    <div class="note"><Calcifer /><p>{t('software.empty')}</p></div>
   {/if}
 
   <div class="stack">

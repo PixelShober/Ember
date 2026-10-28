@@ -4,6 +4,7 @@
   import { host, t } from '../lib/i18n.svelte';
   import type { ProxyRow } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
 
   let rows = $state<ProxyRow[] | null>(null);
@@ -57,7 +58,7 @@
     </div>
 
     {#if px?.configOutdated}
-      <div class="note warn"><Icon name="alert" /><p>{t('proxy.px.outdated')}</p></div>
+      <div class="note warn"><Calcifer /><p>{t('proxy.px.outdated')}</p></div>
     {/if}
 
     <div class="row actions">

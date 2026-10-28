@@ -5,6 +5,7 @@
   import { formatBytes } from '../lib/format';
   import type { AgentToolState, AiStatus, SettingsView, UserSettings, WolDevice } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
 
   let status = $state<AiStatus | null>(null);
@@ -92,7 +93,7 @@
       <button class="btn small" onclick={addDevice}><Icon name="plus" size={14} />{t('ai.devices.add')}</button>
       <button class="btn small primary" onclick={() => saveSettings(t('ai.devices.saved'))}>{t('common.save')}</button>
     </div>
-    {#if settings && settings.wolDevices.length === 0}<p class="muted">{t('ai.devices.empty')}</p>{/if}
+    {#if settings && settings.wolDevices.length === 0}<div class="note"><Calcifer /><p>{t('ai.devices.empty')}</p></div>{/if}
     {#each settings?.wolDevices ?? [] as d (d.id)}
       <div class="device">
         <label class="field"><span>{t('ai.devices.name')}</span><input bind:value={d.name} /></label>
@@ -172,7 +173,7 @@
       <button class="btn ghost small" onclick={() => run(() => api('app.openFolder', { key: 'models' }))}><Icon name="folder" size={14} />{t('common.openFolder')}</button>
     </div>
     {#if status}<p class="small muted">{t('ai.models.folder', { path: status.modelsDir })}</p>{/if}
-    {#if status && status.models.length === 0}<p class="muted">{t('ai.models.empty')}</p>{/if}
+    {#if status && status.models.length === 0}<div class="note"><Calcifer /><p>{t('ai.models.empty')}</p></div>{/if}
     <ul class="models">
       {#each status?.models ?? [] as m (m.id)}
         <li>
