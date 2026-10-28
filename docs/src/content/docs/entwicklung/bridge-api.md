@@ -29,15 +29,15 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 | px | `px.status`, `px.install`, `px.uninstall`, `px.start`, `px.stop`, `px.restart`, `px.debug` |
 | Jobs | `jobs.list`, `jobs.cancel`, `jobs.retry`, `jobs.dismiss` |
 | Git | `git.get`, `git.set` |
-| Software & Mail | `software.list`, `software.open`, `software.install`, `mail.preview`, `mail.compose`, `diagnostics.report` |
+| Software & Mail | `software.list`, `software.open`, `software.install`, `devtools.latest`, `devtools.install`, `devtools.installMany`, `playwright.state`, `playwright.inspect`, `playwright.install`, `mail.preview`, `mail.compose`, `diagnostics.report` |
 | Energie | `power.state`, `power.apply`, `power.defaults`, `power.restore` |
 | Wake-on-LAN (lokal) | `wol.local`, `wol.apply`, `wol.reset` |
-| System | `system.checks`, `system.action`, `system.adminCommands` |
-| KI | `ai.status`, `ai.wake`, `ai.llama.install`, `ai.llama.select`, `ai.server.start`, `ai.server.stop`, `ai.models.download`, `ai.models.delete`, `ai.agents.list`, `ai.agents.install` |
+| System | `system.list`, `system.check`, `system.checks`, `system.action`, `system.adminCommands` |
+| KI | `ai.status`, `ai.llama.install`, `ai.llama.select`, `ai.server.start`, `ai.server.stop`, `ai.models.download`, `ai.models.delete` |
 | Updates | `update.status`, `update.check`, `update.applyUi`, `update.applyExe` |
 | Log | `log.recent`, `log.clear`, `log.save` |
 
-Die KI-Methoden prüfen auch auf der Exe-Seite, ob die erweiterten Module an und freigegeben sind.
+Die Methoden für KI, Energie und Wake-on-LAN prüfen auch auf der Exe-Seite, ob das Konto Admin in der Team-Konfiguration ist (`admins`). `app.toggleAdvanced` (<kbd>Strg</kbd> + <kbd>E</kbd>) blendet die Tabs nur ein und aus.
 
 ## Ereignisse
 
@@ -48,10 +48,11 @@ Die KI-Methoden prüfen auch auf der Exe-Seite, ob die erweiterten Module an und
 | `px.status` | px-Status, wenn er sich ändert (geprüft alle 4 s) |
 | `update` | Update-Status (geprüft, bereit, Fehler) |
 | `app.info` | nach Änderungen an Sprache, Team-Konfiguration oder erweiterten Modulen |
+| `settings.detected` | die Proxy-Erkennung beim Start ist fertig |
 
 ## Jobs
 
-Alles, was länger dauert, ist ein Job: px installieren, Software installieren, Modelle laden, Rechner wecken. Ein Job ist eine Liste von `SetupStep`s mit Titel, Status, Detailtext, Fortschritt und Dauer. Die Methode startet den Job und antwortet sofort mit dem ersten Zustand, danach kommen `job`-Ereignisse. `jobs.retry` setzt am fehlgeschlagenen Schritt wieder an.
+Alles, was länger dauert, ist ein Job: px installieren, Software und Entwicklerwerkzeuge installieren, Playwright-Browser laden, Modelle laden. Ein Job ist eine Liste von `SetupStep`s mit Titel, Status, Detailtext, Fortschritt und Dauer. Die Methode startet den Job und antwortet sofort mit dem ersten Zustand, danach kommen `job`-Ereignisse. `jobs.retry` setzt am fehlgeschlagenen Schritt wieder an.
 
 ## Bridge-Version
 

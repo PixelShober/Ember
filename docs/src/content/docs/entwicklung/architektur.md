@@ -33,8 +33,8 @@ Eine echte PWA, also eine Oberfläche, die von einem Webserver kommt, wäre noch
 - WebView2 lädt ausschließlich `https://ui.ember.invalid/` (eine lokale Ordner-Zuordnung, `.invalid` ist als Domain reserviert). Jede andere Navigation wird abgebrochen. Links öffnen sich im Standardbrowser, erlaubt sind nur `https:`, `http:`, `mailto:` und `softwarecenter:`.
 - Die Bridge nimmt nur Nachrichten von diesem Ursprung an.
 - Die gebaute Oberfläche hat eine strenge Content-Security-Policy (`script-src 'self'`, keine fremden Verbindungen).
-- DevTools, Browser-Tastenkürzel und das Standard-Kontextmenü sind aus. Die DevTools gibt es nur im Debug-Build oder mit „Erweiterte Module“.
-- Downloads (px, llama.cpp, UI-Pakete, Exe) werden per SHA256 geprüft, der WebView2-Installer per Authenticode-Signatur.
+- DevTools, Browser-Tastenkürzel und das Standard-Kontextmenü sind aus. Die DevTools gibt es nur im Debug-Build oder für Admins mit eingeblendeten erweiterten Modulen.
+- Downloads (px, llama.cpp, UI-Pakete, Exe) werden per SHA256 geprüft, der WebView2-Installer per Authenticode-Signatur. Bei den Entwicklerwerkzeugen prüft Ember beides: die Prüfsumme, die der Hersteller veröffentlicht, und seine Signatur.
 
 ## Ablauf beim Start
 

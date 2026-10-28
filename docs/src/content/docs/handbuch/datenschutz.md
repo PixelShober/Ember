@@ -18,8 +18,8 @@ Kurz: Ember speichert keine Passwörter, schickt keine Telemetrie und sendet kei
 
 - Anfragen an GitHub: px, llama.cpp und Ember-Updates
 - Downloads der Modelle, die in der Liste stehen
-- npm-Aufrufe für Agent-Werkzeuge
-- Magic Packets, wenn du einen Rechner weckst
+- Versionsabfragen und Installer der Entwicklerwerkzeuge bei den Herstellern (nodejs.org, GitHub, Microsoft, python.org, nuget.org)
+- npm- und Playwright-Downloads, wenn du Playwright-Browser installierst
 
 Das läuft über px oder den Firmenproxy und meldet sich mit deinem Windows-Login an. Ember hat keinen eigenen Server.
 
@@ -33,6 +33,7 @@ Alles steht unter [Installation](/Ember/handbuch/installation/#wo-ember-seine-da
 - git `user.name`, `user.email`, `core.longpaths`
 - Werte im erlaubten Energieschema, Adapter-Einstellungen für Wake-on-LAN, Schnellstart
 - die PowerShell-Ausführungsrichtlinie für dein Konto
-- Dateien in `C:\Ember` und unter `%APPDATA%\Ember`, `%LOCALAPPDATA%\Ember`
+- Dateien in `C:\Ember`
+- den Benutzer-PATH (Node.js, Git, Python) und die Variable `NODE_EXTRA_CA_CERTS`, wenn du die Node.js-Zertifikate einrichtest
 
 Aktionen mit Adminrechten startet Ember einzeln, und Windows fragt jedes Mal nach. Ember selbst läuft immer mit Benutzerrechten.

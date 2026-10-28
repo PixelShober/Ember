@@ -1,9 +1,11 @@
 ---
 title: Energie
-description: Energieprofile für das Schema „Ausbalanciert“ und Wake-on-LAN für diesen Rechner.
+description: Energieprofile für das Schema „Ausbalanciert“, mit Werkseinstellung zum Zurücksetzen.
 ---
 
 ![Energie-Seite mit Ist, Ziel und Standard](../../../assets/screens/power-de-light.png)
+
+Energie ist wie KI ein erweitertes Modul. Den Tab sieht nur, wer in der Team-Konfiguration als Admin steht (`admins`, siehe [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#admins)). <kbd>Strg</kbd> + <kbd>E</kbd> blendet beide Tabs ein und aus.
 
 ## Warum nur „Ausbalanciert“
 
@@ -33,26 +35,4 @@ Werte, die per Gruppenrichtlinie festgelegt sind, fasst Ember nicht an und marki
 
 Die Profile kann die Team-Konfiguration ersetzen oder ergänzen, siehe [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#energieprofile).
 
-## Wake-on-LAN für diesen Rechner
-
-Die Karte unten richtet diesen Rechner so ein, dass er sich aus dem ausgeschalteten Zustand (S5) wecken lässt. Der Zielzustand stammt von einem Dell, auf dem das funktioniert, angeschlossen über ein Dock mit Realtek-USB-Netzwerkkarte, dazu der Intel-I226-Anschluss im Gerät.
-
-Für jeden kabelgebundenen Adapter prüft Ember:
-
-| Einstellung | Ziel | Pflicht? |
-|---|---|---|
-| Bei Magic Packet aufwecken (`*WakeOnMagicPacket`) | an | ja |
-| Wecken aus „Herunterfahren“ (`S5WakeOnLan` bei Realtek, `WakeOnMagicPacketFromS5` bei Intel, `EnablePME` bei älteren Intel-Treibern) | an | ja, falls der Treiber sie kennt |
-| Gerät darf den Computer aktivieren (`powercfg /devicequery wake_armed`) | ja | ja |
-| Bei Musterübereinstimmung aufwecken, Wake on link change | an | nein, Hinweis |
-| WoL-Linkgeschwindigkeit | 10 Mbit/s zuerst | nein, Hinweis |
-
-Dazu kommt der Windows-Schnellstart: Er muss aus sein, sonst fährt Windows nicht richtig herunter und die Netzwerkkarte bekommt das Magic Packet nicht mit. Energiesparfunktionen wie EEE oder Green Ethernet lässt Ember in Ruhe, für WOL braucht es sie nicht.
-
-„Zielzustand herstellen“ setzt alles mit einer Windows-Abfrage nach Adminrechten. Die Netzwerkverbindung ist dabei für ein paar Sekunden weg. „Auf Standard zurücksetzen“ stellt die Treiber-Standardwerte wieder her, schaltet den Schnellstart ein und nimmt die Weck-Erlaubnis nur dort zurück, wo Ember sie selbst erteilt hat.
-
-Die MAC-Adresse jedes Adapters lässt sich kopieren. Die trägst du auf dem anderen Rechner im [KI-Tab](/Ember/handbuch/ki/#rechner-wecken) ein. Bei einem Dock mit MAC-Pass-Through ist das die Adresse, die Windows beim Dock-Adapter anzeigt.
-
-:::caution[Das BIOS kann Ember nicht prüfen]
-Bei Dell-Geräten müssen im BIOS „Wake on LAN“ und „Wake on Dell USB-C Dock“ eingeschaltet sein, je nach Gerät auch „MAC Address Pass-Through“. „Deep Sleep Control“ muss aus sein.
-:::
+Wake-on-LAN für diesen Rechner steht jetzt im [KI-Tab](/Ember/handbuch/ki/#wake-on-lan-für-diesen-rechner).

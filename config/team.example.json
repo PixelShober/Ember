@@ -53,6 +53,17 @@
     "groups": ["FIRMA\\Entwicklung-Admins"]
   },
 
+  "devTools": {
+    "allowDirect": true,
+    "visualStudio": {
+      "workloads": ["Microsoft.VisualStudio.Workload.ManagedDesktop", "Microsoft.VisualStudio.Workload.NetWeb"]
+    }
+  },
+
+  "playwright": {
+    "downloadHost": "https://artifactory.firma.example/playwright"
+  },
+
   "models": [
     {
       "id": "qwen3-coder-30b-q4",

@@ -15,8 +15,8 @@ Für Schweizer Deutsch gibt es keine eigene Datei. Ember ersetzt „ß“ durch 
 
 | Übergang | Was Ember tut |
 |---|---|
-| Konsolenwerkzeuge (`powercfg`, `gpupdate`, `whoami`) | Ausgabe mit der OEM-Codepage des Rechners dekodieren (CP850 auf deutschem Windows, `GetOEMCP`) |
-| PowerShell | Skript als `-EncodedCommand` (UTF-16), Ergebnisse als JSON über eine UTF-8-Datei. Das funktioniert auch im Constrained Language Mode. |
+| Konsolenwerkzeuge (`powercfg`, `gpupdate`, `whoami`) | Ausgabe mit der OEM-Codepage des Rechners dekodieren (CP850 auf deutschem Windows). Die Codepage kommt aus der Registry (`Nls\CodePage\OEMCP`), nicht aus `GetOEMCP()`: Weil Embers Manifest UTF-8 als Prozess-Codepage setzt, meldet `GetOEMCP()` dort 65001, und in „für“ stünde statt „ü“ das Ersatzzeichen U+FFFD. |
+| PowerShell | Skript als `-Command` (die Kommandozeile ist UTF-16), ersatzweise `-File` (UTF-8 mit BOM) oder `-EncodedCommand`. Ergebnisse kommen als JSON über eine UTF-8-Datei. Das funktioniert auch im Constrained Language Mode. |
 | git, npm | direkte Argumente (`ArgumentList`), nie Nicht-ASCII über `cmd.exe` |
 | px im Debug-Modus | `PYTHONIOENCODING=utf-8` |
 | Einstellungen, Team-Kopie | JSON in UTF-8, Umlaute unmaskiert (`"Büro"`, nicht `"Büro"`) |

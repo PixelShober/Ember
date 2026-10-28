@@ -19,3 +19,5 @@ Gruppenrichtlinien ändern kann Ember nicht und soll es auch nicht. Die Seite ze
 `gpresult` liefert XML, dadurch hängt die Auswertung nicht an der Windows-Sprache. Gezählt werden nur Richtlinien, die wirklich greifen. Was durch einen Filter ausgeschlossen ist, fehlt in der Liste.
 
 Ein Klick auf „Details“ zeigt die Rohdaten, etwa die vollständige GPO-Liste oder die Ausgabe von `gpupdate`.
+
+Jede Prüfung lädt für sich, die Seite steht also sofort. `gpresult` braucht auf einem Domänenrechner gern eine Minute. Antwortet es nach 90 Sekunden nicht, meldet Ember das bei dieser Prüfung und bietet „Richtlinien jetzt aktualisieren“ an.

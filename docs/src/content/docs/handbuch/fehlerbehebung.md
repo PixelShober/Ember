@@ -5,7 +5,7 @@ description: Die häufigsten Probleme und was dagegen hilft.
 
 Erste Anlaufstelle ist immer der Log-Tab. Mit „Debug“ siehst du jeden Befehl, den Ember ausführt, samt Ausgabe. Hilft das nicht weiter: Diagnosebericht erstellen und ans Service-Center schicken.
 
-Die Logdatei liegt unter `%APPDATA%\Ember\logs\ember-JJJJ-MM-TT.log`, eine pro Tag, 30 Tage lang. Sie enthält immer alles, auch die Debug-Zeilen: jeden Befehl, jedes PowerShell-Skript, Exitcodes und die Antworten von Windows. Wenn du einen Fehler meldest, häng diese Datei an. Der Diagnosebericht hat nur die letzten Info-Zeilen.
+Die Logdatei liegt unter `C:\Ember\Logs\ember-JJJJ-MM-TT.log`, eine pro Tag, 30 Tage lang. Sie enthält immer alles, auch die Debug-Zeilen: jeden Befehl, jedes PowerShell-Skript, Exitcodes und die Antworten von Windows. Wenn du einen Fehler meldest, häng diese Datei an. Der Diagnosebericht hat nur die letzten Info-Zeilen.
 
 ## px-Installation bricht bei „Verbindungstest über px“ ab
 
@@ -18,6 +18,20 @@ Host oder Port stimmen nicht, oder die Firewall lässt Ember nicht ins Netz. Pro
 ## Team-Konfiguration „aus der lokalen Kopie“
 
 Das Netzlaufwerk war beim Start nicht erreichbar, meist wegen VPN. Ember arbeitet mit der letzten Fassung weiter. Mit VPN reicht „Neu laden“ in den Einstellungen.
+
+## „PowerShell hat das Skript nicht ausgeführt“
+
+Ember fragt vieles über Windows PowerShell 5.1 ab: Netzwerkadapter, Softwarecenter, Ausführungsrichtlinie, AD. Sicherheitssoftware auf Firmenrechnern blockiert manchmal eine Art, PowerShell zu starten, meist `-EncodedCommand`, und zwar ohne Fehlermeldung. Ember merkt das daran, dass die Ergebnisdatei fehlt, versucht nacheinander `-Command`, `-File` und `-EncodedCommand` und merkt sich den Weg, der funktioniert. Im Log steht dann „PowerShell runs via … on this machine“.
+
+Scheitern alle drei, hilft der Blick ins Log: Dort steht, was PowerShell auf stderr gemeldet hat. Typisch sind eine Ausführungsrichtlinie per GPO (`AllSigned`) oder eine Sperre durch AppLocker. Das klärst du mit der IT.
+
+## Playwright-Browser lassen sich nicht laden
+
+Ember sagt nach dem Abbruch, woran es lag:
+
+- **Zertifikatsfehler**: Der Proxy bricht TLS auf. Unter Proxy → Diagnose „Node.js-Zertifikate“ einrichten und noch einmal versuchen.
+- **407**: px läuft nicht. Unter Proxy starten.
+- **Server nicht erreichbar**: `cdn.playwright.dev` ist vermutlich gesperrt. Ein interner Spiegel in der Team-Konfiguration (`playwright.downloadHost`) hilft, oder du testest mit Edge (`channel: 'msedge'`).
 
 ## Softwarecenter zeigt keine Programme
 

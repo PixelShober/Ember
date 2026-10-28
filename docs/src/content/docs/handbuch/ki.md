@@ -1,23 +1,41 @@
 ---
 title: KI-Modul
-description: Rechner per Wake-on-LAN wecken, llama.cpp und Modelle verwalten, Agent-Werkzeuge einrichten.
+description: Diesen Rechner für Wake-on-LAN freischalten, llama.cpp und Modelle verwalten, llama-server starten.
 ---
 
 ![KI-Seite](../../../assets/screens/ai-de-light.png)
 
-Das KI-Modul ist ein erweitertes Modul. Es erscheint, wenn du in den Einstellungen „Erweiterte Module anzeigen“ einschaltest oder <kbd>Strg</kbd> + <kbd>Umschalt</kbd> + <kbd>E</kbd> drückst und die Team-Konfiguration es für dein Konto freigibt (`modules.ai`). Ohne Einträge dort ist es für alle freigegeben.
+KI ist ein erweitertes Modul, genau wie Energie. Beide Tabs sieht nur, wer in der Team-Konfiguration als Admin steht (`admins`). Ohne Admin-Liste sieht sie niemand. <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus, Ember merkt sich das.
 
-Die Freigabe blendet nur die Oberfläche aus und ein. Ember ist Open Source, das ist also keine Sicherheitsgrenze. Sie hält die Oberfläche für alle anderen aufgeräumt.
+Die Freigabe ordnet nur die Oberfläche. Ember ist Open Source und läuft mit deinen Rechten, eine Sicherheitsgrenze ist das also nicht.
 
-## Rechner wecken
+## Wake-on-LAN für diesen Rechner
 
-Trag Name, MAC-Adresse und optional Hostname oder IP ein. „Wecken“ schickt das Magic Packet über jede aktive Netzwerkverbindung, an `255.255.255.255` und an die Broadcast-Adresse des jeweiligen Netzes. Mit Hostnamen pingt Ember danach bis zu drei Minuten lang und meldet, sobald der Rechner antwortet. Etwa alle 30 Sekunden geht ein neues Paket raus.
+Die erste Karte richtet diesen Rechner so ein, dass er sich aus dem ausgeschalteten Zustand (S5) wecken lässt. Andere Rechner weckt Ember nicht. Den Zielzustand hat Ember von einem Dell übernommen, auf dem das funktioniert: Dock mit Realtek-USB-Netzwerkkarte, dazu der Intel-I226-Anschluss im Gerät.
 
-Damit der Zielrechner aufwacht, muss er vorbereitet sein. Das erledigt auf dem Zielrechner die [Wake-on-LAN-Karte unter Energie](/Ember/handbuch/energie/#wake-on-lan-für-diesen-rechner).
+Für jeden kabelgebundenen Adapter prüft Ember:
+
+| Einstellung | Ziel | Pflicht? |
+|---|---|---|
+| Bei Magic Packet aufwecken (`*WakeOnMagicPacket`) | an | ja |
+| Wecken aus „Herunterfahren“ (`S5WakeOnLan` bei Realtek, `WakeOnMagicPacketFromS5` bei Intel, `EnablePME` bei älteren Intel-Treibern) | an | ja, falls der Treiber sie kennt |
+| Gerät darf den Computer aktivieren (`powercfg /devicequery wake_armed`) | ja | ja |
+| Bei Musterübereinstimmung aufwecken, Wake on link change | an | nein, Hinweis |
+| WoL-Linkgeschwindigkeit | 10 Mbit/s zuerst | nein, Hinweis |
+
+Dazu kommt der Windows-Schnellstart. Er muss aus sein, sonst fährt Windows nicht richtig herunter, und die Netzwerkkarte bekommt das Magic Packet nicht mit. Energiesparfunktionen wie EEE oder Green Ethernet lässt Ember in Ruhe, WOL braucht sie nicht.
+
+„Zielzustand herstellen“ setzt alles mit einer einzigen Abfrage nach Adminrechten. Die Netzwerkverbindung ist dabei ein paar Sekunden weg. „Auf Standard zurücksetzen“ stellt die Treiber-Standardwerte wieder her, schaltet den Schnellstart ein und nimmt die Weck-Erlaubnis nur dort zurück, wo Ember sie selbst erteilt hat.
+
+Die MAC-Adresse jedes Adapters lässt sich kopieren, für das Werkzeug, mit dem du den Rechner später weckst. Bei einem Dock mit MAC-Pass-Through ist das die Adresse, die Windows beim Dock-Adapter anzeigt.
+
+:::caution[Das BIOS kann Ember nicht prüfen]
+Bei Dell-Geräten müssen im BIOS „Wake on LAN“ und „Wake on Dell USB-C Dock“ eingeschaltet sein, je nach Gerät auch „MAC Address Pass-Through“. „Deep Sleep Control“ muss aus sein.
+:::
 
 ## Grafikkarte
 
-Ember zeigt, was `nvidia-smi` meldet: Modell, Treiber, CUDA-Version, Speicher, Leistungsaufnahme, Temperatur. Ändern kann Ember hier nichts, Leistungsgrenzen bleiben Sache des Treibers.
+Ember zeigt, was `nvidia-smi` meldet: Modell, Treiber, CUDA-Version, Speicher, Leistungsaufnahme und Temperatur. Ändern kann Ember hier nichts, Leistungsgrenzen bleiben Sache des Treibers.
 
 ## llama.cpp
 
@@ -31,12 +49,8 @@ Du kannst die Variante auch fest einstellen. Jede Version landet in einem eigene
 
 ## Modelle
 
-Modelle sind GGUF-Dateien mit einer direkten Download-Adresse, meist von Hugging Face (`…/resolve/main/datei.gguf`). Die Liste kommt aus der Team-Konfiguration und aus deinen eigenen Einträgen. Downloads laufen über px und setzen nach einem Abbruch dort fort, wo sie aufgehört haben. Bei 20 GB macht das einen Unterschied. Steht eine SHA256-Prüfsumme dabei, prüft Ember sie nach dem Download.
+Modelle sind GGUF-Dateien mit einer direkten Download-Adresse, meist von Hugging Face (`…/resolve/main/datei.gguf`). Die Liste kommt aus der Team-Konfiguration und aus deinen eigenen Einträgen, gespeichert wird unter `C:\Ember\Models`. Downloads laufen über px und setzen nach einem Abbruch dort fort, wo sie aufgehört haben. Bei 20 GB macht das einen Unterschied. Steht eine SHA256-Prüfsumme dabei, prüft Ember sie nach dem Download.
 
 ## llama-server
 
 Wähle ein heruntergeladenes Modell, einen Port und bei Bedarf weitere Argumente (Standard: `-ngl 99 -c 8192`). Der Server lauscht nur auf `127.0.0.1`. „Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Beim Beenden von Ember stoppt der Server mit.
-
-## Agent-Werkzeuge
-
-Agent-CLIs wie Claude Code installiert Ember mit `npm install -g`. Das läuft über px wie jeder andere npm-Aufruf. Die Liste zeigt installierte und neueste Version. Eigene Pakete fügst du unten hinzu. Erlaubt sind nur gültige npm-Paketnamen, weil der Aufruf über `cmd.exe` läuft.

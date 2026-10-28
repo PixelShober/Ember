@@ -46,12 +46,17 @@ Folgende Werkzeuge kennt Ember:
 | Umgebungsvariablen | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` für dein Benutzerkonto |
 | git | `git config --global http.proxy` |
 | npm | `npm config` (`proxy`, `https-proxy`, `noproxy`) |
+| Node.js-Zertifikate | `NODE_EXTRA_CA_CERTS` für dein Benutzerkonto, zeigt auf `C:\Ember\Certs\windows-ca.pem` |
 | NuGet / .NET | `http_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
 | pip | `proxy` in `%APPDATA%\pip\pip.ini` |
 | VS Code | `"http.proxy"` in `settings.json`, Kommentare bleiben erhalten |
 
 „Entfernen“ nimmt nur Einträge zurück, die auf px zeigen. Was jemand anders eingetragen hat, bleibt stehen. Das gilt auch für die Deinstallation.
 
+Die Zeile „Node.js-Zertifikate“ ist kein Proxy-Eintrag, gehört aber zum selben Problem. Node.js, und damit npm, npx, Playwright und viele CLIs, kennt den Windows-Zertifikatsspeicher nicht. Bricht der Firmenproxy TLS auf, scheitern Downloads mit „unable to get local issuer certificate“. „Einrichten“ exportiert die vertrauenswürdigen Stamm- und Zwischenzertifikate von Windows in eine PEM-Datei und setzt `NODE_EXTRA_CA_CERTS`. „Erneuern“ schreibt die Datei neu, etwa nachdem die IT ein Zertifikat getauscht hat.
+
 ## px steuern
 
-Starten, Stoppen und Neustarten machen, was sie sagen. „px-Debug starten“ startet px im Vordergrund mit ausführlichem Log. Die Ausgabe steht im Log-Tab mit der Quelle „px“. Damit findest du fast jeden Fehler, zum Beispiel eine 407-Antwort vom Firmenproxy, wenn Kerberos nicht klappt. Beim Beenden ersetzt Ember das Debug-px automatisch wieder durch das normale.
+Starten, Stoppen und Neustarten machen, was sie sagen. „px-Debug starten“ startet px in einem eigenen Konsolenfenster mit ausführlicher Ausgabe, live zum Mitlesen. Ember schreibt dieselbe Ausgabe in `C:\Ember\Logs\px-debug-JJJJMMTT-HHMMSS.log`. Damit findest du fast jeden Fehler, zum Beispiel eine 407-Antwort vom Firmenproxy, wenn Kerberos nicht klappt.
+
+Beenden kannst du px-Debug in Ember („px-Debug beenden“) oder indem du das Fenster schließt. Danach öffnet Ember den Explorer mit der Logdatei markiert, und das normale px läuft wieder.

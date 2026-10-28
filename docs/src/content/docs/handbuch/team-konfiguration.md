@@ -1,9 +1,9 @@
 ---
 title: Team-Konfiguration
-description: Eine team.json auf dem Netzlaufwerk für Proxy, Software, Mailvorlagen, Energieprofile und Freigaben.
+description: Eine team.json auf dem Netzlaufwerk für Proxy, Software, Mailvorlagen, Energieprofile und Admins.
 ---
 
-Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: Proxy, interne Domains, Softwareliste, Service-Center-Adresse, Mailvorlagen, Energieprofile und wer den KI-Tab sieht.
+Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: Proxy, interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile und wer als Admin die Tabs KI und Energie sieht.
 
 Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember selbst schreibt nie in diese Datei.
 
@@ -17,7 +17,7 @@ In dieser Reihenfolge:
 
 Zum Verteilen eignet sich Weg 2 am besten. Leg `Ember.exe` und `ember-team.txt` zusammen ab, und wer Ember von dort startet, ist sofort verbunden. Ember kopiert die Datei bei der Selbstinstallation mit.
 
-Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere Datei auf dem Laufwerk. Die letzte erfolgreich gelesene Fassung speichert es in `%APPDATA%\Ember\team.cache.json`. Ohne VPN arbeitet Ember mit dieser Kopie weiter und zeigt in den Einstellungen, von wann sie ist. Hängt das Laufwerk, wartet Ember höchstens zehn Sekunden.
+Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere Datei auf dem Laufwerk. Die letzte erfolgreich gelesene Fassung speichert es in `C:\Ember\Config\team.cache.json`. Ohne VPN arbeitet Ember mit dieser Kopie weiter und zeigt in den Einstellungen, von wann sie ist. Hängt das Laufwerk, wartet Ember höchstens zehn Sekunden.
 
 ## Beispiel
 
@@ -36,7 +36,7 @@ Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere 
     { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE" },
     { "name": "Alfaview", "sccmName": "alfaview*", "category": "Kommunikation" }
   ],
-  "modules": { "ai": { "allowGroups": ["FIRMA\\KI-Entwicklung"] } }
+  "admins": { "users": ["FIRMA\\max.mustermann"], "groups": ["FIRMA\\Entwicklung-Admins"] }
 }
 ```
 
@@ -53,6 +53,8 @@ Texte wie Notizen, Mailvorlagen und Profilnamen dürfen ein einfacher String sei
 | `usePac` | `true`: px nutzt die PAC-Datei (Standard), `false`: den festen Proxy |
 | `pacUrl` | PAC-Adresse. Leer: Ember nimmt die aus den Windows-Einstellungen. |
 | `upstream` | Firmenproxy als `host:port`. Ember nutzt ihn auch für Downloads, solange px noch nicht läuft. |
+
+Fehlt ein Wert hier und in den eigenen Einstellungen, nimmt Ember, was es beim Start erkannt hat: die PAC-Adresse aus Windows, den ersten Proxy aus der PAC-Datei oder den Systemproxy. In den Einstellungen steht dann „automatisch erkannt“.
 | `internalDomains` | Domains, die ohne Proxy erreichbar sind. Sie landen in `NO_PROXY`, npm `noproxy` und px `noproxy`. |
 | `port` | Port von px, Standard 3128 |
 
@@ -88,13 +90,30 @@ Texte wie Notizen, Mailvorlagen und Profilnamen dürfen ein einfacher String sei
 
 `sub` und `setting` sind Aliase wie bei `powercfg` oder GUIDs. `ac` gilt am Netzteil, `dc` im Akkubetrieb, ein fehlender Wert bleibt unverändert. Zeiten stehen in Sekunden.
 
-### modules.ai
+### admins
 
-`allowUsers` und `allowGroups` listen Konten und AD-Gruppen, die das KI-Modul sehen dürfen, mit oder ohne Domäne (`FIRMA\KI-Entwicklung` oder `KI-Entwicklung`). Ohne Einträge ist es für alle freigegeben.
+Wer hier steht, ist Admin und sieht die erweiterten Module KI und Energie. `users` und `groups` listen Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung-Admins` oder `Entwicklung-Admins`). Ohne Einträge sieht die Tabs niemand. Admins blenden sie mit <kbd>Strg</kbd> + <kbd>E</kbd> ein und aus. Ember prüft das auch auf der Host-Seite, eine Sicherheitsgrenze ist es aber nicht, siehe [KI-Modul](/Ember/handbuch/ki/).
 
-### agentTools und models
+### devTools
 
-`agentTools` ergänzt die Liste der npm-Pakete im KI-Tab (`package`, optional `name` und `description`). `models` ergänzt die Modellliste (`url`, optional `id`, `name`, `sha256`, `note`).
+Steuert die Entwicklerwerkzeuge im Software-Tab.
+
+| Feld | Bedeutung |
+|---|---|
+| `tools` | Welche Werkzeuge erscheinen: `nodejs`, `git`, `vscode`, `python`, `visualstudio`, `dotnet`, `pwsh`. Standard: alle. |
+| `allowDirect` | `false`: Ember installiert nie direkt vom Hersteller, nur über das Softwarecenter oder per Mail ans Service-Center. Standard: `true`. |
+| `visualStudio.bootstrapperUrl` | Bootstrapper, Standard `https://aka.ms/vs/17/release/vs_professional.exe` |
+| `visualStudio.workloads` | Workload-IDs für `--add`. Standard: `Microsoft.VisualStudio.Workload.ManagedDesktop` und `Microsoft.VisualStudio.Workload.NetWeb` |
+
+Gibt es ein passendes Paket im Softwarecenter, nimmt Ember immer das.
+
+### playwright
+
+`playwright.downloadHost` ist ein interner Spiegel für die Browser-Downloads, etwa ein Artifactory-Remote auf `cdn.playwright.dev`. Ember setzt ihn als `PLAYWRIGHT_DOWNLOAD_HOST`, wenn es Browser installiert.
+
+### models
+
+`models` ergänzt die Modellliste im KI-Tab (`url`, optional `id`, `name`, `sha256`, `note`).
 
 ### update.mirror
 

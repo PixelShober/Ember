@@ -20,17 +20,19 @@ Ein neuer Dienstrechner kostet einen halben Tag, bis git, npm, NuGet und pip dur
 
 | Bereich | Was passiert |
 |---|---|
-| Proxy | Installiert [px](https://github.com/genotrance/px) und hält es aktuell. px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an, deine Werkzeuge sprechen nur mit `127.0.0.1:3128`. Eine Tabelle zeigt für Umgebungsvariablen, git, npm, NuGet, pip und VS Code, wohin sie gerade zeigen. Ein Klick stellt sie auf px um. |
+| Proxy | Installiert [px](https://github.com/genotrance/px) und hält es aktuell. px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an, deine Werkzeuge sprechen nur mit `127.0.0.1:3128`. Eine Tabelle zeigt für Umgebungsvariablen, git, npm, NuGet, pip und VS Code, wohin sie gerade zeigen. Ein Klick stellt sie auf px um. Dazu die Firmenzertifikate für Node.js (`NODE_EXTRA_CA_CERTS`), falls der Proxy TLS aufbricht. Den Firmenproxy erkennt Ember beim Start selbst. |
 | Git | Schlägt Name und E-Mail aus dem Active Directory vor und setzt sie nach Bestätigung. |
-| Software | Zeigt die Programme aus der Team-Liste mit installierter Version und stößt die Installation über das Softwarecenter an. Ohne Freigabe gibt es eine vorbereitete Mail ans Service-Center. |
+| Software | Entwicklerwerkzeuge (Node.js LTS mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7): über das Softwarecenter, wenn die IT ein Paket hat, sonst direkt vom Hersteller mit geprüfter Prüfsumme und Signatur. Playwright-Browser passend zur Playwright-Version eines Projekts. Die Programme aus der Team-Liste kommen über das Softwarecenter, ohne Freigabe per vorbereiteter Mail ans Service-Center. |
 | Service-Center | Mail-Entwurf in Outlook mit Diagnosebericht als Anhang. Abschicken tust du selbst. |
-| Energie | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. Dazu Wake-on-LAN-Vorbereitung für das Wecken aus dem ausgeschalteten Zustand. |
+| Energie (Admins) | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. |
 | System | Gruppenrichtlinien einsehen und auffrischen, PowerShell-Ausführungsrichtlinie, lange Pfade für git und Windows. |
-| KI (erweitert) | Rechner per Wake-on-LAN wecken, llama.cpp in der passenden Variante (CUDA, Vulkan, CPU) installieren, GGUF-Modelle laden, `llama-server` starten, Agent-CLIs per npm einrichten. |
+| KI (Admins) | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp in der passenden Variante (CUDA, Vulkan, CPU) installieren, GGUF-Modelle laden, `llama-server` starten. |
 
-Gemeinsame Einstellungen fürs Team (Proxy, interne Domains, Softwareliste, Mailvorlagen, Energieprofile, wer den KI-Tab sieht) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
+KI und Energie sind erweiterte Module: Sie erscheinen nur für Admins aus der Team-Konfiguration, <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus.
 
-Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“).
+Gemeinsame Einstellungen fürs Team (Proxy, interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, wer Admin ist) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
+
+Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“). Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
 
 ## Installation
 

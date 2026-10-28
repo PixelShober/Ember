@@ -49,14 +49,18 @@ Jeder Pull Request baut eine `Ember.exe`, zu finden als Artefakt „Ember-PR-…
 |---|---|
 | Programm | `C:\Ember\App\Ember.exe` |
 | px | `C:\Ember\px` (änderbar in den Einstellungen) |
+| Einstellungen, Kopie der Team-Konfiguration, gesicherte Energie- und WOL-Werte | `C:\Ember\Config` |
+| Logs, auch px-Debug | `C:\Ember\Logs` (`ember-JJJJ-MM-TT.log`, `px-debug-….log`) |
+| Diagnoseberichte | `C:\Ember\Reports` |
+| Oberflächen-Updates, WebView2-Daten | `C:\Ember\Cache` |
+| Downloads (Installer, Zwischenstand) | `C:\Ember\Downloads` |
+| Node.js (falls Ember es installiert) | `C:\Ember\Tools\node` |
+| Firmenzertifikate für Node.js | `C:\Ember\Certs\windows-ca.pem` |
 | llama.cpp | `C:\Ember\llama.cpp\<version>-<variante>` |
-| Einstellungen | `%APPDATA%\Ember\settings.json` |
-| Kopie der Team-Konfiguration | `%APPDATA%\Ember\team.cache.json` |
-| Logs | `%APPDATA%\Ember\logs\ember-JJJJ-MM-TT.log` |
-| Gesicherte Energiewerte | `%APPDATA%\Ember\power-backup.json` |
-| Oberflächen-Updates, WebView2-Daten | `%LOCALAPPDATA%\Ember\ui`, `%LOCALAPPDATA%\Ember\WebView2` |
-| Diagnoseberichte | `%LOCALAPPDATA%\Ember\reports` |
-| KI-Modelle | `%LOCALAPPDATA%\Ember\models` (änderbar) |
+| KI-Modelle | `C:\Ember\Models` (änderbar) |
+| Hilfsdateien für PowerShell | `C:\Ember\Temp` |
+
+Alles liegt in einem Ordner. Erlaubt Windows einem normalen Konto nicht, unter `C:\` einen Ordner anzulegen, weicht Ember mit derselben Aufteilung auf `%LOCALAPPDATA%\Ember` aus. Einstellungen aus früheren Testversionen unter `%APPDATA%\Ember` übernimmt Ember beim ersten Start einmal.
 
 ## Deinstallieren
 

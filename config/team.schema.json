@@ -107,32 +107,41 @@
         }
       }
     },
-    "modules": {
+    "admins": {
       "type": "object",
       "additionalProperties": false,
+      "description": "Wer Admin ist und die erweiterten Module KI und Energie sieht. Ohne Einträge sieht sie niemand.",
       "properties": {
-        "ai": {
+        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+      }
+    },
+    "devTools": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Entwicklerwerkzeuge im Software-Tab.",
+      "properties": {
+        "tools": {
+          "type": "array",
+          "description": "Welche Werkzeuge erscheinen. Standard: alle.",
+          "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh"] }
+        },
+        "allowDirect": { "type": "boolean", "description": "false: nie direkt vom Hersteller installieren, nur über das Softwarecenter oder das Service-Center. Standard: true." },
+        "visualStudio": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Wer den KI-Tab sehen darf. Ohne Einträge: alle, die „Erweiterte Module“ einschalten.",
           "properties": {
-            "allowUsers": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-            "allowGroups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+            "bootstrapperUrl": { "type": "string", "format": "uri", "description": "Standard: https://aka.ms/vs/17/release/vs_professional.exe" },
+            "workloads": { "type": "array", "items": { "type": "string" }, "description": "Workload-IDs für --add. Standard: ManagedDesktop und NetWeb." }
           }
         }
       }
     },
-    "agentTools": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["package"],
-        "properties": {
-          "package": { "type": "string", "pattern": "^(@[a-z0-9][\\w.\\-]*/)?[a-z0-9][\\w.\\-]*$" },
-          "name": { "type": "string" },
-          "description": { "$ref": "#/$defs/text" }
-        }
+    "playwright": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "downloadHost": { "type": "string", "format": "uri", "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist." }
       }
     },
     "models": {
