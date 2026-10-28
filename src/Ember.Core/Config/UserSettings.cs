@@ -42,6 +42,11 @@ public sealed class UserSettings
     /// <summary>"auto" (the Windows language), "de" or "en".</summary>
     public string Language { get; set; } = "auto";
 
+    /// <summary>"system", "light" or "dark" (the UI keeps a copy for the first paint).</summary>
+    public string ColorScheme { get; set; } = "system";
+    /// <summary>"efeu" or "glut".</summary>
+    public string Design { get; set; } = "efeu";
+
     /// <summary>Admins hid the advanced tabs with Ctrl+E (who is admin comes from the team configuration).</summary>
     public bool HideAdvanced { get; set; }
 

@@ -28,6 +28,8 @@ export interface AppInfo {
   admin: boolean;
   /** Advanced tabs visible (admin and not hidden with Ctrl+E). */
   showAdvanced: boolean;
+  /** Colour scheme and design as Ember.exe stored them. */
+  appearance?: { scheme: 'system' | 'light' | 'dark'; design: 'efeu' | 'glut' };
   /** C:\\Ember (or the fallback under %LOCALAPPDATA%). */
   root: string;
   logDir: string;

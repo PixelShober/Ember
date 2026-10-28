@@ -1,76 +1,92 @@
-/* Ember – warm, calm, readable, in Calcifer's colours. Light and dark follow Windows (prefers-color-scheme). */
+/* Ember – warm, calm, readable, in Calcifer's colours.
+   Two designs (html[data-design]): "efeu" (default, ivy-green sidebar) and "glut" (rosy ember ground with ivy).
+   Colour scheme: no class = follow Windows, .light / .dark = fixed. Every colour is light-dark(light, dark),
+   so each design needs one set only; the used color-scheme picks the half. */
 :root {
-  /* Calcifer by day: warm paper, a glowing ember accent, crimson only for errors. */
-  --bg: #faf5f0;
-  --sidebar: #f8ebe2;
-  --surface: #fffefd;
-  --surface-2: #f6efe9;
-  --border: #e8ddd6;
-  --border-strong: #d5c6bc;
-  --text: #271b16;
-  --text-muted: #705b53;
-  --accent: #c43603;
-  --accent-hover: #aa280d;
-  --accent-text: #ffffff;
-  --accent-soft: #ffe3d5;
-  --accent-fg: #af2f09;
-  --glow: #f39340;
-  --core: #f5cb70;
-  --hearth: rgb(243 147 64 / 0.16);
-  --ok: #0b7643;
-  --ok-soft: #ddf6e4;
-  --warn: #915c08;
-  --warn-soft: #feefcf;
-  --error: #b61537;
-  --error-soft: #fee8e9;
-  --info: #295e90;
-  --info-soft: #e5f0fc;
-  --shadow: 0 1px 2px rgb(64 32 16 / 0.05), 0 4px 16px rgb(64 32 16 / 0.05);
-  --shadow-lift: 0 10px 28px -8px rgb(64 32 16 / 0.18);
-  --backdrop: rgb(39 27 22 / 0.4);
+  color-scheme: light dark;
+
+  /* Shared roles: the ember accent, the flame, states. */
+  --accent: light-dark(#c43603, #f48645);
+  --accent-hover: light-dark(#aa280d, #fca25f);
+  --accent-text: light-dark(#ffffff, #22110b);
+  --accent-fg: light-dark(#af2f09, #ffa661);
+  --glow: light-dark(#f39340, #fea849);
+  --core: light-dark(#f5cb70, #f8d376);
+  --warn: light-dark(#915c08, #edbb64);
+  --warn-soft: light-dark(#feefcf, #3c2a0e);
+  --error: light-dark(#b61537, #f17993);
+  --error-soft: light-dark(#fee8e9, #472028);
+  --info: light-dark(#295e90, #80b7e7);
+  --info-soft: light-dark(#e5f0fc, #1a2d3e);
+  --shadow-tint: light-dark(rgb(64 32 16 / 0.05), rgb(0 0 0 / 0.32));
+  --shadow: 0 1px 2px var(--shadow-tint), 0 4px 16px var(--shadow-tint);
+  --shadow-lift: 0 10px 28px -8px light-dark(rgb(64 32 16 / 0.18), rgb(0 0 0 / 0.55));
+  --backdrop: light-dark(rgb(39 27 22 / 0.4), rgb(10 6 4 / 0.6));
   /* The flame: red at the base, orange, yellow core. Only where fire means something (progress, the current page). */
   --ember: linear-gradient(90deg, var(--accent), var(--glow) 65%, var(--core));
   --ember-up: linear-gradient(0deg, var(--accent), var(--glow) 60%, var(--core));
+
   --radius: 12px;
   --radius-small: 8px;
   --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Noto Sans', sans-serif;
   --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
   --mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'DejaVu Sans Mono', monospace;
-  color-scheme: light;
+}
+:root.light { color-scheme: light; }
+:root.dark { color-scheme: dark; }
+
+/* Efeu: warm paper and a deep ivy sidebar by day, forest charcoal at night. */
+:root, :root[data-design='efeu'] {
+  --bg: light-dark(#f7f4ec, #121913);
+  --sidebar: light-dark(#213b2d, #12241a);
+  --surface: light-dark(#fffdf8, #1a241d);
+  --surface-2: light-dark(#f0ece1, #213027);
+  --border: light-dark(#e3ddcf, #2c3b31);
+  --border-strong: light-dark(#cfc7b5, #3d5044);
+  --text: light-dark(#271b16, #eef0e8);
+  --text-muted: light-dark(#6a6155, #a9b8aa);
+  --accent-soft: light-dark(#ffe3d5, #3b2a1a);
+  --ok: light-dark(#0b7643, #6cd092);
+  --ok-soft: light-dark(#ddf6e4, #173221);
+  --hearth: light-dark(rgb(243 147 64 / 0.24), rgb(244 134 69 / 0.15));
+}
+/* The sidebar is dark in both schemes: its own text and control colours. */
+:root[data-design='efeu'] aside.sidebar, :root:not([data-design]) aside.sidebar {
+  --text: #f2eee3;
+  --text-muted: light-dark(#bccbbb, #a9b8aa);
+  --border: light-dark(#33533f, #2c3b31);
+  --surface: light-dark(#2b4a38, #1a241d);
+  --accent: #f48645;
+  --accent-soft: light-dark(rgb(244 134 69 / 0.2), #3b2a1a);
+  --accent-fg: light-dark(#ffb27a, #ffa661);
+  --border-strong: light-dark(#4a6b57, #3d5044);
+  --ok-soft: light-dark(#2f5c43, #173221);
+  color: var(--text);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Calcifer by night: charcoal surfaces, the accent glows orange. */
-    --bg: #1a1310;
-    --sidebar: #160d0a;
-    --surface: #251c18;
-    --surface-2: #2f2520;
-    --border: #3c302a;
-    --border-strong: #53443d;
-    --text: #f3ede6;
-    --text-muted: #b7a89b;
-    --accent: #f48645;
-    --accent-hover: #fca25f;
-    --accent-text: #22110b;
-    --accent-soft: #492517;
-    --accent-fg: #ffa661;
-    --glow: #fea849;
-    --core: #f8d376;
-    --hearth: rgb(244 134 69 / 0.13);
-    --ok: #6cd092;
-    --ok-soft: #173221;
-    --warn: #edbb64;
-    --warn-soft: #3c2a0e;
-    --error: #f17993;
-    --error-soft: #472028;
-    --info: #80b7e7;
-    --info-soft: #1a2d3e;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 4px 16px rgb(0 0 0 / 0.28);
-    --shadow-lift: 0 12px 30px -8px rgb(0 0 0 / 0.55);
-    --backdrop: rgb(10 6 4 / 0.6);
-    color-scheme: dark;
-  }
+/* Glut: rosy ember ground by day, oxblood charcoal at night, mossy greens for "done". */
+:root[data-design='glut'] {
+  --bg: light-dark(#fbf0ec, #1c1011);
+  --sidebar: light-dark(#f6dfd6, #160a0b);
+  --surface: light-dark(#fffcfb, #27181a);
+  --surface-2: light-dark(#f7e9e3, #312023);
+  --border: light-dark(#ecd8d0, #43292c);
+  --border-strong: light-dark(#dcc0b5, #5a3a3d);
+  --text: light-dark(#271b16, #f3ece8);
+  --text-muted: light-dark(#6c5650, #c0a5a0);
+  --accent-soft: light-dark(#fddcd0, #4d1f18);
+  --ok: light-dark(#2f6f3e, #7fcf8a);
+  --ok-soft: light-dark(#e1f0dd, #1f2f22);
+  --hearth: light-dark(rgb(224 82 44 / 0.22), rgb(232 86 54 / 0.2));
+}
+
+/* Appearance switch: the new look grows as a circle out of the pressed control (lib/appearance.ts sets the vars). */
+:root.theme-reveal * { view-transition-name: none !important; }
+:root.theme-reveal::view-transition-old(root) { animation: none; }
+:root.theme-reveal::view-transition-new(root) { animation: theme-reveal 500ms ease-in-out both; }
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--reveal-x, 50%) var(--reveal-y, 50%)); }
+  to { clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%)); }
 }
 
 *, *::before, *::after { box-sizing: border-box; }

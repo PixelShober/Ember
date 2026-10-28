@@ -767,7 +767,11 @@
       "pxConfig": "px-Konfiguration",
       "reports": "Berichte"
     },
-    "unsaved": "Ungespeicherte Änderungen"
+    "unsaved": "Ungespeicherte Änderungen",
+    "appearance": {
+      "title": "Darstellung",
+      "description": "Farbschema und Design wechselst du auch unten in der Seitenleiste. Efeu hat eine grüne Leiste, Glut einen warmen, rötlichen Grund; beide mit Efeuranke."
+    }
   },
   "log": {
     "title": "Log",
@@ -919,5 +923,18 @@
     },
     "alreadyInstalled": "Playwright {version} ist schon installiert",
     "browsers": "Im Cache: {list} ({path})"
+  },
+  "appearance": {
+    "scheme": "Farbschema",
+    "design": "Design",
+    "schemes": {
+      "system": "Wie Windows",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "designs": {
+      "efeu": "Efeu",
+      "glut": "Glut"
+    }
   }
 }

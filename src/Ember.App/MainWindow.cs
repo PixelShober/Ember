@@ -37,14 +37,12 @@ public sealed class MainWindow : Window, IHostShell
         MinWidth = 880;
         MinHeight = 580;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        var dark = WindowsUsesDarkTheme();
-        var background = dark ? Color.FromRgb(0x1c, 0x1b, 0x1a) : Color.FromRgb(0xf6, 0xf5, 0xf3);
-        Background = new SolidColorBrush(background);
-        _web.DefaultBackgroundColor = System.Drawing.Color.FromArgb(background.R, background.G, background.B);
+        _dark = EmberHost.DarkFrame(Host.Settings.ColorScheme);
+        ApplyFrameColors();
         Content = _web;
         WindowPlacement.Restore(this);
 
-        SourceInitialized += (_, _) => { if (dark) UseDarkTitleBar(); };
+        SourceInitialized += (_, _) => SetTitleBar(_dark);
         Loaded += async (_, _) => await InitializeWebViewAsync();
 
         Host.Bridge.Outgoing += json => Dispatcher.InvokeAsync(() =>
@@ -260,23 +258,37 @@ public sealed class MainWindow : Window, IHostShell
 
     // ------------------------------------------------------------------ theme
 
-    static bool WindowsUsesDarkTheme()
+    bool _dark;
+
+    /// <summary>Title bar and the background behind the page follow the colour scheme chosen in the UI.</summary>
+    public void SetDarkFrame(bool dark) => Dispatcher.InvokeAsync(() =>
     {
-        try
+        _dark = dark;
+        ApplyFrameColors();
+        SetTitleBar(dark);
+    });
+
+    /// <summary>Page background of the current design, so resizing never flashes a different colour.</summary>
+    void ApplyFrameColors()
+    {
+        var glut = Host.Settings.Design == "glut";
+        var c = (_dark, glut) switch
         {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            return key?.GetValue("AppsUseLightTheme") is int v && v == 0;
-        }
-        catch
-        {
-            return false;
-        }
+            (true, true) => Color.FromRgb(0x1c, 0x10, 0x11),
+            (true, false) => Color.FromRgb(0x12, 0x19, 0x13),
+            (false, true) => Color.FromRgb(0xfb, 0xf0, 0xec),
+            _ => Color.FromRgb(0xf7, 0xf4, 0xec),
+        };
+        Background = new SolidColorBrush(c);
+        _web.DefaultBackgroundColor = System.Drawing.Color.FromArgb(c.R, c.G, c.B);
     }
 
-    void UseDarkTitleBar()
+    void SetTitleBar(bool dark)
     {
-        int on = 1;
-        DwmSetWindowAttribute(new WindowInteropHelper(this).Handle, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, ref on, sizeof(int));
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero) return;
+        int on = dark ? 1 : 0;
+        DwmSetWindowAttribute(handle, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, ref on, sizeof(int));
     }
 
     [DllImport("dwmapi.dll")]

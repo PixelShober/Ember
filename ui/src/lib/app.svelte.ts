@@ -1,5 +1,6 @@
 // Global UI state: app info, px status, jobs, log, updates, toasts and dialogs.
 import { BridgeError, getBridge, type Bridge } from './bridge';
+import { applyAppearance, normalize, storedAppearance } from './appearance';
 import { host, setLanguage, t } from './i18n.svelte';
 import type { AppInfo, JobSnapshot, LogEntry, PxStatus, Route, UpdateStatus } from './types';
 
@@ -80,6 +81,8 @@ export async function init(): Promise<void> {
   const info = await bridge.call<AppInfo>('app.info');
   app.info = info;
   setLanguage(info.language);
+  // The browser storage may be empty (new UI cache, cleared data): Ember.exe's copy wins then.
+  if (!storedAppearance() && info.appearance) applyAppearance(normalize(info.appearance));
   const [px, jobs, logs, update] = await Promise.all([
     bridge.call<PxStatus>('px.status'),
     bridge.call<JobSnapshot[]>('jobs.list'),

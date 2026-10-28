@@ -122,6 +122,28 @@ public sealed class EmberHost : IDisposable
         if (!IsAdmin) throw new EmberException("moduleNotAllowed");
     }
 
+    /// <summary>Whether the window frame should be dark for a colour scheme ("system" follows Windows).</summary>
+    public static bool DarkFrame(string scheme) => scheme switch
+    {
+        "dark" => true,
+        "light" => false,
+        _ => WindowsUsesDarkTheme(),
+    };
+
+    public static bool WindowsUsesDarkTheme()
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            return key?.GetValue("AppsUseLightTheme") is int v && v == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     void RequireNoPxJob()
     {
         if (Jobs.IsRunning("px")) throw new EmberException("jobRunning", ("title", L.T("px.title")));
@@ -141,6 +163,7 @@ public sealed class EmberHost : IDisposable
         elevated = Elevation.IsElevated,
         admin = IsAdmin,
         showAdvanced = ShowAdvanced,
+        appearance = new { scheme = Settings.ColorScheme, design = Settings.Design },
         root = Paths.Root,
         logDir = Paths.LogDir,
         team = Team.Status,
@@ -156,6 +179,20 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
+        // Colour scheme and design (switch in the sidebar). The window frame follows.
+        b.Register("app.setAppearance", (args, _) =>
+        {
+            var scheme = args.OptStr("scheme") is "light" or "dark" ? args.OptStr("scheme")! : "system";
+            var design = args.OptStr("design") == "glut" ? "glut" : "efeu";
+            if (scheme != Settings.ColorScheme || design != Settings.Design)
+            {
+                Settings.ColorScheme = scheme;
+                Settings.Design = design;
+                Settings.Save();
+            }
+            Shell.SetDarkFrame(DarkFrame(scheme));
+            return Task.FromResult<object?>(null);
+        });
         // Ctrl+E: admins show or hide the advanced tabs (KI, Energie).
         b.Register("app.toggleAdvanced", () =>
         {

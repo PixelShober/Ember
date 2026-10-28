@@ -237,6 +237,7 @@ export function createMockBridge(): Bridge {
     'app.pickFile': () => 'C:\\Users\\jmoessner\\Downloads\\px-v0.10.2-windows-amd64.zip',
     'settings.get': () => settingsView(),
     'settings.save': (p) => { Object.assign(user, p.settings); info.languageSetting = user.language; return settingsView(); },
+    'app.setAppearance': () => null,
     'app.toggleAdvanced': () => { user.hideAdvanced = !user.hideAdvanced; info.showAdvanced = !user.hideAdvanced; emit('app.info', { ...info }); return info.showAdvanced; },
     'settings.defaults': () => ({ ...user, usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null }),
     'team.status': () => ({ status: team, name: info.teamName }),

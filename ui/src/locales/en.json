@@ -767,7 +767,11 @@
       "pxConfig": "px configuration",
       "reports": "Reports"
     },
-    "unsaved": "Unsaved changes"
+    "unsaved": "Unsaved changes",
+    "appearance": {
+      "title": "Appearance",
+      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy has a green sidebar, Ember a warm reddish ground; both with ivy."
+    }
   },
   "log": {
     "title": "Log",
@@ -919,5 +923,18 @@
     },
     "alreadyInstalled": "Playwright {version} is already installed",
     "browsers": "In the cache: {list} ({path})"
+  },
+  "appearance": {
+    "scheme": "Colour scheme",
+    "design": "Design",
+    "schemes": {
+      "system": "Like Windows",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "designs": {
+      "efeu": "Ivy",
+      "glut": "Ember"
+    }
   }
 }

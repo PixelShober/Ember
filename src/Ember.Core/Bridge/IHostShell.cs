@@ -15,5 +15,8 @@ public interface IHostShell
 
     void SetDevTools(bool enabled);
 
+    /// <summary>Dark or light window frame (title bar, background behind the page).</summary>
+    void SetDarkFrame(bool dark);
+
     void OpenUrl(string url);
 }

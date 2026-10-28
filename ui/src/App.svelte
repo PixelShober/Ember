@@ -5,6 +5,8 @@
   import { t } from './lib/i18n.svelte';
   import type { Route } from './lib/types';
   import Icon from './lib/components/Icon.svelte';
+  import AppearanceSwitch from './lib/components/AppearanceSwitch.svelte';
+  import ivy from './assets/ivy.svg';
   import Toasts from './lib/components/Toasts.svelte';
   import ConfirmDialog from './lib/components/ConfirmDialog.svelte';
   import MailDialog from './lib/components/MailDialog.svelte';
@@ -72,7 +74,7 @@
   <main class="center" in:fade><div class="loading"><img src="./favicon.svg" alt="" width="64" height="64" /><p>{t('app.loading')}</p></div></main>
 {:else}
   <div class="shell">
-    <aside class="sidebar">
+    <aside class="sidebar" style={`--ivy: url("${ivy}")`}>
       <div class="brand">
         <img src="./favicon.svg" alt="" width="32" height="32" />
         <div>
@@ -94,6 +96,7 @@
       </nav>
 
       <div class="foot">
+        <AppearanceSwitch />
         <a class="px-pill {pxState}" href="#/proxy">
           <span class="dot"></span>
           <span>{app.px?.portOpen ? 'px · ' + app.px.url.replace('http://', '') : app.px?.installed ? t('proxy.px.stopped') : t('proxy.px.notInstalled')}</span>
@@ -142,7 +145,15 @@
     background: radial-gradient(ellipse 150% 38% at 12% 0%, var(--hearth), transparent 72%), var(--sidebar);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; padding: 16px 12px; gap: 18px; min-height: 0;
+    position: relative;
   }
+  /* Ivy climbs up the right edge of the sidebar (pixel art like Calcifer), behind the content. */
+  .sidebar::after {
+    content: ''; position: absolute; right: 0; bottom: 0; width: 42px; height: 58%; pointer-events: none; z-index: 0;
+    background: var(--ivy) repeat-y right bottom / 42px 108px;
+    -webkit-mask-image: linear-gradient(to top, #000 50%, transparent); mask-image: linear-gradient(to top, #000 50%, transparent);
+  }
+  .sidebar > :global(*) { position: relative; z-index: 1; }
   .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
   .brand div { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
   .brand strong { font-family: var(--font-display); font-size: 17px; }
@@ -160,7 +171,7 @@
   nav a :global(svg) { color: var(--text-muted); }
   nav a.active :global(svg) { color: var(--accent-fg); }
   .sep { height: 1px; background: var(--border); margin: 8px 6px; }
-  .foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 6px; }
+  .foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 34px 0 6px; }
   .px-pill {
     display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px;
     background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 12.5px;
