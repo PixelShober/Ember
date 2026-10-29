@@ -1,4 +1,3 @@
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -45,7 +44,7 @@ public static class PlaywrightTemplate
         };
         return new Dictionary<string, string>
         {
-            ["package.json"] = Serialize(package, "  ", "\n") + "\n",
+            ["package.json"] = Json.Format(package) + "\n",
             ["playwright.config.ts"] = Config(mode),
             ["tests/example.spec.ts"] = ExampleTest,
             [".gitignore"] = MergeIgnore(null)!,
@@ -318,22 +317,7 @@ public static class PlaywrightTemplate
             existing[name] = command?.GetValue<string>();
             changed = true;
         }
-        if (!changed) return json;
-
         // Keep the file's own indentation and line endings, like npm does.
-        var indent = Regex.Match(json, @"\n([ \t]+)\S") is { Success: true } m ? m.Groups[1].Value : "  ";
-        var newline = json.Contains("\r\n") ? "\r\n" : "\n";
-        var text = Serialize(root, indent, newline);
-        return json.EndsWith('\n') ? text + newline : text;
+        return changed ? Json.WriteLike(root, json) : json;
     }
-
-    static string Serialize(JsonNode node, string indent, string newline) =>
-        node.ToJsonString(new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            IndentCharacter = indent[0],
-            IndentSize = indent.Length,
-            NewLine = newline,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        });
 }

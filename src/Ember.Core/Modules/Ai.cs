@@ -18,22 +18,10 @@ public static class AdminCheck
 {
     public static bool IsAdmin(TeamConfig team) =>
         AppInfo.Version.EndsWith("-dev", StringComparison.Ordinal) ||
-        IsAdmin(team, Elevation.AccountName, Elevation.GroupNames());
+        IsAdmin(team, Elevation.AccountName, Access.MyGroups);
 
-    internal static bool IsAdmin(TeamConfig team, string account, IEnumerable<string> groups)
-    {
-        var users = team.Admins?.Users ?? new List<string>();
-        var adminGroups = team.Admins?.Groups ?? new List<string>();
-        if (users.Any(u => Same(u, account))) return true;
-        var mine = groups.ToList();
-        return adminGroups.Any(g => mine.Any(m => Same(g, m)));
-    }
-
-    /// <summary>"FIRMA\\max" matches "FIRMA\\max" and "max"; the comparison ignores case.</summary>
-    static bool Same(string configured, string actual) =>
-        configured.Trim().Length > 0 &&
-        (configured.Trim().Equals(actual, StringComparison.OrdinalIgnoreCase) ||
-         (!configured.Contains('\\') && actual.EndsWith("\\" + configured.Trim(), StringComparison.OrdinalIgnoreCase)));
+    internal static bool IsAdmin(TeamConfig team, string account, IEnumerable<string> groups) =>
+        Access.Listed(team.Admins?.Users, team.Admins?.Groups, account, groups.ToList());
 }
 
 public sealed record GpuInfo(string Name, string? Driver, string? Cuda, int? MemoryTotalMb, int? MemoryUsedMb,

@@ -1,6 +1,8 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Ember.Core;
 
@@ -34,4 +36,26 @@ public static class Json
     public static T? Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options);
 
     public static T? Deserialize<T>(JsonElement element) => element.Deserialize<T>(Options);
+
+    /// <summary>
+    /// Writes an edited node the way the original file looked: same indentation, same line endings,
+    /// trailing newline if it had one, umlauts as-is. Key order is kept by JsonObject.
+    /// </summary>
+    public static string WriteLike(JsonNode node, string original)
+    {
+        var indent = Regex.Match(original, @"\n([ \t]+)\S") is { Success: true } m ? m.Groups[1].Value : "  ";
+        var newline = original.Contains("\r\n") ? "\r\n" : "\n";
+        var text = Format(node, indent, newline);
+        return original.EndsWith('\n') ? text + newline : text;
+    }
+
+    public static string Format(JsonNode node, string indent = "  ", string newline = "\n") =>
+        node.ToJsonString(new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            IndentCharacter = indent[0],
+            IndentSize = indent.Length,
+            NewLine = newline,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        });
 }

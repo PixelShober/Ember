@@ -50,6 +50,13 @@
     "groups": ["FIRMA\\Entwicklung-Admins"]
   },
 
+  "access": {
+    "enabled": true,
+    "users": [],
+    "groups": ["FIRMA\\Entwicklung"],
+    "contact": "ember-admins@firma.example"
+  },
+
   "devTools": {
     "allowDirect": true,
     "visualStudio": {

@@ -7,7 +7,9 @@
   import Icon from './Icon.svelte';
   import Calcifer from './Calcifer.svelte';
 
-  const templates: MailRequest['template'][] = ['softwareRequest', 'adminAction', 'problem'];
+  const standard: MailRequest['template'][] = ['softwareRequest', 'adminAction', 'problem'];
+  // The access request only comes from the lock screen, and there it is the only sensible choice.
+  const templates = $derived(app.mail?.template === 'accessRequest' ? ['accessRequest' as const] : standard);
 
   let template = $state<MailRequest['template']>('problem');
   let details = $state('');
@@ -55,11 +57,11 @@
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mail-title" transition:scale={{ start: 0.96, duration: 150 }}>
       <div class="row">
         <Icon name="mail" />
-        <h2 id="mail-title">{t('mail.title')}</h2>
+        <h2 id="mail-title">{template === 'accessRequest' ? t('access.locked.request') : t('mail.title')}</h2>
       </div>
       <p class="muted">{t('mail.subtitle')}</p>
 
-      {#if !app.info?.serviceCenter}
+      {#if !(template === 'accessRequest' ? app.info?.accessContact : app.info?.serviceCenter)}
         <div class="note warn"><Calcifer /><p>{t('mail.noServiceCenter')}</p></div>
       {/if}
 

@@ -31,7 +31,8 @@
     "ai": "KI",
     "settings": "Einstellungen",
     "log": "Log",
-    "advanced": "Erweitert"
+    "advanced": "Erweitert",
+    "access": "Berechtigungen"
   },
   "common": {
     "yes": "Ja",
@@ -161,7 +162,14 @@
     "playwrightNameInvalid": "„{name}“ geht als Projektname nicht. Erlaubt sind Kleinbuchstaben, Ziffern, Punkt, Binde- und Unterstrich, vorne ein Buchstabe oder eine Ziffer.",
     "playwrightFolderNotEmpty": "{path} gibt es schon, und der Ordner ist nicht leer. Nimm einen anderen Namen.",
     "playwrightNoEdge": "Microsoft Edge ist auf diesem Rechner nicht installiert. Nimm Chromium oder frag das Service-Center nach Edge.",
-    "playwrightEdgeLibrary": "Dein Projekt nutzt {package} ohne Test-Runner, dafür gibt es keine playwright.config. Starte den Browser im Code mit chromium.launch({ channel: 'msedge' })."
+    "playwrightEdgeLibrary": "Dein Projekt nutzt {package} ohne Test-Runner, dafür gibt es keine playwright.config. Starte den Browser im Code mit chromium.launch({ channel: 'msedge' }).",
+    "accessDenied": "Ember ist für dein Konto nicht freigeschaltet.",
+    "accessSelfLockout": "So würdest du dich selbst als Admin austragen. Bleib in der Admin-Liste (direkt oder über eine deiner Gruppen) und speichere noch einmal.",
+    "accessContactInvalid": "„{value}“ ist keine Mailadresse.",
+    "accessNoTeamFile": "Ember kennt keine team.json. Trag unter Einstellungen den Pfad ein, dann lassen sich die Listen dort speichern.",
+    "teamChanged": "Die team.json ({path}) hat sich geändert, seit du die Seite geöffnet hast. Lade neu, prüf die Listen und speichere dann.",
+    "teamInvalid": "Die team.json ist kein gültiges JSON: {detail}",
+    "teamOffline": "Die team.json ist gerade nicht erreichbar (VPN, Netzlaufwerk). Ember nutzt die lokale Kopie, speichern geht erst wieder mit Verbindung."
   },
   "jobs": {
     "started": "gestartet",
@@ -446,7 +454,8 @@
     "templateNames": {
       "softwareRequest": "Software anfordern",
       "adminAction": "Adminrechte für eine Aktion",
-      "problem": "Problem melden"
+      "problem": "Problem melden",
+      "accessRequest": "Zugriff auf Ember"
     },
     "details": "Was genau?",
     "attachReport": "Diagnosebericht anhängen",
@@ -470,6 +479,10 @@
       "problem": {
         "subject": "Problem auf {computer}",
         "body": "Hallo Service-Center,\n\nich habe folgendes Problem:\n\n{details}\n\nBenutzer: {user}\nRechner: {computer}\nDer Diagnosebericht von Ember hängt an.\n\nVielen Dank!"
+      },
+      "accessRequest": {
+        "subject": "Zugriff auf Ember für {user}",
+        "body": "Hallo,\n\nich möchte Ember auf {computer} nutzen, um meinen Entwicklerrechner einzurichten. Bitte nehmt mich in die Zugriffsliste auf.\n\n{details}\n\nBenutzer: {user}\n\nDanke!"
       }
     }
   },
@@ -1004,6 +1017,53 @@
     "designs": {
       "efeu": "Efeu",
       "glut": "Glut"
+    }
+  },
+  "access": {
+    "saved": "Berechtigungen in {path} gespeichert: {members} Einträge mit Zugriff, {admins} Admins",
+    "title": "Berechtigungen",
+    "subtitle": "Wer Ember nutzen darf und wer Admin ist. Das steht in der team.json, alle bekommen es beim nächsten Start.",
+    "restrict": "Nur ausgewählte Benutzer und Gruppen dürfen Ember nutzen",
+    "everyone": "Im Moment darf jeder Ember nutzen, der die team.json lesen kann.",
+    "members": "Zugriff",
+    "membersHint": "Benutzer und AD-Gruppen. Admins dürfen immer, sie müssen hier nicht stehen.",
+    "membersEmpty": "Noch niemand eingetragen. Mit eingeschalteter Beschränkung kämen dann nur die Admins rein.",
+    "admins": "Admins",
+    "adminsHint": "Sehen KI, Energie und Berechtigungen (Strg + E blendet sie aus) und dürfen Ember immer nutzen.",
+    "adminsEmpty": "Keine Admins eingetragen.",
+    "contact": "Zugriffsanfragen gehen an",
+    "contactHint": "Leer: an das Service-Center ({email}).",
+    "addPlaceholder": "Name oder FIRMA\\Name",
+    "add": "Hinzufügen",
+    "user": "Benutzer",
+    "group": "Gruppe",
+    "remove": "{name} entfernen",
+    "notFound": "„{name}“ gibt es im Verzeichnis nicht.",
+    "unchecked": "„{name}“ ließ sich gerade nicht im Verzeichnis prüfen (VPN?) und ist als {kind} eingetragen.",
+    "duplicate": "„{name}“ steht schon in der Liste.",
+    "me": "Deine Anmeldung",
+    "meHint": "Deine Domänengruppen. Ein Klick trägt eine Gruppe bei Zugriff oder bei den Admins ein.",
+    "groupsFilter": "Gruppen filtern",
+    "noGroups": "Keine Domänengruppen gefunden.",
+    "toMembers": "+ Zugriff",
+    "toAdmins": "+ Admin",
+    "save": "In team.json speichern",
+    "discard": "Verwerfen",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "savedToast": "Gespeichert. Alle anderen bekommen die Listen beim nächsten Start von Ember.",
+    "file": "Gespeichert wird in {path}",
+    "problems": {
+      "noTeamFile": "Ember kennt keine team.json. Ohne sie gibt es keine Listen: Trag unter Einstellungen den Pfad ein.",
+      "teamOffline": "Die team.json ist gerade nicht erreichbar. Du siehst die lokale Kopie, speichern geht erst wieder mit Verbindung.",
+      "teamReadOnly": "Du darfst die team.json ({path}) nur lesen. Speichern geht mit Schreibrechten auf die Datei, die vergibt die IT für das Netzlaufwerk."
+    },
+    "locked": {
+      "title": "Ember ist für dich noch nicht freigeschaltet",
+      "text": "Ember ist nur für ausgewählte Benutzer und Gruppen freigegeben. Du bist angemeldet als {user}.",
+      "request": "Zugriff anfragen",
+      "contact": "Anfragen gehen an {email}.",
+      "retry": "Erneut prüfen",
+      "stillLocked": "Noch nicht freigeschaltet. Steht die Freigabe in der team.json, klappt es nach dem nächsten Prüfen."
     }
   }
 }

@@ -21,12 +21,12 @@ export interface ConfirmRequest {
 }
 
 export interface MailRequest {
-  template: 'softwareRequest' | 'adminAction' | 'problem';
+  template: 'softwareRequest' | 'adminAction' | 'problem' | 'accessRequest';
   vars: Record<string, string>;
   attachReport: boolean;
 }
 
-const routes: Route[] = ['start', 'proxy', 'git', 'software', 'power', 'system', 'ai', 'settings', 'log'];
+const routes: Route[] = ['start', 'proxy', 'git', 'software', 'power', 'system', 'ai', 'access', 'settings', 'log'];
 const MAX_LOG = 3000;
 
 export const app = $state({
@@ -91,6 +91,8 @@ export async function init(): Promise<void> {
   bridge.on('px.status', (s: PxStatus) => (app.px = s));
   bridge.on('update', (s: UpdateStatus) => (app.update = s));
   bridge.on('app.info', (info: AppInfo) => {
+    // Just got access (team.json changed): start over, so everything loads that the lock screen skipped.
+    if (app.info && !app.info.access && info.access) location.reload();
     app.info = info;
     setLanguage(info.language);
   });
@@ -100,6 +102,11 @@ export async function init(): Promise<void> {
   setLanguage(info.language);
   // The browser storage may be empty (new UI cache, cleared data): Ember.exe's copy wins then.
   if (!storedAppearance() && info.appearance) applyAppearance(normalize(info.appearance));
+  // Not on the access list: only the lock screen, the host refuses everything else anyway.
+  if (!info.access) {
+    app.ready = true;
+    return;
+  }
   const [px, jobs, logs, update] = await Promise.all([
     bridge.call<PxStatus>('px.status'),
     bridge.call<JobSnapshot[]>('jobs.list'),

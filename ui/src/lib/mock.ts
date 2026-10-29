@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AccessView, AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -35,7 +35,7 @@ export function createMockBridge(): Bridge {
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
     languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
-    admin: true, showAdvanced: true, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
+    admin: true, showAdvanced: true, access: !new URLSearchParams(location.search).has('locked'), accessContact: 'ember-admins@firma.example', root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
   };
 
@@ -208,6 +208,15 @@ export function createMockBridge(): Bridge {
   };
 
   let pwFailedOnce = false;
+  const accessView: AccessView = {
+    restricted: true,
+    members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }, { name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }],
+    admins: [{ name: 'FIRMA\\jmoessner', kind: 'user' }],
+    contact: 'ember-admins@firma.example',
+    teamPath: '\\\\fs01\\entwicklung\\ember\\team.json', writable: true, version: 'a1b2c3', problem: null,
+    account: 'FIRMA\\jmoessner',
+    myGroups: ['FIRMA\\Domain Users', 'FIRMA\\GG-Entwicklung', 'FIRMA\\GG-Ember-Admins', 'FIRMA\\GG-VPN', 'FIRMA\\SCCM-Software-Entwicklung', 'FIRMA\\Teams-Entwicklung'],
+  };
   const playwright: PlaywrightState = {
     browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
     browsers: [{ name: 'chromium-1194', path: '' }, { name: 'chromium_headless_shell-1194', path: '' }, { name: 'ffmpeg-1011', path: '' }],
@@ -251,6 +260,18 @@ export function createMockBridge(): Bridge {
     'team.reload': () => settingsView(),
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'] }),
     'proxy.diagnose': () => proxyRows,
+    'access.get': () => structuredClone(accessView),
+    'access.lookup': (p) => {
+      const name = String(p.name).trim();
+      if (/^x/i.test(name)) return { name, kind: null, found: false };
+      const group = /gruppe|team|admins|entwicklung/i.test(name);
+      return { name: name.includes('\\') ? name : `FIRMA\\${name}`, kind: group ? 'group' : 'user', found: true };
+    },
+    'access.save': (p) => {
+      const c = p.change as { restricted: boolean; members: AccessView['members']; admins: AccessView['admins']; contact: string | null };
+      Object.assign(accessView, { restricted: c.restricted, members: c.members, admins: c.admins, contact: c.contact || null, version: String(Date.now()) });
+      return structuredClone(accessView);
+    },
     'git.proxy': () => {
       const r = proxyRows.find((x) => x.tool === 'git')!;
       const on = r.state === 'px';
@@ -300,7 +321,7 @@ export function createMockBridge(): Bridge {
     'devtools.install': (p) => { void simulate('devtool:' + p.id, 'devtool', t('devtools.jobs.install', { name: p.id }), [t('devtools.steps.resolve'), t('devtools.steps.download'), t('devtools.steps.verify'), t('devtools.steps.install'), t('devtools.steps.check')]); return null; },
     'devtools.installMany': (p) => { void simulate('devtools', 'devtool', t('devtools.jobs.installMany', { count: p.tools.length }), p.tools.flatMap((x: { id: string }) => [x.id + ': ' + t('devtools.steps.download'), x.id + ': ' + t('devtools.steps.install')])); return null; },
     'software.install': (p) => { void simulate('software:' + p.key, 'software', t('software.jobs.install', { name: p.name }), [t('software.steps.trigger'), t('software.steps.wait')]); return null; },
-    'mail.preview': (p) => ({ to: info.serviceCenter, subject: t(`mail.templates.${p.template}.subject`, { ...p.vars, user: info.user, computer: info.computer }), body: t(`mail.templates.${p.template}.body`, { ...p.vars, user: info.user, computer: info.computer }) }),
+    'mail.preview': (p) => ({ to: p.template === 'accessRequest' ? info.accessContact : info.serviceCenter, subject: t(`mail.templates.${p.template}.subject`, { ...p.vars, user: info.user, computer: info.computer }), body: t(`mail.templates.${p.template}.body`, { ...p.vars, user: info.user, computer: info.computer }) }),
     'mail.compose': (p) => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text', reportPath: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt', reportText: p.attachReport ? 'Ember-Diagnosebericht\n…' : null }),
     'diagnostics.report': () => ({ text: 'Ember-Diagnosebericht\n=====\nRechner: NB-ENT-0427\nBenutzer: FIRMA\\jmoessner', path: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt' }),
     'power.state': () => power,

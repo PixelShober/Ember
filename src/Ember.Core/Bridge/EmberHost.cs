@@ -48,6 +48,10 @@ public sealed class EmberHost : IDisposable
     /// <summary>The advanced tabs are visible (admin, and not hidden with Ctrl+E). Also switches the DevTools.</summary>
     public bool ShowAdvanced => IsAdmin && !Settings.HideAdvanced;
 
+    /// <summary>What still works for someone who is not on the access list: the lock screen and the request mail.</summary>
+    static readonly HashSet<string> OpenMethods = new(StringComparer.Ordinal)
+        { "app.info", "app.ready", "app.setAppearance", "app.openExternal", "team.reload", "mail.compose", "mail.preview" };
+
     /// <summary>Loads the team configuration and starts the background timers.</summary>
     public async Task InitializeAsync()
     {
@@ -163,6 +167,8 @@ public sealed class EmberHost : IDisposable
         elevated = Elevation.IsElevated,
         admin = IsAdmin,
         showAdvanced = ShowAdvanced,
+        access = Access.Allowed(Team.Config),
+        accessContact = Team.Config.Access?.Contact ?? Team.Config.ServiceCenter?.Email,
         appearance = new { scheme = Settings.ColorScheme, design = Settings.Design },
         root = Paths.Root,
         logDir = Paths.LogDir,
@@ -176,6 +182,7 @@ public sealed class EmberHost : IDisposable
     void RegisterApi()
     {
         var b = Bridge;
+        b.Guard = method => OpenMethods.Contains(method) || Access.Allowed(Team.Config);
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
@@ -264,6 +271,30 @@ public sealed class EmberHost : IDisposable
             Shell.SetDevTools(ShowAdvanced);
             Bridge.Emit("app.info", Info());
             return SettingsView();
+        });
+
+        // ------------------------------------------------------------------ access (admins)
+        b.Register("access.get", async ct =>
+        {
+            RequireAdmin();
+            return await Access.ViewAsync(Team.Config, Team.Status, ct);
+        });
+        b.Register("access.lookup", (args, _) =>
+        {
+            RequireAdmin();
+            return Task.FromResult<object?>(Access.Lookup(args.Req("name")));
+        });
+        b.Register("access.save", async (args, ct) =>
+        {
+            RequireAdmin();
+            var change = args.Get<AccessChange>("change") ?? throw new EmberException("missingParam", ("name", "change"));
+            var path = Team.Status.Path ?? throw new EmberException("accessNoTeamFile");
+            if (Team.Status.FromCache) throw new EmberException("teamOffline", ("path", path));
+            await Task.Run(() => Access.Save(path, change, Elevation.AccountName, Access.MyGroups), ct).WaitAsync(TimeSpan.FromSeconds(20), ct);
+            await Team.LoadAsync(Settings, ct);
+            Shell.SetDevTools(ShowAdvanced);
+            Bridge.Emit("app.info", Info());
+            return await Access.ViewAsync(Team.Config, Team.Status, ct);
         });
 
         // ------------------------------------------------------------------ proxy & px
@@ -442,8 +473,9 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("mail.preview", (args, _) =>
         {
-            var (subject, body) = Mail.Render(Team.Config, args.Req("template"), args.Dict("vars"));
-            return Task.FromResult<object?>(new { to = Team.Config.ServiceCenter?.Email, subject, body });
+            var template = args.Req("template");
+            var (subject, body) = Mail.Render(Team.Config, template, args.Dict("vars"));
+            return Task.FromResult<object?>(new { to = Mail.Recipient(Team.Config, template), subject, body });
         });
         b.Register("diagnostics.report", async ct =>
         {

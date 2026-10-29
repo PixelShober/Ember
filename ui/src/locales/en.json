@@ -31,7 +31,8 @@
     "ai": "AI",
     "settings": "Settings",
     "log": "Log",
-    "advanced": "Advanced"
+    "advanced": "Advanced",
+    "access": "Permissions"
   },
   "common": {
     "yes": "Yes",
@@ -161,7 +162,14 @@
     "playwrightNameInvalid": "\"{name}\" does not work as a project name. Use lower-case letters, digits, dot, hyphen and underscore, starting with a letter or digit.",
     "playwrightFolderNotEmpty": "{path} already exists and is not empty. Pick another name.",
     "playwrightNoEdge": "Microsoft Edge is not installed on this computer. Use Chromium or ask the service center for Edge.",
-    "playwrightEdgeLibrary": "Your project uses {package} without the test runner, so there is no playwright.config. Launch the browser in code with chromium.launch({ channel: 'msedge' })."
+    "playwrightEdgeLibrary": "Your project uses {package} without the test runner, so there is no playwright.config. Launch the browser in code with chromium.launch({ channel: 'msedge' }).",
+    "accessDenied": "Ember is not enabled for your account.",
+    "accessSelfLockout": "This would remove you as an admin. Stay on the admin list (directly or through one of your groups) and save again.",
+    "accessContactInvalid": "\"{value}\" is not a mail address.",
+    "accessNoTeamFile": "Ember knows no team.json. Enter its path under Settings, then the lists can be saved there.",
+    "teamChanged": "team.json ({path}) changed since you opened this page. Reload, check the lists and save again.",
+    "teamInvalid": "team.json is not valid JSON: {detail}",
+    "teamOffline": "team.json cannot be reached right now (VPN, network share). Ember uses the local copy; saving works again once connected."
   },
   "jobs": {
     "started": "started",
@@ -446,7 +454,8 @@
     "templateNames": {
       "softwareRequest": "Request software",
       "adminAction": "Admin rights for an action",
-      "problem": "Report a problem"
+      "problem": "Report a problem",
+      "accessRequest": "Access to Ember"
     },
     "details": "What exactly?",
     "attachReport": "Attach diagnosis report",
@@ -470,6 +479,10 @@
       "problem": {
         "subject": "Problem on {computer}",
         "body": "Hello service center,\n\nI have the following problem:\n\n{details}\n\nUser: {user}\nComputer: {computer}\nThe Ember diagnosis report is attached.\n\nThank you!"
+      },
+      "accessRequest": {
+        "subject": "Access to Ember for {user}",
+        "body": "Hello,\n\nI would like to use Ember on {computer} to set up my developer machine. Please add me to the access list.\n\n{details}\n\nUser: {user}\n\nThank you!"
       }
     }
   },
@@ -1004,6 +1017,53 @@
     "designs": {
       "efeu": "Ivy",
       "glut": "Ember"
+    }
+  },
+  "access": {
+    "saved": "Permissions saved to {path}: {members} entries with access, {admins} admins",
+    "title": "Permissions",
+    "subtitle": "Who may use Ember and who is an admin. It lives in team.json; everyone gets it the next time Ember starts.",
+    "restrict": "Only selected users and groups may use Ember",
+    "everyone": "Right now anyone who can read team.json may use Ember.",
+    "members": "Access",
+    "membersHint": "Users and AD groups. Admins always may and need not be listed here.",
+    "membersEmpty": "Nobody listed yet. With the restriction on, only admins would get in.",
+    "admins": "Admins",
+    "adminsHint": "See AI, Power and Permissions (Ctrl + E hides them) and may always use Ember.",
+    "adminsEmpty": "No admins listed.",
+    "contact": "Access requests go to",
+    "contactHint": "Empty: to the service center ({email}).",
+    "addPlaceholder": "Name or COMPANY\\Name",
+    "add": "Add",
+    "user": "User",
+    "group": "Group",
+    "remove": "Remove {name}",
+    "notFound": "\"{name}\" does not exist in the directory.",
+    "unchecked": "\"{name}\" could not be checked in the directory right now (VPN?) and was added as {kind}.",
+    "duplicate": "\"{name}\" is already on the list.",
+    "me": "Your sign-in",
+    "meHint": "Your domain groups. One click adds a group to Access or to Admins.",
+    "groupsFilter": "Filter groups",
+    "noGroups": "No domain groups found.",
+    "toMembers": "+ Access",
+    "toAdmins": "+ Admin",
+    "save": "Save to team.json",
+    "discard": "Discard",
+    "unsaved": "Unsaved changes",
+    "savedToast": "Saved. Everyone else gets the lists the next time Ember starts.",
+    "file": "Saved to {path}",
+    "problems": {
+      "noTeamFile": "Ember knows no team.json, so there are no lists. Enter its path under Settings.",
+      "teamOffline": "team.json cannot be reached right now. You see the local copy; saving works again once connected.",
+      "teamReadOnly": "You may only read team.json ({path}). Saving needs write access to the file, which IT grants on the network share."
+    },
+    "locked": {
+      "title": "Ember is not enabled for you yet",
+      "text": "Ember is only available to selected users and groups. You are signed in as {user}.",
+      "request": "Request access",
+      "contact": "Requests go to {email}.",
+      "retry": "Check again",
+      "stillLocked": "Not enabled yet. Once team.json lists you, the next check lets you in."
     }
   }
 }

@@ -1,6 +1,6 @@
 // Shapes of the data the host (Ember.Core, C#) sends. Property names are camelCase JSON.
 
-export type Route = 'start' | 'proxy' | 'git' | 'software' | 'power' | 'system' | 'ai' | 'settings' | 'log';
+export type Route = 'start' | 'proxy' | 'git' | 'software' | 'power' | 'system' | 'ai' | 'access' | 'settings' | 'log';
 
 export interface TeamStatus {
   path: string | null;
@@ -28,6 +28,10 @@ export interface AppInfo {
   admin: boolean;
   /** Advanced tabs visible (admin and not hidden with Ctrl+E). */
   showAdvanced: boolean;
+  /** On the access list from team.json (or there is none). */
+  access: boolean;
+  /** Where access requests go: access.contact, else the service center. */
+  accessContact: string | null;
   /** Colour scheme and design as Ember.exe stored them. */
   appearance?: { scheme: 'system' | 'light' | 'dark'; design: 'efeu' | 'glut' };
   /** C:\\Ember (or the fallback under %LOCALAPPDATA%). */
@@ -107,6 +111,31 @@ export interface ProxyRow {
   canSet: boolean;
   canRemove: boolean;
   hint: string | null;
+}
+
+export interface AccessEntry {
+  name: string;
+  kind: 'user' | 'group';
+}
+
+export interface AccessView {
+  restricted: boolean;
+  members: AccessEntry[];
+  admins: AccessEntry[];
+  contact: string | null;
+  teamPath: string | null;
+  writable: boolean;
+  version: string | null;
+  problem: 'noTeamFile' | 'teamOffline' | 'teamReadOnly' | null;
+  account: string;
+  myGroups: string[];
+}
+
+export interface AccessLookup {
+  name: string;
+  kind: 'user' | 'group' | null;
+  /** null: could not be checked (no connection to the directory) */
+  found: boolean | null;
 }
 
 export interface GitProxyInfo {

@@ -47,7 +47,7 @@
     "mailTemplates": {
       "type": "object",
       "description": "Eigene Vorlagen. Platzhalter: {user}, {computer}, {app}, {details}, {date}, {ember}.",
-      "propertyNames": { "enum": ["softwareRequest", "adminAction", "problem"] },
+      "propertyNames": { "enum": ["softwareRequest", "adminAction", "problem", "accessRequest"] },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -108,10 +108,21 @@
     "admins": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Wer Admin ist und die erweiterten Module KI und Energie sieht. Ohne Einträge sieht sie niemand.",
+      "description": "Wer Admin ist: sieht die erweiterten Module KI, Energie und Berechtigungen und darf Ember immer nutzen. Ohne Einträge gibt es keine Admins. Admins pflegen diese Liste im Tab „Berechtigungen“.",
       "properties": {
         "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
         "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Wer Ember überhaupt nutzen darf. Ohne Einträge (oder mit enabled: false) darf jeder. Admins dürfen immer. Admins pflegen die Liste im Tab „Berechtigungen“.",
+      "properties": {
+        "enabled": { "type": "boolean", "description": "false: Liste bleibt stehen, gilt aber nicht. Standard: an, sobald es einen Eintrag gibt." },
+        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "contact": { "type": "string", "format": "email", "description": "Wohin Zugriffsanfragen gehen. Standard: die Mailadresse des Service-Centers." }
       }
     },
     "devTools": {

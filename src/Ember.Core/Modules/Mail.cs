@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Ember.Core;
 
@@ -12,7 +13,11 @@ public sealed record MailResult(string Method, string To, string Subject, string
 /// </summary>
 public static class Mail
 {
-    public static readonly string[] Templates = { "softwareRequest", "adminAction", "problem" };
+    public static readonly string[] Templates = { "softwareRequest", "adminAction", "problem", "accessRequest" };
+
+    /// <summary>Access requests go to whoever looks after the list (team.json access.contact), everything else to the service center.</summary>
+    public static string? Recipient(TeamConfig team, string template) =>
+        template == "accessRequest" && team.Access?.Contact is { Length: > 0 } contact ? contact : team.ServiceCenter?.Email;
 
     public static (string Subject, string Body) Render(TeamConfig team, string template, IReadOnlyDictionary<string, string?> vars)
     {
@@ -33,6 +38,8 @@ public static class Mail
             subject = subject.Replace("{" + k + "}", v ?? "");
             body = body.Replace("{" + k + "}", v ?? "");
         }
+        // An empty placeholder ({details}) must not leave a gap of blank lines.
+        body = Regex.Replace(body, @"(\r?\n[ \t]*){3,}", m => m.Value.Contains('\r') ? "\r\n\r\n" : "\n\n");
         var prefix = team.ServiceCenter?.SubjectPrefix;
         if (!string.IsNullOrWhiteSpace(prefix)) subject = prefix.Trim() + " " + subject;
         return (subject, body);
@@ -41,7 +48,7 @@ public static class Mail
     public static async Task<MailResult> ComposeAsync(TeamConfig team, string template, IReadOnlyDictionary<string, string?> vars,
                                                       Func<CancellationToken, Task<string>>? report, CancellationToken ct)
     {
-        var to = team.ServiceCenter?.Email;
+        var to = Recipient(team, template);
         if (string.IsNullOrWhiteSpace(to)) throw new EmberException("mailNoRecipient");
         var (subject, body) = Render(team, template, vars);
 

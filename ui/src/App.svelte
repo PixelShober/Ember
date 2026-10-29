@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { api, app, init, navigate, toast } from './lib/app.svelte';
+  import { api, app, init, navigate, openMail, run, toast } from './lib/app.svelte';
   import { t } from './lib/i18n.svelte';
   import type { Route } from './lib/types';
   import Icon from './lib/components/Icon.svelte';
@@ -18,6 +18,8 @@
   import Power from './pages/Power.svelte';
   import System from './pages/System.svelte';
   import Ai from './pages/Ai.svelte';
+  import Access from './pages/Access.svelte';
+  import Calcifer from './lib/components/Calcifer.svelte';
   import Settings from './pages/Settings.svelte';
   import Log from './pages/Log.svelte';
 
@@ -34,9 +36,9 @@
     init().catch((e) => (failed = String(e?.message ?? e)));
   });
 
-  // KI and Energie are advanced modules: only admins from the team configuration see them,
-  // and Ctrl+E shows or hides them.
-  const advancedRoutes: Route[] = ['power', 'ai'];
+  // KI, Energie and Berechtigungen are advanced modules: only admins from the team configuration
+  // see them, and Ctrl+E shows or hides them.
+  const advancedRoutes: Route[] = ['power', 'ai', 'access'];
   const showAdvanced = $derived(!!app.info?.showAdvanced);
 
   const nav = $derived(
@@ -46,7 +48,7 @@
       { route: 'git', icon: 'git' },
       { route: 'software', icon: 'software' },
       { route: 'system', icon: 'system' },
-      ...(showAdvanced ? [{ route: 'power', icon: 'power' }, { route: 'ai', icon: 'ai' }] : []),
+      ...(showAdvanced ? [{ route: 'power', icon: 'power' }, { route: 'ai', icon: 'ai' }, { route: 'access', icon: 'users' }] : []),
     ] as { route: Route; icon: string }[],
   );
 
@@ -54,13 +56,22 @@
     if (app.ready && advancedRoutes.includes(app.route) && !showAdvanced) navigate('start');
   });
 
+  /** Lock screen: check team.json again (an admin may just have added this account). */
+  let checking = $state(false);
+  async function recheck() {
+    checking = true;
+    await run(() => api('team.reload'));
+    checking = false;
+    if (!app.info?.access) toast('info', t('access.locked.stillLocked'));
+  }
+
   const pxState = $derived(
     !app.px ? 'muted' : app.px.portOpen ? 'ok' : app.px.installed ? 'warn' : 'muted',
   );
 
   /** Ctrl+E shows or hides the advanced tabs (admins only; remembered in the settings). */
   async function onKey(e: KeyboardEvent) {
-    if (!(e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'e') || !app.info) return;
+    if (!(e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'e') || !app.info?.access) return;
     e.preventDefault();
     if (!app.info.admin) {
       toast('info', t('app.advancedNotAllowed'));
@@ -79,6 +90,19 @@
   <main class="center"><div class="note error"><Icon name="alert" /><p>{failed}</p></div></main>
 {:else if !app.ready}
   <main class="center" in:fade><div class="loading"><img src="./favicon.svg" alt="" width="64" height="64" /><p>{t('app.loading')}</p></div></main>
+{:else if app.info && !app.info.access}
+  <main class="center" in:fade>
+    <div class="locked">
+      <Calcifer size={72} />
+      <h1>{t('access.locked.title')}</h1>
+      <p>{t('access.locked.text', { user: app.info.user })}</p>
+      {#if app.info.accessContact}<p class="small muted">{t('access.locked.contact', { email: app.info.accessContact })}</p>{/if}
+      <div class="row">
+        <button class="btn primary" onclick={() => openMail('accessRequest', {}, false)}><Icon name="mail" size={16} />{t('access.locked.request')}</button>
+        <button class="btn" disabled={checking} onclick={recheck}><Icon name="refresh" size={16} />{t('access.locked.retry')}</button>
+      </div>
+    </div>
+  </main>
 {:else}
   <div class="shell">
     <aside class="sidebar" style={`--ivy: url("${ivy}")`}>
@@ -126,6 +150,7 @@
           {:else if app.route === 'power'}<Power />
           {:else if app.route === 'system'}<System />
           {:else if app.route === 'ai'}<Ai />
+          {:else if app.route === 'access'}<Access />
           {:else if app.route === 'settings'}<Settings />
           {:else if app.route === 'log'}<Log />
           {/if}
@@ -142,6 +167,10 @@
 <style>
   .center { height: 100%; display: grid; place-items: center; padding: 24px; }
   .loading { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted); }
+  .locked { max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  .locked h1 { margin: 6px 0 0; font-family: var(--font-display); font-size: 22px; }
+  .locked p { margin: 0; }
+  .locked .row { margin-top: 10px; justify-content: center; }
   .loading img { animation: glow 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
   @keyframes glow { 50% { opacity: 0.7; transform: scale(0.94, 1.04); } }
   @media (prefers-reduced-motion: reduce) { .loading img { animation: none; } }

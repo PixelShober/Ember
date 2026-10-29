@@ -19,6 +19,9 @@ public sealed class Bridge
 
     public IReadOnlyCollection<string> Methods => _methods.Keys;
 
+    /// <summary>Checked before every call; false answers with the error "accessDenied".</summary>
+    public Func<string, bool>? Guard { get; set; }
+
     public void Register(string method, Handler handler) => _methods[method] = handler;
 
     public void Register(string method, Func<CancellationToken, Task<object?>> handler) =>
@@ -43,6 +46,7 @@ public sealed class Bridge
             method = root.TryGetProperty("method", out var m) ? m.GetString() ?? "?" : "?";
             var args = root.TryGetProperty("params", out var p) ? p.Clone() : JsonDocument.Parse("{}").RootElement.Clone();
             if (!_methods.TryGetValue(method, out var handler)) throw new EmberException("unknownMethod", ("method", method));
+            if (Guard != null && !Guard(method)) throw new EmberException("accessDenied");
             var result = await handler(args, ct);
             Send(new { id, result });
         }

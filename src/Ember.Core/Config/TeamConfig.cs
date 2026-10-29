@@ -144,6 +144,8 @@ public sealed class TeamConfig
     public TeamPlaywright? Playwright { get; set; }
     public TeamPower? Power { get; set; }
     public TeamAdmins? Admins { get; set; }
+    /// <summary>Who may use Ember at all (users and AD groups); admins always may.</summary>
+    public TeamAccess? Access { get; set; }
     public List<ModelEntry>? Models { get; set; }
     public TeamUpdate? Update { get; set; }
     /// <summary>Overrides the download URL of the WebView2 standalone installer.</summary>
