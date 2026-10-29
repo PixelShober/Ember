@@ -278,9 +278,13 @@
     },
     "hints": {
       "windows": "Bleibt unverändert: px liest genau diese Einstellung, um den Firmenproxy zu finden.",
-      "nuget": "dotnet restore und Visual Studio lesen http_proxy aus %APPDATA%\\NuGet\\NuGet.Config.",
-      "vscode": "Ember ändert nur „http.proxy“ in settings.json, Kommentare und andere Einträge bleiben.",
-      "nodeCerts": "Node.js, npm, npx und Playwright kennen den Windows-Zertifikatsspeicher nicht. Bricht der Firmenproxy TLS auf, scheitern Downloads mit „unable to get local issuer certificate“. „Einrichten“ exportiert die vertrauenswürdigen Zertifikate von Windows nach C:\\Ember\\Certs und setzt NODE_EXTRA_CA_CERTS."
+      "nuget": "dotnet restore und Visual Studio lesen http_proxy und no_proxy aus %APPDATA%\\NuGet\\NuGet.Config.",
+      "vscode": "Ember ändert nur „http.proxy“ und „http.noProxy“ in settings.json, Kommentare und andere Einträge bleiben.",
+      "nodeCerts": "Node.js, npm, npx und Playwright kennen den Windows-Zertifikatsspeicher nicht. Bricht der Firmenproxy TLS auf, scheitern Downloads mit „unable to get local issuer certificate“. „Einrichten“ exportiert die vertrauenswürdigen Zertifikate von Windows nach C:\\Ember\\Certs und setzt NODE_EXTRA_CA_CERTS.",
+      "env": "NO_PROXY enthält die internen Domains. git, npm, pip, Python und Node.js gehen damit direkt zu internen Servern, ohne Umweg über px.",
+      "git": "Für jede interne Domain setzt Ember zusätzlich http.<url>.proxy auf leer. So erreicht git interne Server direkt, auch wenn px gerade nicht läuft. Tiefere Subdomains deckt NO_PROXY ab.",
+      "gitExceptionsMissing": "Für diese internen Adressen fehlt die Ausnahme noch: {list}. „Auf px setzen“ ergänzt sie.",
+      "pip": "pip.ini kennt keine Ausnahmeliste. Interne Server erreicht pip direkt über NO_PROXY (Zeile Umgebungsvariablen)."
     },
     "none": "keiner",
     "toolMissing": "nicht installiert",
@@ -305,7 +309,8 @@
         "missing": "–",
         "info": "–"
       }
-    }
+    },
+    "noProxyFor": "ohne Proxy: {list}"
   },
   "px": {
     "title": "px",
@@ -361,8 +366,8 @@
     "debugWindow": "px-Debug läuft. Die Ausgabe steht zusätzlich in {file}. Fenster schließen oder in Ember auf „px-Debug beenden“ klicken, um aufzuhören."
   },
   "git": {
-    "title": "Git-Identität",
-    "subtitle": "Name und E-Mail für deine Commits. Ember schlägt sie aus deinem Windows-Konto vor und speichert erst, wenn du bestätigst.",
+    "title": "Git",
+    "subtitle": "Name und E-Mail für deine Commits, dazu der Weg ins Netz: nach draußen über px, zu internen Servern direkt.",
     "current": "Aktuell in git",
     "suggested": "Vorschlag",
     "sources": {
@@ -377,7 +382,21 @@
     "notSet": "nicht gesetzt",
     "gitMissing": "git ist auf diesem Rechner nicht installiert. Hol es dir über das Softwarecenter.",
     "identitySet": "git-Identität gesetzt: {name} <{email}>",
-    "saved": "git-Identität gespeichert"
+    "saved": "git-Identität gespeichert",
+    "identity": "Identität",
+    "proxy": {
+      "title": "Proxy für git",
+      "subtitle": "Externe Repositories (GitHub, npm-Registries, …) laufen über px. Für interne Server setzt Ember Ausnahmen, denn die sind über den Firmenproxy oft gar nicht erreichbar.",
+      "httpProxy": "http.proxy",
+      "direct": "Ohne Proxy",
+      "noDomains": "Noch keine internen Domains eingetragen. Dann geht auch git zu internen Servern über den Proxy.",
+      "editDomains": "Interne Domains bearbeiten",
+      "set": "Auf px setzen",
+      "missing": "Ausnahmen fehlen noch für: {list}",
+      "envMissing": "NO_PROXY in den Umgebungsvariablen kennt die internen Domains noch nicht. Ohne diesen Eintrag gehen Server mit tieferen Subdomains (z. B. gitlab.dev.firma.local) noch über den Proxy.",
+      "envFix": "Zur Proxy-Seite",
+      "ok": "git geht über px nach draußen und direkt zu den internen Servern."
+    }
   },
   "software": {
     "title": "Software",

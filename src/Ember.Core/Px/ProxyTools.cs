@@ -15,6 +15,12 @@ public enum ProxyState
 
 public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint);
 
+/// <param name="Domains">Internal domains git reaches without proxy.</param>
+/// <param name="MissingExceptions">git URLs for them that are not switched off yet.</param>
+/// <param name="NoProxyEnv">NO_PROXY (user) lists all internal domains, which also covers deeper subdomains.</param>
+public sealed record GitProxyInfo(string? HttpProxy, ProxyState State, IReadOnlyList<string> Domains, IReadOnlyList<string> MissingExceptions,
+                                  bool NoProxyEnv, bool CanSet, bool CanRemove);
+
 /// <summary>
 /// Per tool: read the current proxy, point it to px, or remove it again.
 /// Ember never stores passwords – px signs in with Kerberos, the tools only talk to 127.0.0.1.
@@ -75,7 +81,7 @@ public static class ProxyTools
                 var no = Environment.GetEnvironmentVariable("NO_PROXY", EnvironmentVariableTarget.User);
                 var value = $"HTTP_PROXY={http ?? "–"} · HTTPS_PROXY={https ?? "–"} · NO_PROXY={no ?? "–"}";
                 var state = StateOf(s, http, https);
-                return new ProxyRow(id, label, value, state, state != ProxyState.Px, state == ProxyState.Px, null);
+                return new ProxyRow(id, label, value, state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.env"));
             }
             case "git":
             {
@@ -83,7 +89,11 @@ public static class ProxyTools
                 var r = await ProcessRunner.RunAsync(Tools.Git, new[] { "config", "--global", "--get", "http.proxy" }, ct, logOutput: false);
                 var value = r.LastLine;
                 var state = StateOf(s, value);
-                return new ProxyRow(id, label, Shown(value), state, state != ProxyState.Px, state == ProxyState.Px, null);
+                var missing = await GitMissingExceptionsAsync(Tools.Git, s, ct);
+                var domains = NoProxy.ForTools(s.InternalDomainList).Where(d => !d.Contains('/')).ToList();
+                var shown = $"http.proxy={Shown(value)}" + (domains.Count > 0 ? " · " + L.T("proxy.noProxyFor", ("list", string.Join(", ", domains))) : "");
+                string? hint = missing.Count > 0 && state == ProxyState.Px ? L.T("proxy.hints.gitExceptionsMissing", ("list", string.Join(", ", missing))) : L.T("proxy.hints.git");
+                return new ProxyRow(id, label, shown, state, state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px, hint);
             }
             case "npm":
             {
@@ -105,26 +115,61 @@ public static class ProxyTools
             case "nuget":
             {
                 var value = NuGetConfigEditor.Get(Tools.NuGetConfig, "http_proxy");
+                var no = NuGetConfigEditor.Get(Tools.NuGetConfig, "no_proxy");
                 var state = StateOf(s, value);
-                return new ProxyRow(id, label, Shown(value), state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.nuget"));
+                bool stale = state == ProxyState.Px && !SameList(no, s.NoProxyList);
+                return new ProxyRow(id, label, $"http_proxy={Shown(value)} · no_proxy={Shown(no)}", state, state != ProxyState.Px || stale, state == ProxyState.Px, L.T("proxy.hints.nuget"));
             }
             case "pip":
             {
                 var value = IniFile.Get(Tools.PipIni, "global", "proxy");
                 var state = StateOf(s, value);
-                return new ProxyRow(id, label, Shown(value), state, state != ProxyState.Px, state == ProxyState.Px, null);
+                return new ProxyRow(id, label, Shown(value), state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.pip"));
             }
             case "vscode":
             {
                 if (!Tools.VsCodeInstalled) return Missing(id, label);
                 var text = File.Exists(Tools.VsCodeSettings) ? await File.ReadAllTextAsync(Tools.VsCodeSettings, ct) : "";
                 var value = JsoncEditor.GetString(text, "http.proxy");
+                var no = JsoncEditor.GetStringArray(text, "http.noProxy");
                 var state = StateOf(s, value);
-                return new ProxyRow(id, label, Shown(value), state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.vscode"));
+                bool stale = state == ProxyState.Px && !SameList(no == null ? null : string.Join(",", no), string.Join(",", VsCodeNoProxy(s)));
+                return new ProxyRow(id, label, $"http.proxy={Shown(value)} · http.noProxy={(no is { Count: > 0 } ? string.Join(", ", no) : "–")}", state,
+                                    state != ProxyState.Px || stale, state == ProxyState.Px, L.T("proxy.hints.vscode"));
             }
         }
         throw new EmberException("unknownTool", ("tool", id));
     }
+
+    /// <summary>The proxy card on the git page: where git goes out, and which internal servers it reaches directly.</summary>
+    public static async Task<GitProxyInfo?> GitAsync(EffectiveSettings s, CancellationToken ct)
+    {
+        if (Tools.Git is not { } git) return null;
+        var value = (await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get", "http.proxy" }, ct, logOutput: false)).LastLine;
+        var state = StateOf(s, value);
+        var missing = await GitMissingExceptionsAsync(git, s, ct);
+        var domains = NoProxy.ForTools(s.InternalDomainList);
+        var env = NoProxy.ForTools(EffectiveSettings.SplitDomains(Environment.GetEnvironmentVariable("NO_PROXY", EnvironmentVariableTarget.User) ?? ""));
+        bool envOk = domains.All(d => env.Contains(d, StringComparer.OrdinalIgnoreCase));
+        return new GitProxyInfo(string.IsNullOrWhiteSpace(value) ? null : value, state, domains, missing, envOk,
+                                state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px);
+    }
+
+    /// <summary>The git URLs for the internal domains whose proxy is not switched off yet.</summary>
+    static async Task<List<string>> GitMissingExceptionsAsync(string git, EffectiveSettings s, CancellationToken ct)
+    {
+        var wanted = NoProxy.GitUrls(s.InternalDomainList);
+        if (wanted.Count == 0) return wanted;
+        var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get-regexp", @"^http\..+\.proxy$" }, ct, logOutput: false);
+        var present = NoProxy.ParseGitExceptions(r.StdOut);
+        return wanted.Where(u => !present.Contains(u)).ToList();
+    }
+
+    static IReadOnlyList<string> VsCodeNoProxy(EffectiveSettings s) => s.NoProxyList.Split(',');
+
+    static bool SameList(string? a, string b) =>
+        (a ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                 .SetEquals(b.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
     static ProxyRow Missing(string id, string label) =>
         new(id, label, L.T("proxy.toolMissing"), ProxyState.Missing, false, false, null);
@@ -153,7 +198,14 @@ public static class ProxyTools
                 var git = Tools.Git ?? throw new EmberException("toolMissing", ("tool", "git"));
                 var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "http.proxy", s.PxUrl }, ct);
                 if (!r.Ok) throw new EmberException("commandFailed", ("command", "git config"), ("detail", r.Output));
-                return "git config --global http.proxy " + s.PxUrl;
+                // Internal servers without proxy, also when px is not running.
+                foreach (var url in await GitMissingExceptionsAsync(git, s, ct))
+                {
+                    var e = await ProcessRunner.RunAsync(git, new[] { "config", "--global", $"http.{url}.proxy", "" }, ct);
+                    if (!e.Ok) throw new EmberException("commandFailed", ("command", $"git config http.{url}.proxy"), ("detail", e.Output));
+                }
+                var urls = NoProxy.GitUrls(s.InternalDomainList);
+                return "git config --global http.proxy " + s.PxUrl + (urls.Count > 0 ? " · " + L.T("proxy.noProxyFor", ("list", string.Join(", ", NoProxy.ForTools(s.InternalDomainList)))) : "");
             }
 
             case "npm":
@@ -169,7 +221,8 @@ public static class ProxyTools
 
             case "nuget":
                 NuGetConfigEditor.Set(Tools.NuGetConfig, "http_proxy", s.PxUrl);
-                return $"http_proxy = {s.PxUrl} → {Tools.NuGetConfig}";
+                NuGetConfigEditor.Set(Tools.NuGetConfig, "no_proxy", s.NoProxyList);
+                return $"http_proxy = {s.PxUrl} · no_proxy = {s.NoProxyList} → {Tools.NuGetConfig}";
 
             case "pip":
                 IniFile.Set(Tools.PipIni, "global", "proxy", s.PxUrl);
@@ -181,8 +234,10 @@ public static class ProxyTools
                 var text = File.Exists(path) ? await File.ReadAllTextAsync(path, ct) : "";
                 if (text.Length > 0) File.Copy(path, path + ".ember.bak", overwrite: true);
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                await File.WriteAllTextAsync(path, JsoncEditor.SetString(text, "http.proxy", s.PxUrl), ct);
-                return $"\"http.proxy\": \"{s.PxUrl}\" → {path}";
+                text = JsoncEditor.SetString(text, "http.proxy", s.PxUrl);
+                text = JsoncEditor.SetStringArray(text, "http.noProxy", VsCodeNoProxy(s));
+                await File.WriteAllTextAsync(path, text, ct);
+                return $"\"http.proxy\": \"{s.PxUrl}\" · \"http.noProxy\" → {path}";
             }
         }
         throw new EmberException("unknownTool", ("tool", id));
@@ -231,6 +286,10 @@ public static class ProxyTools
                 if (onlyIfOurs && !IsOurs(current.LastLine, s)) return L.T("proxy.unchanged", ("value", current.LastLine));
                 var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--unset", "http.proxy" }, ct);
                 if (!r.Ok) throw new EmberException("commandFailed", ("command", "git config --unset"), ("detail", r.Output));
+                // The exceptions only make sense together with the proxy.
+                var present = NoProxy.ParseGitExceptions((await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get-regexp", @"^http\..+\.proxy$" }, ct, logOutput: false)).StdOut);
+                foreach (var url in NoProxy.GitUrls(s.InternalDomainList).Where(present.Contains))
+                    await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--unset", $"http.{url}.proxy" }, ct);
                 return L.T("proxy.removed", ("items", "http.proxy"));
             }
 
@@ -253,7 +312,8 @@ public static class ProxyTools
                 if (current == null) return L.T("proxy.nothingToRemove");
                 if (onlyIfOurs && !IsOurs(current, s)) return L.T("proxy.unchanged", ("value", current));
                 NuGetConfigEditor.Set(Tools.NuGetConfig, "http_proxy", null);
-                return L.T("proxy.removed", ("items", "http_proxy"));
+                NuGetConfigEditor.Set(Tools.NuGetConfig, "no_proxy", null);
+                return L.T("proxy.removed", ("items", "http_proxy, no_proxy"));
             }
 
             case "pip":
@@ -273,8 +333,10 @@ public static class ProxyTools
                 var current = JsoncEditor.GetString(text, "http.proxy");
                 if (current == null) return L.T("proxy.nothingToRemove");
                 if (onlyIfOurs && !IsOurs(current, s)) return L.T("proxy.unchanged", ("value", current));
-                await File.WriteAllTextAsync(path, JsoncEditor.SetString(text, "http.proxy", null), ct);
-                return L.T("proxy.removed", ("items", "http.proxy"));
+                text = JsoncEditor.SetString(text, "http.proxy", null);
+                text = JsoncEditor.SetStringArray(text, "http.noProxy", null);
+                await File.WriteAllTextAsync(path, text, ct);
+                return L.T("proxy.removed", ("items", "http.proxy, http.noProxy"));
             }
         }
         throw new EmberException("unknownTool", ("tool", id));

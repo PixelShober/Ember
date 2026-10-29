@@ -104,3 +104,58 @@ public class EditorTests
         Assert.Equal(ours, ProxyTools.IsOurs(value, s));
     }
 }
+
+public class NoProxyTests
+{
+    static readonly string[] Domains = { "*.firma.local", ".intranet.firma.example", "git.Werk.de", "10.0.0.0/8" };
+
+    [Fact]
+    public void Tools_get_plain_domain_suffixes()
+    {
+        Assert.Equal(new[] { "firma.local", "intranet.firma.example", "git.werk.de", "10.0.0.0/8" }, NoProxy.ForTools(Domains));
+        Assert.Equal("localhost,127.0.0.1,::1,firma.local", EffectiveSettings.Build(new UserSettings { InternalDomains = "*.firma.local, firma.local" }, new TeamConfig()).NoProxyList);
+    }
+
+    [Fact]
+    public void Px_gets_the_domain_and_its_wildcard()
+    {
+        Assert.Equal(new[] { "firma.local", "*.firma.local", "10.0.0.0/8" }, NoProxy.ForPx(new[] { "*.firma.local", "10.0.0.0/8" }));
+    }
+
+    [Fact]
+    public void Git_gets_url_exceptions_for_both_schemes()
+    {
+        Assert.Equal(new[] { "https://firma.local", "https://*.firma.local", "http://firma.local", "http://*.firma.local" },
+                     NoProxy.GitUrls(new[] { "*.firma.local", "10.0.0.0/8" }));
+    }
+
+    [Fact]
+    public void Git_exceptions_are_read_from_get_regexp()
+    {
+        var output = "http.proxy http://127.0.0.1:3128\nhttp.https://*.firma.local.proxy \nhttp.https://firma.local/.proxy\nhttp.https://extern.example.proxy http://other:8080\n";
+        var urls = NoProxy.ParseGitExceptions(output);
+        Assert.Equal(2, urls.Count);
+        Assert.Contains("https://*.firma.local", urls);
+        Assert.Contains("https://firma.local", urls);
+    }
+}
+
+public class JsoncArrayTests
+{
+    [Fact]
+    public void String_arrays_are_set_replaced_and_removed_without_touching_comments()
+    {
+        var text = "{\n    // Proxy über px\n    \"http.proxy\": \"http://127.0.0.1:3128\",\n    \"editor.fontSize\": 14\n}\n";
+        var set = JsoncEditor.SetStringArray(text, "http.noProxy", new[] { "localhost", "firma.local" });
+        Assert.Contains("// Proxy über px", set);
+        Assert.Equal(new[] { "localhost", "firma.local" }, JsoncEditor.GetStringArray(set, "http.noProxy"));
+
+        var replaced = JsoncEditor.SetStringArray(set, "http.noProxy", new[] { "intranet.firma.example" });
+        Assert.Equal(new[] { "intranet.firma.example" }, JsoncEditor.GetStringArray(replaced, "http.noProxy"));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(replaced, "http.noProxy"));
+
+        var removed = JsoncEditor.SetStringArray(replaced, "http.noProxy", null);
+        Assert.Null(JsoncEditor.GetStringArray(removed, "http.noProxy"));
+        Assert.Equal(text, removed);
+    }
+}

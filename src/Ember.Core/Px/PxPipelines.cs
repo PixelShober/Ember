@@ -185,7 +185,7 @@ public static class PxPipelines
             "--port=" + s.Port,
             s.UsePac ? "--pac=" + c.PacUrl : "--proxy=" + s.UpstreamHostPort,
         };
-        if (s.InternalDomainList.Count > 0) args.Add("--noproxy=" + string.Join(",", s.InternalDomainList));
+        if (s.InternalDomainList.Count > 0) args.Add("--noproxy=" + string.Join(",", NoProxy.ForPx(s.InternalDomainList)));
         args.Add("--save");
 
         try

@@ -5,12 +5,17 @@ namespace Ember.Core;
 
 /// <summary>
 /// Minimal, comment-preserving edits of VS Code's settings.json (JSON with comments).
-/// Only a single top-level string value is touched; everything else stays byte for byte.
+/// Only a single top-level string (or array of strings) is touched; everything else stays byte for byte.
 /// </summary>
 public static class JsoncEditor
 {
+    const string StringLiteral = "\"((?:[^\"\\\\]|\\\\.)*)\"";
+
     static Regex KeyValue(string key) =>
-        new("\"" + Regex.Escape(key) + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"", RegexOptions.CultureInvariant);
+        new("\"" + Regex.Escape(key) + "\"\\s*:\\s*" + StringLiteral, RegexOptions.CultureInvariant);
+
+    static Regex KeyArray(string key) =>
+        new("\"" + Regex.Escape(key) + "\"\\s*:\\s*\\[((?:[^\\]\"]|\"(?:[^\"\\\\]|\\\\.)*\")*)\\]", RegexOptions.CultureInvariant);
 
     public static string? GetString(string text, string key)
     {
@@ -19,11 +24,26 @@ public static class JsoncEditor
     }
 
     /// <summary>Sets (or with value == null removes) "key": "value".</summary>
-    public static string SetString(string text, string key, string? value)
+    public static string SetString(string text, string key, string? value) =>
+        SetMember(text, KeyValue(key), key, value == null ? null : Quote(value));
+
+    public static List<string>? GetStringArray(string text, string key)
     {
-        var regex = KeyValue(key);
+        var m = KeyArray(key).Match(text);
+        if (!m.Success) return null;
+        return Regex.Matches(m.Groups[1].Value, StringLiteral).Select(x => Regex.Unescape(x.Groups[1].Value)).ToList();
+    }
+
+    /// <summary>Sets (or with values == null removes) "key": ["a", "b"].</summary>
+    public static string SetStringArray(string text, string key, IReadOnlyList<string>? values) =>
+        SetMember(text, KeyArray(key), key, values == null ? null : "[" + string.Join(", ", values.Select(Quote)) + "]");
+
+    static string Quote(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+
+    static string SetMember(string text, Regex regex, string key, string? literalValue)
+    {
         var m = regex.Match(text);
-        if (value == null)
+        if (literalValue == null)
         {
             if (!m.Success) return text;
             // "key": "v",  → remove the whole member including indentation and trailing comma
@@ -34,7 +54,7 @@ public static class JsoncEditor
             return before.IsMatch(text) ? before.Replace(text, "", 1) : regex.Replace(text, "", 1);
         }
 
-        var literal = "\"" + key + "\": \"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+        var literal = "\"" + key + "\": " + literalValue;
         if (m.Success) return text[..m.Index] + literal + text[(m.Index + m.Length)..];
 
         if (text.Trim().Length == 0) return "{\n    " + literal + "\n}\n";

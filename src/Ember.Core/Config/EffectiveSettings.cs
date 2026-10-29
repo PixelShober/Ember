@@ -29,7 +29,8 @@ public sealed record EffectiveSettings
     public string PxUrl => $"http://127.0.0.1:{Port}";
     public string ConfigIni => Paths.PxConfigIni;
     public string UpstreamHostPort => NormalizeHostPort(UpstreamProxy);
-    public string NoProxyList => string.Join(",", new[] { "localhost", "127.0.0.1", "::1" }.Concat(InternalDomainList));
+    /// <summary>NO_PROXY, npm, NuGet: local addresses plus the internal domains as plain suffixes.</summary>
+    public string NoProxyList => string.Join(",", new[] { "localhost", "127.0.0.1", "::1" }.Concat(NoProxy.ForTools(InternalDomainList)));
 
     public static EffectiveSettings Build(UserSettings u, TeamConfig team, ProxyDetectionResult? detected = null)
     {

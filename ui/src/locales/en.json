@@ -278,9 +278,13 @@
     },
     "hints": {
       "windows": "Stays unchanged: px reads exactly this setting to find the company proxy.",
-      "nuget": "dotnet restore and Visual Studio read http_proxy from %APPDATA%\\NuGet\\NuGet.Config.",
-      "vscode": "Ember only changes \"http.proxy\" in settings.json; comments and other entries stay.",
-      "nodeCerts": "Node.js, npm, npx and Playwright do not use the Windows certificate store. If the company proxy inspects TLS, downloads fail with “unable to get local issuer certificate”. “Set up” exports the trusted certificates from Windows to C:\\Ember\\Certs and sets NODE_EXTRA_CA_CERTS."
+      "nuget": "dotnet restore and Visual Studio read http_proxy and no_proxy from %APPDATA%\\NuGet\\NuGet.Config.",
+      "vscode": "Ember only changes \"http.proxy\" and \"http.noProxy\" in settings.json; comments and other entries stay.",
+      "nodeCerts": "Node.js, npm, npx and Playwright do not use the Windows certificate store. If the company proxy inspects TLS, downloads fail with “unable to get local issuer certificate”. “Set up” exports the trusted certificates from Windows to C:\\Ember\\Certs and sets NODE_EXTRA_CA_CERTS.",
+      "env": "NO_PROXY holds the internal domains, so git, npm, pip, Python and Node.js reach internal servers directly instead of going through px.",
+      "git": "For each internal domain Ember also sets http.<url>.proxy to empty, so git reaches internal servers directly, even when px is not running. Deeper subdomains are covered by NO_PROXY.",
+      "gitExceptionsMissing": "These internal addresses have no exception yet: {list}. \"Point to px\" adds them.",
+      "pip": "pip.ini has no exception list. pip reaches internal servers directly through NO_PROXY (environment variables row)."
     },
     "none": "none",
     "toolMissing": "not installed",
@@ -305,7 +309,8 @@
         "missing": "–",
         "info": "–"
       }
-    }
+    },
+    "noProxyFor": "no proxy for: {list}"
   },
   "px": {
     "title": "px",
@@ -361,8 +366,8 @@
     "debugWindow": "px debug is running. The output is also written to {file}. Close this window or click “Stop px debug” in Ember to end it."
   },
   "git": {
-    "title": "Git identity",
-    "subtitle": "Name and email for your commits. Ember suggests them from your Windows account and only saves after you confirm.",
+    "title": "Git",
+    "subtitle": "Name and email for your commits, plus the way out: external hosts through px, internal servers directly.",
     "current": "Currently in git",
     "suggested": "Suggestion",
     "sources": {
@@ -377,7 +382,21 @@
     "notSet": "not set",
     "gitMissing": "git is not installed on this machine. Get it from Software Center.",
     "identitySet": "git identity set: {name} <{email}>",
-    "saved": "git identity saved"
+    "saved": "git identity saved",
+    "identity": "Identity",
+    "proxy": {
+      "title": "Proxy for git",
+      "subtitle": "External repositories (GitHub, npm registries, …) go through px. For internal servers Ember sets exceptions, because they are often not reachable through the company proxy at all.",
+      "httpProxy": "http.proxy",
+      "direct": "Without proxy",
+      "noDomains": "No internal domains entered yet, so git reaches internal servers through the proxy too.",
+      "editDomains": "Edit internal domains",
+      "set": "Point to px",
+      "missing": "Exceptions still missing for: {list}",
+      "envMissing": "NO_PROXY in the environment variables does not list the internal domains yet. Without it, servers on deeper subdomains (e.g. gitlab.dev.firma.local) still go through the proxy.",
+      "envFix": "Go to the proxy page",
+      "ok": "git goes out through px and straight to the internal servers."
+    }
   },
   "software": {
     "title": "Software",

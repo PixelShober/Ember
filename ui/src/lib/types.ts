@@ -109,6 +109,16 @@ export interface ProxyRow {
   hint: string | null;
 }
 
+export interface GitProxyInfo {
+  httpProxy: string | null;
+  state: ProxyState;
+  domains: string[];
+  missingExceptions: string[];
+  noProxyEnv: boolean;
+  canSet: boolean;
+  canRemove: boolean;
+}
+
 export interface ModelEntry {
   id: string;
   name: string;

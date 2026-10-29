@@ -269,6 +269,7 @@ public sealed class EmberHost : IDisposable
         // ------------------------------------------------------------------ proxy & px
         b.Register("proxy.detect", async ct => await Net.DetectProxyAsync(ct));
         b.Register("proxy.diagnose", async ct => await ProxyTools.DiagnoseAsync(Effective, ct));
+        b.Register("git.proxy", async ct => await ProxyTools.GitAsync(Effective, ct));
         b.Register("proxy.set", async (args, ct) => await ProxyTools.SetAsync(args.Req("tool"), Effective, ct));
         b.Register("proxy.remove", async (args, ct) => await ProxyTools.RemoveAsync(args.Req("tool"), Effective, ct, onlyIfOurs: !args.Flag("force")));
         b.Register("px.status", async _ => await PxControl.StatusAsync(Effective));

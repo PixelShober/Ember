@@ -251,6 +251,11 @@ export function createMockBridge(): Bridge {
     'team.reload': () => settingsView(),
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'] }),
     'proxy.diagnose': () => proxyRows,
+    'git.proxy': () => {
+      const r = proxyRows.find((x) => x.tool === 'git')!;
+      const on = r.state === 'px';
+      return { httpProxy: on ? pxUrl : null, state: r.state, domains: ['firma.local', 'intranet.firma.example'], missingExceptions: on ? [] : ['https://firma.local'], noProxyEnv: true, canSet: !on, canRemove: on };
+    },
     'proxy.set': (p) => { const r = proxyRows.find((x) => x.tool === p.tool)!; r.state = 'px'; r.value = pxUrl; r.canSet = false; r.canRemove = true; return `${r.label} → ${pxUrl}`; },
     'proxy.remove': (p) => { const r = proxyRows.find((x) => x.tool === p.tool)!; r.state = 'unset'; r.value = '–'; r.canSet = true; r.canRemove = false; return t('proxy.removed', { items: r.label }); },
     'px.status': () => px,
