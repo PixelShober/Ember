@@ -1,11 +1,11 @@
 ---
 title: Team-Konfiguration
-description: Eine team.json auf dem Netzlaufwerk für Proxy, Software, Mailvorlagen, Energieprofile und Admins.
+description: Eine team.json auf dem Netzlaufwerk für interne Domains, Software, Mailvorlagen, Energieprofile, Zugriff und Admins.
 ---
 
-Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: Proxy, interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile und wer als Admin die Tabs KI und Energie sieht.
+Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile, wer Ember nutzen darf und wer Admin ist.
 
-Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember selbst schreibt nie in diese Datei.
+Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember schreibt nur an einer Stelle hinein: Im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/) ändern Admins mit Schreibrechten die Abschnitte `access` und `admins`. Alles andere bleibt Handarbeit.
 
 ## So findet Ember die Datei
 
@@ -26,17 +26,14 @@ Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere 
   "$schema": "https://pixelshober.github.io/Ember/team.schema.json",
   "version": 3,
   "name": "Team Entwicklung",
-  "proxy": {
-    "pacUrl": "http://pac.firma.example/proxy.pac",
-    "upstream": "proxy.firma.example:8080",
-    "internalDomains": ["firma.local", "intranet.firma.example"]
-  },
+  "proxy": { "internalDomains": ["firma.local", "intranet.firma.example"] },
   "serviceCenter": { "email": "servicecenter@firma.example", "subjectPrefix": "[Ember]" },
   "software": [
     { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE" },
     { "name": "Alfaview", "sccmName": "alfaview*", "category": "Kommunikation" }
   ],
-  "admins": { "users": ["FIRMA\\max.mustermann"], "groups": ["FIRMA\\Entwicklung-Admins"] }
+  "admins": { "users": ["FIRMA\\max.mustermann"], "groups": ["FIRMA\\Entwicklung-Admins"] },
+  "access": { "groups": ["FIRMA\\Entwicklung"], "contact": "ember-admins@firma.example" }
 }
 ```
 
@@ -48,21 +45,20 @@ Texte wie Notizen, Mailvorlagen und Profilnamen dürfen ein einfacher String sei
 
 ### proxy
 
+Den Firmenproxy (PAC-Datei oder fester Proxy) erkennt Ember bei jedem Start selbst aus den Windows-Einstellungen, er steht deshalb nicht in der `team.json`.
+
 | Feld | Bedeutung |
 |---|---|
-| `usePac` | `true`: px nutzt die PAC-Datei (Standard), `false`: den festen Proxy |
-| `pacUrl` | PAC-Adresse. Leer: Ember nimmt die aus den Windows-Einstellungen. |
-| `upstream` | Firmenproxy als `host:port`. Ember nutzt ihn auch für Downloads, solange px noch nicht läuft. |
-
-Fehlt ein Wert hier und in den eigenen Einstellungen, nimmt Ember, was es beim Start erkannt hat: die PAC-Adresse aus Windows, den ersten Proxy aus der PAC-Datei oder den Systemproxy. In den Einstellungen steht dann „automatisch erkannt“.
-| `internalDomains` | Domains, die ohne Proxy erreichbar sind. Sie landen in `NO_PROXY`, npm `noproxy` und px `noproxy`. |
+| `internalDomains` | Domains, die ohne Proxy erreichbar sind. Ember trägt sie bei px, `NO_PROXY`, npm, git, NuGet und VS Code als Ausnahme ein, siehe [Proxy](/Ember/handbuch/proxy/#interne-server-ohne-proxy). |
 | `port` | Port von px, Standard 3128 |
 
 ### serviceCenter und mailTemplates
 
-`serviceCenter.email` ist der Empfänger aller Mails, `subjectPrefix` wird jedem Betreff vorangestellt. Unter `mailTemplates` lassen sich die drei Vorlagen `softwareRequest`, `adminAction` und `problem` ersetzen, jeweils mit `subject` und `body`. Platzhalter: `{user}`, `{computer}`, `{app}`, `{details}`, `{date}`, `{ember}`.
+`serviceCenter.email` ist der Empfänger aller Mails, `subjectPrefix` wird jedem Betreff vorangestellt. Unter `mailTemplates` lassen sich die vier Vorlagen `softwareRequest`, `adminAction`, `problem` und `accessRequest` ersetzen, jeweils mit `subject` und `body`. Platzhalter: `{user}`, `{computer}`, `{app}`, `{details}`, `{date}`, `{ember}`.
 
 ### software
+
+Die Kacheln zeigen ohnehin alles, was das Softwarecenter anbietet. Ein Eintrag hier sortiert ein Programm unter eine Überschrift, ergänzt eine Notiz oder einen festen Link. Programme, die das Softwarecenter (noch) nicht anbietet, erscheinen trotzdem, mit dem Weg über das Service-Center.
 
 | Feld | Bedeutung |
 |---|---|
@@ -92,7 +88,19 @@ Fehlt ein Wert hier und in den eigenen Einstellungen, nimmt Ember, was es beim S
 
 ### admins
 
-Wer hier steht, ist Admin und sieht die erweiterten Module KI und Energie. `users` und `groups` listen Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung-Admins` oder `Entwicklung-Admins`). Ohne Einträge sieht die Tabs niemand. Admins blenden sie mit <kbd>Strg</kbd> + <kbd>E</kbd> ein und aus. Ember prüft das auch auf der Host-Seite, eine Sicherheitsgrenze ist es aber nicht, siehe [KI-Modul](/Ember/handbuch/ki/).
+Wer hier steht, ist Admin: sieht die erweiterten Module KI, Energie und Berechtigungen und darf Ember immer nutzen. `users` und `groups` listen Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung-Admins` oder `Entwicklung-Admins`). Ohne Einträge gibt es keine Admins. Admins blenden die Tabs mit <kbd>Strg</kbd> + <kbd>E</kbd> ein und aus. Ember prüft das auch auf der Host-Seite, eine Sicherheitsgrenze ist es aber nicht, siehe [KI-Modul](/Ember/handbuch/ki/).
+
+### access
+
+Wer Ember überhaupt nutzen darf. Wer nicht auf der Liste steht, sieht nur einen Sperrbildschirm mit „Zugriff anfragen“.
+
+| Feld | Bedeutung |
+|---|---|
+| `users`, `groups` | Konten und AD-Gruppen wie bei `admins`. Admins dürfen immer, sie müssen hier nicht stehen. |
+| `enabled` | `false`: Die Liste bleibt stehen, gilt aber nicht. Standard: an, sobald es einen Eintrag gibt. |
+| `contact` | Mailadresse für Zugriffsanfragen. Standard: das Service-Center. |
+
+Ohne `access` darf jeder Ember nutzen, der die `team.json` lesen kann. Gepflegt wird die Liste am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
 
 ### devTools
 
@@ -100,7 +108,7 @@ Steuert die Entwicklerwerkzeuge im Software-Tab.
 
 | Feld | Bedeutung |
 |---|---|
-| `tools` | Welche Werkzeuge erscheinen: `nodejs`, `git`, `vscode`, `python`, `visualstudio`, `dotnet`, `pwsh`. Standard: alle. |
+| `tools` | Welche Werkzeuge erscheinen: `nodejs`, `git`, `vscode`, `python`, `visualstudio`, `dotnet`, `pwsh`, `bruno`. Standard: alle. |
 | `allowDirect` | `false`: Ember installiert nie direkt vom Hersteller, nur über das Softwarecenter oder per Mail ans Service-Center. Standard: `true`. |
 | `visualStudio.bootstrapperUrl` | Bootstrapper, Standard `https://aka.ms/vs/17/release/vs_professional.exe` |
 | `visualStudio.workloads` | Workload-IDs für `--add`. Standard: `Microsoft.VisualStudio.Workload.ManagedDesktop` und `Microsoft.VisualStudio.Workload.NetWeb` |

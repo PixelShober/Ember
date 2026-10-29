@@ -44,12 +44,28 @@ Folgende Werkzeuge kennt Ember:
 | Werkzeug | Wo Ember liest und schreibt |
 |---|---|
 | Umgebungsvariablen | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` für dein Benutzerkonto |
-| git | `git config --global http.proxy` |
+| git | `git config --global http.proxy`, dazu `http.<url>.proxy` leer für jede interne Domain |
 | npm | `npm config` (`proxy`, `https-proxy`, `noproxy`) |
 | Node.js-Zertifikate | `NODE_EXTRA_CA_CERTS` für dein Benutzerkonto, zeigt auf `C:\Ember\Certs\windows-ca.pem` |
-| NuGet / .NET | `http_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
+| NuGet / .NET | `http_proxy` und `no_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
 | pip | `proxy` in `%APPDATA%\pip\pip.ini` |
-| VS Code | `"http.proxy"` in `settings.json`, Kommentare bleiben erhalten |
+| VS Code | `"http.proxy"` und `"http.noProxy"` in `settings.json`, Kommentare bleiben erhalten |
+
+## Interne Server ohne Proxy
+
+Interne Server sind über den Firmenproxy oft nicht erreichbar, oder der Umweg kostet nur Zeit. Die internen Domains aus den Einstellungen oder der Team-Konfiguration (`proxy.internalDomains`) bekommt deshalb jedes Werkzeug als Ausnahme, und zwar in dem Format, das es versteht:
+
+| Wo | Was Ember einträgt (Beispiel `firma.local`) |
+|---|---|
+| px | `noproxy = firma.local,*.firma.local`: px verbindet direkt statt über den Firmenproxy |
+| `NO_PROXY` | `localhost,127.0.0.1,::1,firma.local`, gilt für git, npm, pip, Python, Node.js und viele CLIs |
+| npm | `noproxy` wie `NO_PROXY` |
+| git | `http.https://firma.local.proxy` und `http.https://*.firma.local.proxy` leer, dasselbe für `http://`, siehe [Git](/Ember/handbuch/git/#proxy-und-interne-server) |
+| NuGet | `no_proxy` wie `NO_PROXY` |
+| VS Code | `"http.noProxy": ["localhost", "127.0.0.1", "::1", "firma.local"]` |
+| pip | `pip.ini` kennt keine Ausnahmen, pip nimmt `NO_PROXY` |
+
+Ob du `firma.local`, `.firma.local` oder `*.firma.local` einträgst, ist egal: Ember meint damit immer die Domain und alles darunter. IP-Bereiche wie `10.0.0.0/8` gehen unverändert durch. Ändern sich die Domains, zeigt die Diagnose bei git, NuGet und VS Code „Auf px setzen“ wieder an. Ein Klick bringt die Ausnahmen auf den neuen Stand.
 
 „Entfernen“ nimmt nur Einträge zurück, die auf px zeigen. Was jemand anders eingetragen hat, bleibt stehen. Das gilt auch für die Deinstallation.
 

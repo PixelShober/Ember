@@ -408,7 +408,7 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Developer tools, Playwright browsers and everything Software Center offers.",
+    "subtitle": "Developer tools, Playwright and everything Software Center offers.",
     "client": "Software Center client {version}",
     "noClient": "No Software Center client found. Installing then only works through the service center.",
     "empty": "The team configuration does not list any programs yet (section \"software\").",

@@ -2,7 +2,7 @@
 
 <h1 align="center">Ember</h1>
 
-<p align="center">Richtet Entwicklerrechner fürs Firmennetz ein: Proxy, Softwarecenter, Energie, KI-Werkzeuge.</p>
+<p align="center">Richtet Entwicklerrechner fürs Firmennetz ein: Proxy, Software, Playwright, Energie, KI-Werkzeuge.</p>
 
 <p align="center">
   <a href="https://github.com/PixelShober/Ember/releases/latest">Download</a> ·
@@ -20,19 +20,21 @@ Ein neuer Dienstrechner kostet einen halben Tag, bis git, npm, NuGet und pip dur
 
 | Bereich | Was passiert |
 |---|---|
-| Proxy | Installiert [px](https://github.com/genotrance/px) und hält es aktuell. px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an, deine Werkzeuge sprechen nur mit `127.0.0.1:3128`. Eine Tabelle zeigt für Umgebungsvariablen, git, npm, NuGet, pip und VS Code, wohin sie gerade zeigen. Ein Klick stellt sie auf px um. Dazu die Firmenzertifikate für Node.js (`NODE_EXTRA_CA_CERTS`), falls der Proxy TLS aufbricht. Den Firmenproxy erkennt Ember beim Start selbst. |
-| Git | Schlägt Name und E-Mail aus dem Active Directory vor und setzt sie nach Bestätigung. |
-| Software | Entwicklerwerkzeuge (Node.js LTS mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7): über das Softwarecenter, wenn die IT ein Paket hat, sonst direkt vom Hersteller mit geprüfter Prüfsumme und Signatur. Playwright-Browser passend zur Playwright-Version eines Projekts. Die Programme aus der Team-Liste kommen über das Softwarecenter, ohne Freigabe per vorbereiteter Mail ans Service-Center. |
+| Proxy | Installiert [px](https://github.com/genotrance/px) und hält es aktuell. px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an, deine Werkzeuge sprechen nur mit `127.0.0.1:3128`. Eine Tabelle zeigt für Umgebungsvariablen, git, npm, NuGet, pip und VS Code, wohin sie gerade zeigen. Ein Klick stellt sie auf px um, interne Domains bekommt jedes Werkzeug als Ausnahme. Dazu die Firmenzertifikate für Node.js (`NODE_EXTRA_CA_CERTS`), falls der Proxy TLS aufbricht. Den Firmenproxy erkennt Ember beim Start selbst. |
+| Git | Schlägt Name und E-Mail aus dem Active Directory vor und setzt sie nach Bestätigung. Externe Repositories gehen über px, interne Git-Server direkt, auch wenn px gerade nicht läuft. |
+| Software | Kacheln für alles, was das Softwarecenter anbietet, und für die Entwicklerwerkzeuge (Node.js LTS mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7, Bruno): über das Softwarecenter, wenn die IT ein Paket hat, sonst direkt vom Hersteller mit geprüfter Prüfsumme und Signatur. Ohne Freigabe geht eine vorbereitete Mail ans Service-Center. |
+| Playwright | Browser passend zur Playwright-Version eines Projekts, durch px und mit den Firmenzertifikaten. Scheitert der Download, testet das Projekt mit dem installierten Edge, Ember legt die Konfiguration an. Playwright zu einem Projekt hinzufügen oder ein neues Projekt aus der Ember-Vorlage anlegen. |
 | Service-Center | Mail-Entwurf in Outlook mit Diagnosebericht als Anhang. Abschicken tust du selbst. |
 | Energie (Admins) | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. |
 | System | Gruppenrichtlinien einsehen und auffrischen, PowerShell-Ausführungsrichtlinie, lange Pfade für git und Windows. |
 | KI (Admins) | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp in der passenden Variante (CUDA, Vulkan, CPU) installieren, GGUF-Modelle laden, `llama-server` starten. |
+| Berechtigungen (Admins) | Wer Ember nutzen darf und wer Admin ist, Benutzer und AD-Gruppen. Ember prüft die Namen im Verzeichnis und schreibt die Listen in die `team.json`. Wer nicht freigeschaltet ist, kann per Mail Zugriff anfragen. |
 
-KI und Energie sind erweiterte Module: Sie erscheinen nur für Admins aus der Team-Konfiguration, <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus.
+KI, Energie und Berechtigungen sind erweiterte Module: Sie erscheinen nur für Admins aus der Team-Konfiguration, <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus.
 
-Gemeinsame Einstellungen fürs Team (Proxy, interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, wer Admin ist) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
+Gemeinsame Einstellungen fürs Team (interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, wer Ember nutzen darf, wer Admin ist) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
 
-Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“). Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
+Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“) und kommt in zwei Designs, Efeu und Glut, jeweils hell und dunkel. Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
 
 ## Installation
 
@@ -85,7 +87,7 @@ Geplantes für Version 2 steht in [ROADMAP-V2.md](ROADMAP-V2.md).
 
 ## Datenschutz
 
-Ember speichert keine Passwörter, sendet keine Telemetrie und verschickt keine Mails selbst. Es spricht nur mit GitHub (Updates, px, llama.cpp), mit den Download-Adressen deiner Modelle und mit npm, jeweils über den Firmenproxy. Was Ember wo ablegt, steht [im Handbuch](https://pixelshober.github.io/Ember/handbuch/datenschutz/).
+Ember speichert keine Passwörter, sendet keine Telemetrie und verschickt keine Mails selbst. Es spricht nur mit GitHub (Updates, px, llama.cpp, einige Werkzeuge), mit den Herstellern der Entwicklerwerkzeuge, mit npm und dem Playwright-Download und mit den Download-Adressen deiner Modelle, jeweils über den Firmenproxy. Was Ember wo ablegt, steht [im Handbuch](https://pixelshober.github.io/Ember/handbuch/datenschutz/).
 
 ## Lizenz
 

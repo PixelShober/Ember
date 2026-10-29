@@ -408,7 +408,7 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Entwicklerwerkzeuge, Playwright-Browser und alles, was das Softwarecenter anbietet.",
+    "subtitle": "Entwicklerwerkzeuge, Playwright und alles, was das Softwarecenter anbietet.",
     "client": "Softwarecenter-Client {version}",
     "noClient": "Kein Softwarecenter-Client gefunden. Installieren geht dann nur über das Service-Center.",
     "empty": "In der Team-Konfiguration stehen noch keine Programme (Abschnitt „software“).",

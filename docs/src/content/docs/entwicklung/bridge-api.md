@@ -23,13 +23,14 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 
 | Bereich | Methoden |
 |---|---|
-| App | `app.info`, `app.ready`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
+| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
 | Einstellungen | `settings.get`, `settings.save`, `settings.defaults`, `team.status`, `team.reload` |
 | Proxy | `proxy.detect`, `proxy.diagnose`, `proxy.set`, `proxy.remove` |
+| Berechtigungen | `access.get`, `access.lookup`, `access.save` |
 | px | `px.status`, `px.install`, `px.uninstall`, `px.start`, `px.stop`, `px.restart`, `px.debug` |
 | Jobs | `jobs.list`, `jobs.cancel`, `jobs.retry`, `jobs.dismiss` |
-| Git | `git.get`, `git.set` |
-| Software & Mail | `software.list`, `software.open`, `software.install`, `devtools.latest`, `devtools.install`, `devtools.installMany`, `playwright.state`, `playwright.inspect`, `playwright.install`, `mail.preview`, `mail.compose`, `diagnostics.report` |
+| Git | `git.get`, `git.set`, `git.proxy` |
+| Software & Mail | `software.list`, `software.open`, `software.install`, `devtools.latest`, `devtools.install`, `devtools.installMany`, `playwright.state`, `playwright.inspect`, `playwright.install`, `playwright.create`, `playwright.useEdge`, `playwright.openInCode`, `mail.preview`, `mail.compose`, `diagnostics.report` |
 | Energie | `power.state`, `power.apply`, `power.defaults`, `power.restore` |
 | Wake-on-LAN (lokal) | `wol.local`, `wol.apply`, `wol.reset` |
 | System | `system.list`, `system.check`, `system.checks`, `system.action`, `system.adminCommands` |
@@ -37,7 +38,9 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 | Updates | `update.status`, `update.check`, `update.applyUi`, `update.applyExe` |
 | Log | `log.recent`, `log.clear`, `log.save` |
 
-Die Methoden für KI, Energie und Wake-on-LAN prüfen auch auf der Exe-Seite, ob das Konto Admin in der Team-Konfiguration ist (`admins`). `app.toggleAdvanced` (<kbd>Strg</kbd> + <kbd>E</kbd>) blendet die Tabs nur ein und aus.
+Die Methoden für KI, Energie, Wake-on-LAN und Berechtigungen prüfen auch auf der Exe-Seite, ob das Konto Admin in der Team-Konfiguration ist (`admins`). `app.toggleAdvanced` (<kbd>Strg</kbd> + <kbd>E</kbd>) blendet die Tabs nur ein und aus.
+
+Steht ein Konto nicht auf der Zugriffsliste (`access`), lässt `Bridge.Guard` nur noch `app.info`, `app.ready`, `app.setAppearance`, `app.openExternal`, `team.reload`, `mail.preview` und `mail.compose` durch. Alles andere antwortet mit dem Fehler `accessDenied`. `app.info.access` sagt der Oberfläche, ob sie den Sperrbildschirm zeigen soll.
 
 ## Ereignisse
 

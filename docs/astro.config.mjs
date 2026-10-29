@@ -33,6 +33,7 @@ export default defineConfig({
             'handbuch/energie',
             'handbuch/system',
             'handbuch/ki',
+            'handbuch/berechtigungen',
             'handbuch/einstellungen',
             'handbuch/team-konfiguration',
             'handbuch/updates',

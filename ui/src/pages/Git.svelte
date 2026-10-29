@@ -49,6 +49,7 @@
   <div class="note warn"><Calcifer /><p>{t('git.gitMissing')}</p>
     <button class="btn small" onclick={() => navigate('software')}>{t('nav.software')}</button></div>
 {:else if info}
+  <h2 class="section-title first">{t('git.identity')}</h2>
   <div class="grid two">
     <section class="card stack tight">
       <h2>{t('git.current')}</h2>
@@ -71,7 +72,6 @@
     </section>
   </div>
 
-  <h2 class="section-title">{t('git.identity')}</h2>
   <section class="card stack form">
     <label class="field"><span>{t('git.name')}</span><input bind:value={name} autocomplete="name" spellcheck="false" /></label>
     <label class="field"><span>{t('git.email')}</span><input bind:value={email} type="text" inputmode="email" autocomplete="email" spellcheck="false" /></label>
@@ -125,6 +125,8 @@
   dt { color: var(--text-muted); }
   dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
   .section-title { margin: 22px 0 10px; }
+  .section-title.first { margin-top: 0; }
+  .form { margin-top: 16px; }
   .proxy { margin-top: 16px; }
   .grow { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 3px; }
   .ok-text { display: flex; align-items: center; gap: 6px; color: var(--ok); }

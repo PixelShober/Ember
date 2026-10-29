@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
 
 const out = process.argv[2] ?? 'docs/src/assets/screens';
 const langs = process.argv.slice(3).length ? process.argv.slice(3) : ['de'];
-const routes = ['start', 'proxy', 'git', 'software', 'power', 'system', 'ai', 'settings', 'log'];
+const routes = ['start', 'proxy', 'git', 'software', 'power', 'system', 'ai', 'access', 'settings', 'log'];
 const base = process.env.EMBER_PREVIEW ?? 'http://localhost:4173';
 
 mkdirSync(out, { recursive: true });
