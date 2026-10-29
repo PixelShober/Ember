@@ -26,6 +26,11 @@ public static class Tools
         File.Exists(VsCodeSettings) ||
         Find("code.cmd", @"%LocalAppData%\Programs\Microsoft VS Code\bin", @"%ProgramFiles%\Microsoft VS Code\bin") != null;
 
+    /// <summary>Code.exe next to the "code" command (user or machine installation).</summary>
+    public static string? VsCodeExe =>
+        Find("code.cmd", @"%LocalAppData%\Programs\Microsoft VS Code\bin", @"%ProgramFiles%\Microsoft VS Code\bin") is { } cmd &&
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(cmd)!, "..", "Code.exe")) is var exe && File.Exists(exe) ? exe : null;
+
     /// <summary>Searches PATH (process, user and machine – also freshly installed tools) and extra folders.</summary>
     public static string? Find(string exe, params string[] extraDirs)
     {

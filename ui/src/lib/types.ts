@@ -234,6 +234,18 @@ export interface PlaywrightProject {
   version: string | null;
   wanted: string | null;
   hasLockFile: boolean;
+  /** playwright.config.* in the folder */
+  config: string | null;
+  /** a config already runs the tests in the installed Edge (channel "msedge") */
+  usesEdge: boolean;
+}
+
+export type PlaywrightMode = 'chromium' | 'all' | 'msedge';
+
+export interface PlaywrightEdgeSetup {
+  file: string;
+  command: string;
+  created: boolean;
 }
 
 export interface PlaywrightState {
@@ -242,6 +254,9 @@ export interface PlaywrightState {
   downloadHost: string | null;
   nodeCerts: boolean;
   nodeFound: boolean;
+  edgeFound: boolean;
+  vsCodeFound: boolean;
+  defaultParent: string;
   project: PlaywrightProject | null;
 }
 

@@ -226,6 +226,7 @@ public sealed class EmberHost : IDisposable
                 "models" => Models.Dir(Settings),
                 "llama" => Paths.LlamaDir,
                 "playwright" => Playwright.BrowsersDir,
+                "playwrightProject" => Settings.PlaywrightProject ?? throw new EmberException("folderMissing", ("path", "–")),
                 "root" => Paths.Root,
                 var other => throw new EmberException("unknownFolder", ("key", other)),
             };
@@ -393,9 +394,41 @@ public sealed class EmberHost : IDisposable
         b.Register("playwright.install", (args, _) =>
         {
             var dir = args.Req("dir");
-            var browsers = args.OptStr("browsers") == "all" ? "all" : "chromium";
+            if (!Directory.Exists(dir)) throw new EmberException("folderMissing", ("path", dir));
             return Task.FromResult<object?>(Jobs.Start("playwright", "playwright", L.T("playwright.jobs.install", ("path", dir)),
-                Playwright.InstallSteps(dir, browsers, Effective, Team.Config)).Snapshot());
+                Playwright.InstallSteps(dir, args.OptStr("browsers") ?? "chromium", args.Flag("add"), Effective, Team.Config)).Snapshot());
+        });
+        // A new project from the Ember template; name and folder are checked before the job starts.
+        b.Register("playwright.create", (args, _) =>
+        {
+            var parent = args.Req("parent");
+            var name = args.Req("name").Trim();
+            if (!PlaywrightTemplate.ValidName(name)) throw new EmberException("playwrightNameInvalid", ("name", name));
+            if (!Directory.Exists(parent)) throw new EmberException("folderMissing", ("path", parent));
+            var dir = Path.Combine(parent, name);
+            if (Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any()) throw new EmberException("playwrightFolderNotEmpty", ("path", dir));
+            Settings.PlaywrightProject = dir;
+            Settings.Save();
+            return Task.FromResult<object?>(Jobs.Start("playwright", "playwright", L.T("playwright.jobs.create", ("name", name)),
+                Playwright.CreateSteps(parent, name, args.OptStr("browsers") ?? "chromium", Effective, Team.Config)).Snapshot());
+        });
+        // When the browser download is blocked: run the tests in the Edge Windows already has.
+        b.Register("playwright.useEdge", (args, _) =>
+        {
+            if (Playwright.EdgePath == null) throw new EmberException("playwrightNoEdge");
+            var setup = PlaywrightTemplate.UseEdge(args.Req("dir"));
+            Log.Info(L.T(setup.Created ? "playwright.edgeCreated" : "playwright.edgeExisting", ("file", setup.File), ("command", setup.Command)), "playwright");
+            return Task.FromResult<object?>(setup);
+        });
+        b.Register("playwright.openInCode", (args, _) =>
+        {
+            var dir = args.Req("dir");
+            var code = Tools.VsCodeExe ?? throw new EmberException("toolMissing", ("tool", "VS Code"));
+            if (!Directory.Exists(dir)) throw new EmberException("folderMissing", ("path", dir));
+            var psi = new ProcessStartInfo(code) { UseShellExecute = false, WorkingDirectory = dir };
+            psi.ArgumentList.Add(dir);
+            Process.Start(psi)?.Dispose();
+            return Task.FromResult<object?>(null);
         });
         b.Register("mail.compose", async (args, ct) =>
         {

@@ -8,12 +8,17 @@ namespace Ember.Core;
 /// <param name="Package">@playwright/test, playwright or playwright-core – whichever the project uses.</param>
 /// <param name="Version">Installed in node_modules (null if "npm install" has not run yet).</param>
 /// <param name="Wanted">What package.json asks for (e.g. "^1.56.0").</param>
-public sealed record PlaywrightProject(string Dir, bool HasPackageJson, string? Package, string? Version, string? Wanted, bool HasLockFile);
+/// <param name="Config">playwright.config.* in the folder, if any.</param>
+/// <param name="UsesEdge">A config already runs the tests in the installed Microsoft Edge (channel "msedge").</param>
+public sealed record PlaywrightProject(string Dir, bool HasPackageJson, string? Package, string? Version, string? Wanted, bool HasLockFile,
+                                       string? Config = null, bool UsesEdge = false);
 
 public sealed record PlaywrightBrowser(string Name, string Path);
 
+/// <param name="DefaultParent">Where a new project goes unless the user picks another folder.</param>
 public sealed record PlaywrightState(string BrowsersDir, IReadOnlyList<PlaywrightBrowser> Browsers, string? DownloadHost,
-                                     bool NodeCerts, bool NodeFound, PlaywrightProject? Project);
+                                     bool NodeCerts, bool NodeFound, bool EdgeFound, bool VsCodeFound, string DefaultParent,
+                                     PlaywrightProject? Project);
 
 /// <summary>
 /// Playwright is a per-project npm package; its browsers live in a shared cache
@@ -21,6 +26,7 @@ public sealed record PlaywrightState(string BrowsersDir, IReadOnlyList<Playwrigh
 /// inside the project, so the browsers match exactly the Playwright version of that project, and
 /// sets up what usually breaks behind a company proxy: the proxy variables (px), the company
 /// certificates for Node (NODE_EXTRA_CA_CERTS) and, if IT runs one, a mirror for the downloads.
+/// When the download is blocked anyway, the tests can run in the Edge that Windows already has.
 /// </summary>
 public static class Playwright
 {
@@ -31,9 +37,29 @@ public static class Playwright
             ? custom
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ms-playwright");
 
-    public static PlaywrightState State(TeamConfig team, string? projectDir) =>
-        new(BrowsersDir, Browsers(), team.Playwright?.DownloadHost, NodeCertificates.Configured, Tools.Node != null,
-            string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir) ? null : Inspect(projectDir));
+    public static PlaywrightState State(TeamConfig team, string? projectDir)
+    {
+        var project = string.IsNullOrWhiteSpace(projectDir) || !Directory.Exists(projectDir) ? null : Inspect(projectDir);
+        return new(BrowsersDir, Browsers(), team.Playwright?.DownloadHost, NodeCertificates.Configured, Tools.Node != null,
+                   EdgePath != null, Tools.VsCodeExe != null, DefaultParent(project?.Dir), project);
+    }
+
+    /// <summary>The Edge that Playwright starts for channel "msedge" (the same places Playwright looks).</summary>
+    public static string? EdgePath =>
+        new[] { Environment.SpecialFolder.ProgramFilesX86, Environment.SpecialFolder.ProgramFiles, Environment.SpecialFolder.LocalApplicationData }
+            .Select(Environment.GetFolderPath)
+            .Where(d => d.Length > 0)
+            .Select(d => Path.Combine(d, "Microsoft", "Edge", "Application", "msedge.exe"))
+            .FirstOrDefault(File.Exists);
+
+    /// <summary>Next to the current project, else %USERPROFILE%\source\repos (Visual Studio's default), else the profile.</summary>
+    static string DefaultParent(string? projectDir)
+    {
+        if (projectDir != null && Path.GetDirectoryName(projectDir) is { } parent && Directory.Exists(parent)) return parent;
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var repos = Path.Combine(profile, "source", "repos");
+        return Directory.Exists(repos) ? repos : profile;
+    }
 
     public static List<PlaywrightBrowser> Browsers()
     {
@@ -50,7 +76,10 @@ public static class Playwright
     {
         var packageJson = Path.Combine(dir, "package.json");
         bool lockFile = File.Exists(Path.Combine(dir, "package-lock.json"));
-        if (!File.Exists(packageJson)) return new PlaywrightProject(dir, false, null, null, null, lockFile);
+        var config = PlaywrightTemplate.ConfigNames.FirstOrDefault(n => File.Exists(Path.Combine(dir, n)));
+        bool edge = config != null && File.ReadAllText(Path.Combine(dir, config)).Contains("msedge", StringComparison.Ordinal) ||
+                    PlaywrightTemplate.ConfigNames.Any(n => File.Exists(Path.Combine(dir, n.Replace("playwright.config.", "playwright.msedge.config."))));
+        if (!File.Exists(packageJson)) return new PlaywrightProject(dir, false, null, null, null, lockFile, config, edge);
 
         string? package = null, wanted = null;
         try
@@ -78,58 +107,138 @@ public static class Playwright
                 installed = mod.RootElement.Str("version");
             }
         }
-        return new PlaywrightProject(dir, true, package, installed, wanted, lockFile);
+        return new PlaywrightProject(dir, true, package, installed, wanted, lockFile, config, edge);
     }
 
-    /// <param name="browsers">"chromium" or "all".</param>
-    public static List<SetupStep> InstallSteps(string dir, string browsers, EffectiveSettings eff, TeamConfig team)
+    /// <summary>
+    /// Browsers for an existing project. With <paramref name="add"/>, a project without Playwright gets it
+    /// first (npm init if there is no package.json yet, then @playwright/test and the template files that are missing).
+    /// </summary>
+    /// <param name="mode">"chromium", "all" or "msedge" (installed Edge, nothing to download).</param>
+    public static List<SetupStep> InstallSteps(string dir, string mode, bool add, EffectiveSettings eff, TeamConfig team)
     {
-        PlaywrightProject? project = null;
-        Dictionary<string, string> env = new();
-        var npm = Tools.Npm;
-        var npx = Tools.Npx;
-
-        return new List<SetupStep>
+        var run = new Run(dir, PlaywrightTemplate.Mode(mode), eff, team);
+        var steps = new List<SetupStep>
         {
             new(L.T("playwright.steps.project"), (step, ct) =>
             {
-                if (npm == null || npx == null) throw new EmberException("playwrightNoNode");
-                project = Inspect(dir);
-                if (!project.HasPackageJson) throw new EmberException("playwrightNoProject", ("path", dir));
-                if (project.Package == null) throw new EmberException("playwrightNotInProject", ("path", dir));
-                step.Report($"{project.Package} {project.Version ?? project.Wanted ?? "?"} · {dir}");
+                run.RequireNode();
+                var project = Inspect(dir);
+                if (!add && !project.HasPackageJson) throw new EmberException("playwrightNoProject", ("path", dir));
+                if (!add && project.Package == null) throw new EmberException("playwrightNotInProject", ("path", dir));
+                step.Report(project.Package != null ? $"{project.Package} {project.Version ?? project.Wanted ?? "?"} · {dir}" : L.T("playwright.willAdd", ("path", dir)));
                 return Task.CompletedTask;
             }),
-            new(L.T("playwright.steps.environment"), async (step, ct) =>
+        };
+        steps.AddRange(run.Steps());
+        return steps;
+    }
+
+    /// <summary>A new project from the Ember template in parent\name, then npm and the browsers (or Edge).</summary>
+    public static List<SetupStep> CreateSteps(string parent, string name, string mode, EffectiveSettings eff, TeamConfig team)
+    {
+        var dir = Path.Combine(parent, name);
+        var run = new Run(dir, PlaywrightTemplate.Mode(mode), eff, team);
+        var steps = new List<SetupStep>
+        {
+            new(L.T("playwright.steps.template"), (step, ct) =>
             {
-                env = await EnvironmentAsync(eff, team);
-                step.Report(string.Join(" · ", env.Where(e => e.Key != "NO_PROXY").Select(e => $"{e.Key}={e.Value}")));
+                run.RequireNode();
+                var files = PlaywrightTemplate.Write(parent, name, run.Mode);
+                step.Report(L.T("playwright.created", ("files", string.Join(", ", files)), ("path", dir)));
+                return Task.CompletedTask;
             }),
-            new(L.T("playwright.steps.npm"), async (step, ct) =>
+        };
+        steps.AddRange(run.Steps());
+        return steps;
+    }
+
+    /// <summary>What install and create have in common: environment, npm, browsers (or Edge), check.</summary>
+    sealed class Run(string dir, string mode, EffectiveSettings eff, TeamConfig team)
+    {
+        public string Mode => mode;
+        Dictionary<string, string> _env = new();
+        bool _edge => mode == "msedge";
+        readonly string? _npm = Tools.Npm, _npx = Tools.Npx;
+
+        public void RequireNode()
+        {
+            if (_npm == null || _npx == null) throw new EmberException("playwrightNoNode");
+        }
+
+        public IEnumerable<SetupStep> Steps()
+        {
+            yield return new(L.T("playwright.steps.environment"), async (step, ct) =>
             {
+                _env = await EnvironmentAsync(eff, team);
+                // With Edge nothing needs downloading, also not by the older "playwright" package on install.
+                if (_edge) _env["PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"] = "1";
+                step.Report(string.Join(" · ", _env.Where(e => e.Key != "NO_PROXY").Select(e => $"{e.Key}={e.Value}")));
+            });
+            yield return new(L.T("playwright.steps.npm"), async (step, ct) =>
+            {
+                RequireNode();
                 step.SetProgress(null);
-                var command = project!.HasLockFile ? "ci" : "install";
-                var (code, lines) = await RunAsync($"\"{npm}\" {command} --no-fund --no-audit", dir, env, step, ct, 30 * 60);
-                if (code != 0) throw Explain(lines, "npm " + command);
+                var project = Inspect(dir);
+                if (project.Package == null)
+                {
+                    if (!project.HasPackageJson)
+                    {
+                        var (initCode, initLines) = await RunAsync($"\"{_npm}\" init -y", dir, _env, step, ct, 120);
+                        if (initCode != 0) throw Explain(initLines, "npm init");
+                    }
+                    var (code, lines) = await RunAsync($"\"{_npm}\" install -D @playwright/test@latest @types/node --no-fund --no-audit", dir, _env, step, ct, 30 * 60);
+                    if (code != 0) throw Explain(lines, "npm install -D @playwright/test");
+                    var written = PlaywrightTemplate.Scaffold(dir, mode);
+                    project = Inspect(dir);
+                    step.Report(L.T("playwright.added", ("version", project.Version ?? "?"), ("files", written.Count > 0 ? string.Join(", ", written) : "–")));
+                    return;
+                }
+                if (project.Version != null)
+                {
+                    step.Report(L.T("playwright.alreadyInstalled", ("version", project.Version)));
+                    return;
+                }
+                var command = project.HasLockFile ? "ci" : "install";
+                var (c, l) = await RunAsync($"\"{_npm}\" {command} --no-fund --no-audit", dir, _env, step, ct, 30 * 60);
+                if (c != 0) throw Explain(l, "npm " + command);
                 project = Inspect(dir);
                 step.Report($"{project.Package} {project.Version}");
-            }, () => project?.Version != null ? L.T("playwright.alreadyInstalled", ("version", project.Version)) : null),
-            new(L.T("playwright.steps.browsers"), async (step, ct) =>
+            });
+            if (_edge)
+            {
+                yield return new(L.T("playwright.steps.edge"), (step, ct) =>
+                {
+                    if (EdgePath == null) throw new EmberException("playwrightNoEdge");
+                    var setup = PlaywrightTemplate.UseEdge(dir);
+                    step.Report(L.T(setup.Created ? "playwright.edgeCreated" : "playwright.edgeExisting", ("file", setup.File), ("command", setup.Command)));
+                    return Task.CompletedTask;
+                });
+                yield return new(L.T("playwright.steps.check"), (step, ct) =>
+                {
+                    var edge = EdgePath ?? throw new EmberException("playwrightNoEdge");
+                    var version = FileVersionInfo.GetVersionInfo(edge).ProductVersion ?? "?";
+                    step.Report(L.T("playwright.edgeFound", ("version", version), ("path", edge)));
+                    return Task.CompletedTask;
+                });
+                yield break;
+            }
+            yield return new(L.T("playwright.steps.browsers"), async (step, ct) =>
             {
                 step.SetProgress(null);
-                var which = browsers == "all" ? "" : " chromium";
-                var (code, lines) = await RunAsync($"\"{npx}\" --no playwright install{which}", dir, env, step, ct, 60 * 60);
+                var which = mode == "all" ? "" : " chromium";
+                var (code, lines) = await RunAsync($"\"{_npx}\" --no playwright install{which}", dir, _env, step, ct, 60 * 60);
                 if (code != 0) throw Explain(lines, "npx playwright install");
                 step.Report(lines.LastOrDefault(l => l.Trim().Length > 0) ?? "OK");
-            }),
-            new(L.T("playwright.steps.check"), (step, ct) =>
+            });
+            yield return new(L.T("playwright.steps.check"), (step, ct) =>
             {
                 var found = Browsers();
                 if (found.Count == 0) throw new EmberException("playwrightNoBrowsers", ("path", BrowsersDir));
                 step.Report(L.T("playwright.browsers", ("list", string.Join(", ", found.Select(b => b.Name))), ("path", BrowsersDir)));
                 return Task.CompletedTask;
-            }),
-        };
+            });
+        }
     }
 
     /// <summary>The variables npm, npx and the Playwright downloader need behind the company proxy.</summary>

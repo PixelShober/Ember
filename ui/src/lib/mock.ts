@@ -207,11 +207,13 @@ export function createMockBridge(): Bridge {
     modelsDir: 'C:\\Ember\\Models',
   };
 
+  let pwFailedOnce = false;
   const playwright: PlaywrightState = {
     browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
     browsers: [{ name: 'chromium-1194', path: '' }, { name: 'chromium_headless_shell-1194', path: '' }, { name: 'ffmpeg-1011', path: '' }],
-    downloadHost: null, nodeCerts: false, nodeFound: true,
-    project: { dir: 'C:\\Users\\jmoessner\\source\\repos\\kundenportal', hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true },
+    downloadHost: null, nodeCerts: false, nodeFound: true, edgeFound: true, vsCodeFound: true,
+    defaultParent: 'C:\\Users\\jmoessner\\source\\repos',
+    project: { dir: 'C:\\Users\\jmoessner\\source\\repos\\kundenportal', hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true, config: 'playwright.config.ts', usesEdge: false },
   };
 
   const git: GitIdentityInfo = { gitFound: true, name: null, email: null, suggestedName: 'Jürgen Mößner', suggestedEmail: 'juergen.moessner@firma.example', source: 'ad' };
@@ -267,8 +269,28 @@ export function createMockBridge(): Bridge {
     'software.list': () => software,
     'software.open': () => null,
     'playwright.state': () => playwright,
-    'playwright.inspect': (p) => { playwright.project = { dir: p.dir, hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true }; return playwright; },
-    'playwright.install': (p) => { void simulate('playwright', 'playwright', t('playwright.jobs.install', { path: p.dir }), [t('playwright.steps.project'), t('playwright.steps.environment'), t('playwright.steps.npm'), t('playwright.steps.browsers'), t('playwright.steps.check')]); return null; },
+    'playwright.inspect': (p) => { playwright.project = { dir: p.dir, hasPackageJson: true, package: null, version: null, wanted: null, hasLockFile: false, config: null, usesEdge: false }; return playwright; },
+    'playwright.install': (p) => {
+      const edge = p.browsers === 'msedge';
+      const steps = [t('playwright.steps.project'), t('playwright.steps.environment'), t('playwright.steps.npm'), t(edge ? 'playwright.steps.edge' : 'playwright.steps.browsers'), t('playwright.steps.check')];
+      // The first browser download "fails" in the preview, so the Edge way out can be seen.
+      const fail = !edge && !pwFailedOnce ? 3 : -1;
+      pwFailedOnce = true;
+      if (playwright.project) Object.assign(playwright.project, { package: '@playwright/test', version: '1.56.1', wanted: '^1.56.1', config: playwright.project.config ?? 'playwright.config.ts', usesEdge: playwright.project.usesEdge || edge });
+      void simulate('playwright', 'playwright', t('playwright.jobs.install', { path: p.dir }), steps, fail);
+      return null;
+    },
+    'playwright.create': (p) => {
+      const dir = `${p.parent}\\${p.name}`;
+      playwright.project = { dir, hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.1', hasLockFile: true, config: 'playwright.config.ts', usesEdge: p.browsers === 'msedge' };
+      void simulate('playwright', 'playwright', t('playwright.jobs.create', { name: p.name }), [t('playwright.steps.template'), t('playwright.steps.environment'), t('playwright.steps.npm'), t(p.browsers === 'msedge' ? 'playwright.steps.edge' : 'playwright.steps.browsers'), t('playwright.steps.check')]);
+      return null;
+    },
+    'playwright.useEdge': () => {
+      if (playwright.project) playwright.project.usesEdge = true;
+      return { file: 'playwright.msedge.config.ts', command: 'npm run test:edge', created: true };
+    },
+    'playwright.openInCode': () => null,
     'devtools.latest': (p) => ({ nodejs: '26.12.1', git: '2.47.1', vscode: '1.106.2', python: '3.14.2', visualstudio: t('devtools.channel'), dotnet: '10.0.105', pwsh: '7.5.4', bruno: '2.14.2' } as Record<string, string>)[p.id],
     'devtools.install': (p) => { void simulate('devtool:' + p.id, 'devtool', t('devtools.jobs.install', { name: p.id }), [t('devtools.steps.resolve'), t('devtools.steps.download'), t('devtools.steps.verify'), t('devtools.steps.install'), t('devtools.steps.check')]); return null; },
     'devtools.installMany': (p) => { void simulate('devtools', 'devtool', t('devtools.jobs.installMany', { count: p.tools.length }), p.tools.flatMap((x: { id: string }) => [x.id + ': ' + t('devtools.steps.download'), x.id + ': ' + t('devtools.steps.install')])); return null; },
