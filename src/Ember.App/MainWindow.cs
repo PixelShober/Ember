@@ -277,7 +277,7 @@ public sealed class MainWindow : Window, IHostShell
             (true, true) => Color.FromRgb(0x1c, 0x10, 0x11),
             (true, false) => Color.FromRgb(0x12, 0x19, 0x13),
             (false, true) => Color.FromRgb(0xfb, 0xf0, 0xec),
-            _ => Color.FromRgb(0xf7, 0xf4, 0xec),
+            _ => Color.FromRgb(0xf1, 0xf4, 0xee),
         };
         Background = new SolidColorBrush(c);
         _web.DefaultBackgroundColor = System.Drawing.Color.FromArgb(c.R, c.G, c.B);

@@ -1,5 +1,5 @@
 /* Ember – warm, calm, readable, in Calcifer's colours.
-   Two designs (html[data-design]): "efeu" (default, ivy-green sidebar) and "glut" (rosy ember ground with ivy).
+   Two designs (html[data-design]): "efeu" (default, sage by day, ivy-green sidebar at night) and "glut" (rosy ember ground with ivy).
    Colour scheme: no class = follow Windows, .light / .dark = fixed. Every colour is light-dark(light, dark),
    so each design needs one set only; the used color-scheme picks the half. */
 :root {
@@ -35,32 +35,24 @@
 :root.light { color-scheme: light; }
 :root.dark { color-scheme: dark; }
 
-/* Efeu: warm paper and a deep ivy sidebar by day, forest charcoal at night. */
+/* Efeu: sage by day, forest charcoal with a deep ivy sidebar at night. */
 :root, :root[data-design='efeu'] {
-  --bg: light-dark(#f7f4ec, #121913);
-  --sidebar: light-dark(#213b2d, #12241a);
-  --surface: light-dark(#fffdf8, #1a241d);
-  --surface-2: light-dark(#f0ece1, #213027);
-  --border: light-dark(#e3ddcf, #2c3b31);
-  --border-strong: light-dark(#cfc7b5, #3d5044);
-  --text: light-dark(#271b16, #eef0e8);
-  --text-muted: light-dark(#6a6155, #a9b8aa);
+  --bg: light-dark(#f1f4ee, #121913);
+  --sidebar: light-dark(#e3eadf, #12241a);
+  --surface: light-dark(#fdfefc, #1a241d);
+  --surface-2: light-dark(#eef2ea, #213027);
+  --border: light-dark(#dbe3d5, #2c3b31);
+  --border-strong: light-dark(#c4cfbd, #3d5044);
+  --text: light-dark(#1f241f, #eef0e8);
+  --text-muted: light-dark(#5b6658, #a9b8aa);
   --accent-soft: light-dark(#ffe3d5, #3b2a1a);
   --ok: light-dark(#0b7643, #6cd092);
   --ok-soft: light-dark(#ddf6e4, #173221);
-  --hearth: light-dark(rgb(243 147 64 / 0.24), rgb(244 134 69 / 0.15));
+  --hearth: light-dark(rgb(243 147 64 / 0.2), rgb(244 134 69 / 0.15));
 }
-/* The sidebar is dark in both schemes: its own text and control colours. */
+/* At night the dark sidebar keeps its slightly warmer text. */
 :root[data-design='efeu'] aside.sidebar, :root:not([data-design]) aside.sidebar {
-  --text: #f2eee3;
-  --text-muted: light-dark(#bccbbb, #a9b8aa);
-  --border: light-dark(#33533f, #2c3b31);
-  --surface: light-dark(#2b4a38, #1a241d);
-  --accent: #f48645;
-  --accent-soft: light-dark(rgb(244 134 69 / 0.2), #3b2a1a);
-  --accent-fg: light-dark(#ffb27a, #ffa661);
-  --border-strong: light-dark(#4a6b57, #3d5044);
-  --ok-soft: light-dark(#2f5c43, #173221);
+  --text: light-dark(#1f241f, #f2eee3);
   color: var(--text);
 }
 

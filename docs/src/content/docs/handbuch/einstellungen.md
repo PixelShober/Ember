@@ -41,6 +41,6 @@ Wählst du die Sprache, die auch Windows hat, folgt Ember weiter der Windows-Ein
 
 ## Darstellung
 
-Ember hat zwei Designs. **Efeu** hat eine dunkelgrüne Seitenleiste, an der Efeu hochrankt, und glutrote Akzente. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel, „System“ folgt der Windows-Einstellung, auch während Ember läuft.
+Ember hat zwei Designs. **Efeu** ist am Tag hell und salbeigrün, nachts waldgrün mit dunkelgrüner Seitenleiste. An der Seitenleiste rankt Efeu hoch, die Akzente sind glutrot. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel, „System“ folgt der Windows-Einstellung, auch während Ember läuft.
 
 Beim Umschalten wächst das neue Aussehen als Kreis aus dem gedrückten Schalter. Wer unter Windows „Animationseffekte“ abgeschaltet hat, bekommt den Wechsel ohne Animation. Die Wahl merkt sich Ember in `settings.json`, auch die Titelleiste des Fensters passt sich an.
