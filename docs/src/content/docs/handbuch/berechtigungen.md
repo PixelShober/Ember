@@ -40,7 +40,7 @@ Wer nicht auf der Liste steht, sieht statt der Oberfläche einen Hinweis mit sei
 - **Zugriff anfragen** öffnet eine vorbereitete Mail (Vorlage `accessRequest`) an die eingetragene Adresse.
 - **Erneut prüfen** liest die `team.json` neu. Steht der Name inzwischen drin, startet die Oberfläche.
 
-Ember führt für diese Konten keine Aktionen aus, die Exe lehnt alle Aufrufe außer diesen ab.
+Mehr zeigt die Oberfläche nicht, und die Exe lehnt alle anderen Aufrufe ab. Im Hintergrund sucht Ember weiter nach Updates.
 
 :::note[Keine Sicherheitsgrenze]
 Die Liste hält Ember aus den falschen Händen, schützt aber nichts. Ember läuft mit den Rechten des Benutzers und kann nichts, was der Benutzer nicht auch selbst könnte. Der Code ist öffentlich, und wer will, baut sich eine Exe ohne die Prüfung. Was wirklich geschützt werden muss, schützen die Rechte auf Netzlaufwerk, Softwarecenter und Proxy.
