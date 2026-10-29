@@ -1,4 +1,5 @@
 // Global UI state: app info, px status, jobs, log, updates, toasts and dialogs.
+import { flushSync } from 'svelte';
 import { BridgeError, getBridge, type Bridge } from './bridge';
 import { applyAppearance, normalize, storedAppearance } from './appearance';
 import { host, setLanguage, t } from './i18n.svelte';
@@ -56,15 +57,31 @@ function routeFromHash(): Route {
 }
 
 export function navigate(route: Route): void {
-  app.route = route;
+  changeRoute(route);
   if (location.hash !== '#/' + route) history.replaceState(null, '', '#/' + route);
+}
+
+/**
+ * Page change as in CakeSender: the page fades out and the new one rises in, the sidebar stays and
+ * the marker of the active tab glides to its new place (CSS in app.css and App.svelte).
+ */
+function changeRoute(next: Route): void {
+  if (next === app.route) return;
+  const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+  const root = document.documentElement;
+  if (!app.ready || !doc.startViewTransition || root.classList.contains('theme-reveal') || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    app.route = next;
+    return;
+  }
+  // The DOM must be updated inside the callback, so the new page is in the "after" snapshot.
+  doc.startViewTransition(() => flushSync(() => (app.route = next)));
 }
 
 export async function init(): Promise<void> {
   bridge = await getBridge();
   app.native = bridge.native;
   app.route = routeFromHash();
-  window.addEventListener('hashchange', () => (app.route = routeFromHash()));
+  window.addEventListener('hashchange', () => changeRoute(routeFromHash()));
 
   bridge.on('log', (entries: LogEntry[]) => {
     app.logs.push(...entries);

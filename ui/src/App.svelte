@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fly, fade } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { api, app, init, navigate, toast } from './lib/app.svelte';
   import { t } from './lib/i18n.svelte';
   import type { Route } from './lib/types';
@@ -22,6 +22,13 @@
   import Log from './pages/Log.svelte';
 
   let failed = $state<string | null>(null);
+  let content = $state<HTMLElement>();
+
+  // A new page starts at the top.
+  $effect(() => {
+    void app.route;
+    content?.scrollTo(0, 0);
+  });
 
   onMount(() => {
     init().catch((e) => (failed = String(e?.message ?? e)));
@@ -105,13 +112,13 @@
       </div>
     </aside>
 
-    <main class="content">
+    <main class="content" bind:this={content}>
       {#if !app.native && !new URLSearchParams(location.search).has('clean')}
         <div class="note preview"><Icon name="info" /><p>{t('app.browserPreview')}</p></div>
       {/if}
       <UpdateBanner />
       {#key app.route}
-        <div class="page" in:fly={{ x: 18, duration: 220, delay: 60 }} out:fade={{ duration: 60 }}>
+        <div class="page">
           {#if app.route === 'start'}<Start />
           {:else if app.route === 'proxy'}<Proxy />
           {:else if app.route === 'git'}<Git />
@@ -141,7 +148,9 @@
 
   .shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
   /* The sidebar is the hearth: a soft glow behind Calcifer, fading out further down. */
+  /* Own layers for the page change: the sidebar stays put, the active tab's marker glides (app.css). */
   .sidebar {
+    view-transition-name: sidebar;
     background: radial-gradient(ellipse 150% 38% at 12% 0%, var(--hearth), transparent 72%), var(--sidebar);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; padding: 16px 12px; gap: 18px; min-height: 0;
@@ -164,7 +173,7 @@
     color: var(--text); text-decoration: none; font-weight: 500; position: relative;
   }
   nav a:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-  nav a.active { background: var(--accent-soft); }
+  nav a.active { background: var(--accent-soft); view-transition-name: active-nav; }
   nav a.active::before {
     content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; border-radius: 2px; background: var(--ember-up);
   }
