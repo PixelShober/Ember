@@ -1,0 +1,83 @@
+{
+  "$schema": "https://pixelshober.github.io/Ember/team.schema.json",
+  "version": 1,
+  "name": "Team Entwicklung",
+
+  "proxy": {
+    "internalDomains": ["firma.local", "intranet.firma.example"],
+    "port": 3128
+  },
+
+  "serviceCenter": {
+    "email": "servicecenter@firma.example",
+    "name": "IT-Service-Center",
+    "subjectPrefix": "[Ember]"
+  },
+
+  "mailTemplates": {
+    "softwareRequest": {
+      "subject": { "de": "Softwarebereitstellung: {app} für {user}", "en": "Software request: {app} for {user}" },
+      "body": {
+        "de": "Hallo Service-Center,\n\nbitte stellt {app} für mich bereit.\n\nBenutzer: {user}\nRechner: {computer}\n\n{details}\n\nDanke!",
+        "en": "Hello service center,\n\nplease provide {app} for me.\n\nUser: {user}\nComputer: {computer}\n\n{details}\n\nThank you!"
+      }
+    }
+  },
+
+  "software": [
+    { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE", "note": { "de": "Lizenz läuft über das Team", "en": "Licensed through the team" } },
+    { "name": "Windows Terminal", "category": "Werkzeuge" },
+    { "name": "Alfaview", "sccmName": "alfaview*", "displayName": "alfaview*", "category": "Kommunikation" },
+    { "name": "Stackfield", "category": "Kommunikation", "softwareCenterLink": "softwarecenter:SoftwareID=ScopeId_00000000-0000-0000-0000-000000000000/Application_00000000-0000-0000-0000-000000000000" }
+  ],
+
+  "power": {
+    "allowedSchemes": ["SCHEME_BALANCED"],
+    "profiles": [
+      {
+        "id": "sleep-ac",
+        "name": { "de": "Kein Standby am Netzteil", "en": "No sleep when plugged in" },
+        "settings": [
+          { "sub": "SUB_SLEEP", "setting": "STANDBYIDLE", "ac": 0 },
+          { "sub": "SUB_VIDEO", "setting": "VIDEOIDLE", "ac": 1200 }
+        ]
+      }
+    ]
+  },
+
+  "admins": {
+    "users": ["FIRMA\\max.mustermann"],
+    "groups": ["FIRMA\\Entwicklung-Admins"]
+  },
+
+  "access": {
+    "enabled": true,
+    "users": [],
+    "groups": ["FIRMA\\Entwicklung"],
+    "contact": "ember-admins@firma.example"
+  },
+
+  "devTools": {
+    "allowDirect": true,
+    "visualStudio": {
+      "workloads": ["Microsoft.VisualStudio.Workload.ManagedDesktop", "Microsoft.VisualStudio.Workload.NetWeb"]
+    }
+  },
+
+  "playwright": {
+    "downloadHost": "https://artifactory.firma.example/playwright"
+  },
+
+  "models": [
+    {
+      "id": "qwen3-coder-30b-q4",
+      "name": "Qwen3 Coder 30B A3B (Q4_K_M)",
+      "url": "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
+      "note": "Gut für Code, passt in 24 GB VRAM"
+    }
+  ],
+
+  "update": {
+    "mirror": ""
+  }
+}

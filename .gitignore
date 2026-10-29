@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+publish/
+*.user
+.vs/
+TestResults/
+
+# Node
+node_modules/
+ui/dist/
+docs/dist/
+docs/.astro/
+*.tsbuildinfo
+
+# Release scratch
+artifacts/
+release/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs: copied from config/ at build time
+docs/public/team.schema.json

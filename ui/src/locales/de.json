@@ -1,0 +1,1069 @@
+{
+  "app": {
+    "name": "Ember",
+    "tagline": "Richtet deinen Entwicklerrechner fürs Firmennetz ein",
+    "loading": "Ember startet …",
+    "browserPreview": "Vorschau im Browser mit Beispieldaten – ohne Ember-Exe ändert sich nichts am System.",
+    "started": "Ember {version} gestartet ({mode}, Sprache {language})",
+    "unexpectedError": "Unerwarteter Fehler",
+    "confirmClose": "Es läuft gerade noch eine Aktion. Trotzdem beenden?",
+    "linkBlocked": "Link nicht geöffnet (erlaubt sind nur https, mailto und softwarecenter): {url}",
+    "noUi": "Diese Exe wurde ohne Oberfläche gebaut. Baue zuerst die Web-Oberfläche:",
+    "shortcutDescription": "Ember – richtet deinen Entwicklerrechner ein",
+    "uiShown": "Oberfläche {version} geladen ({kind})",
+    "uiRollback": "Die Oberfläche {version} hat nicht rechtzeitig gestartet. Ember nimmt wieder die eingebaute Version.",
+    "modes": {
+      "installed": "installiert",
+      "portable": "portabel",
+      "dev": "Entwicklung"
+    },
+    "advancedOn": "KI und Energie sind jetzt sichtbar. Strg + E blendet sie wieder aus.",
+    "advancedOff": "KI und Energie sind ausgeblendet. Strg + E zeigt sie wieder.",
+    "advancedNotAllowed": "KI und Energie gibt es nur für Admins aus der Team-Konfiguration (team.json → admins)."
+  },
+  "nav": {
+    "start": "Start",
+    "proxy": "Proxy",
+    "git": "Git",
+    "software": "Software",
+    "power": "Energie",
+    "system": "System",
+    "ai": "KI",
+    "settings": "Einstellungen",
+    "log": "Log",
+    "advanced": "Erweitert",
+    "access": "Berechtigungen"
+  },
+  "common": {
+    "yes": "Ja",
+    "no": "Nein",
+    "on": "An",
+    "off": "Aus",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "refresh": "Aktualisieren",
+    "retry": "Ab Fehler wiederholen",
+    "reset": "Zurücksetzen",
+    "apply": "Anwenden",
+    "browse": "Durchsuchen …",
+    "remove": "Entfernen",
+    "add": "Hinzufügen",
+    "delete": "Löschen",
+    "copy": "Kopieren",
+    "copied": "In die Zwischenablage kopiert",
+    "details": "Details",
+    "loading": "Wird geladen …",
+    "none": "–",
+    "open": "Öffnen",
+    "openFolder": "Ordner öffnen",
+    "confirm": "Bestätigen",
+    "dismiss": "Ausblenden",
+    "error": "Fehler",
+    "unknown": "unbekannt",
+    "sources": {
+      "user": "eigener Wert",
+      "team": "aus Team-Konfiguration",
+      "default": "Ember-Standard",
+      "detected": "automatisch erkannt"
+    },
+    "resetToTeam": "Auf Team-Wert zurücksetzen",
+    "needsAdmin": "Braucht Adminrechte – Windows fragt nach",
+    "askServiceCenter": "Beim Service-Center anfragen",
+    "saved": "Gespeichert",
+    "cancelled": "Abgebrochen",
+    "resetToDetected": "Erkannten Wert nutzen",
+    "admin": "Admin"
+  },
+  "errors": {
+    "internal": "Interner Fehler: {message}",
+    "cancelled": "Abgebrochen",
+    "timeoutSuffix": "Zeitüberschreitung",
+    "proxyAuth": "der Proxy verlangt eine Anmeldung, und Kerberos/NTLM mit dem Windows-Login hat nicht geklappt",
+    "fixedProxyMissing": "Bei „fester Proxy“ muss ein Proxy (host:port) eingetragen sein.",
+    "proxyFormat": "Der Proxy muss im Format host:port angegeben werden, z. B. proxy.firma.de:8080.",
+    "portRange": "Der Port muss zwischen 1 und 65535 liegen.",
+    "installDirMissing": "Bitte einen Installationsordner für px angeben.",
+    "installDirInvalid": "Der Installationsordner ist kein gültiger Pfad.",
+    "localZipMissing": "Das lokale px-Zip wurde nicht gefunden: {path}",
+    "settingsInvalid": "Einstellungen prüfen: {detail}",
+    "commandFailed": "{command} ist fehlgeschlagen: {detail}",
+    "elevatedNoResult": "Die Aktion mit Adminrechten hat kein Ergebnis geliefert.",
+    "elevationCancelled": "Die Windows-Abfrage nach Adminrechten wurde abgebrochen.",
+    "exeUpdateMissing": "Es liegt kein heruntergeladenes Update bereit.",
+    "folderMissing": "Den Ordner gibt es (noch) nicht: {path}",
+    "gitIdentityInvalid": "Bitte Name und eine gültige E-Mail-Adresse angeben.",
+    "jobRunning": "„{title}“ läuft bereits.",
+    "jobUnknown": "Diese Aktion gibt es nicht mehr.",
+    "llamaNoAsset": "Im aktuellen llama.cpp-Release gibt es keine Windows-Variante „{variant}“.",
+    "llamaNoServer": "llama-server.exe fehlt im heruntergeladenen Archiv.",
+    "llamaNotInstalled": "llama.cpp ist noch nicht installiert.",
+    "mailNoRecipient": "In der Team-Konfiguration fehlt die Adresse des Service-Centers (serviceCenter.email).",
+    "missingParam": "Parameter fehlt: {name}",
+    "modelMissing": "Die Modelldatei fehlt: {path}",
+    "modelUnknown": "Dieses Modell gibt es nicht in der Liste.",
+    "moduleNotAllowed": "Das erweiterte Modul ist nicht freigeschaltet.",
+    "noDownloadLink": "Es wurde kein Download-Link ermittelt.",
+    "noHttpClient": "Keine Netzwerkverbindung vorbereitet – bitte die Installation von vorn starten.",
+    "pacMissing": "px soll die PAC-Datei nutzen, es wurde aber keine gefunden. Trag sie in den Einstellungen ein oder wähle „fester Proxy“.",
+    "packageInvalid": "„{package}“ ist kein gültiger npm-Paketname.",
+    "powerNoBackup": "Es gibt keinen gesicherten vorherigen Stand.",
+    "powerProfileUnknown": "Das Energieprofil „{id}“ gibt es nicht.",
+    "powershell": "PowerShell meldet: {detail}",
+    "powershellEmpty": "PowerShell hat keine Daten geliefert. Was genau passiert ist, steht im Log.",
+    "powershellNoResult": "PowerShell hat das Skript nicht ausgeführt ({way}: {detail}). Möglicherweise blockiert eine Sicherheitsrichtlinie diesen Aufruf. Details stehen im Log.",
+    "processStart": "Konnte {file} nicht starten.",
+    "processTimeout": "{file} hat nach {seconds} s nicht geantwortet.",
+    "proxyUnreachable": "Der Proxy {proxy} ist per TCP nicht erreichbar. Stimmen Host und Port, und darf Ember laut Firewall ins Netz?",
+    "pxExeNotInZip": "px.exe wurde im Archiv nicht gefunden.",
+    "pxIniMissing": "px hat keine px.ini geschrieben: {path}",
+    "pxNoWindowsZip": "Im Release {tag} gibt es kein Windows-Zip. Vorhanden: {assets}",
+    "pxNotInstalled": "px ist nicht installiert: {path}",
+    "pxPortTimeout": "px lauscht nach {seconds} s nicht auf Port {port}. „px-Debug starten“ zeigt im Log, woran es liegt.",
+    "pxTestFailed": "{detail} – „px-Debug starten“ zeigt im Log, was px macht.",
+    "pxZipMissing": "Kein px-Zip vorhanden: {path}",
+    "refuseDelete": "{path} wird aus Sicherheitsgründen nicht gelöscht.",
+    "refuseDeleteNoPx": "{path} enthält kein px.exe und wird deshalb nicht gelöscht.",
+    "releaseTagUnknown": "Die aktuelle Version von {repo} konnte nicht ermittelt werden.",
+    "sccmExecuteFailed": "Der Softwarecenter-Client hat die Installation abgelehnt (Code {code}).",
+    "sccmInstallFailed": "Die Installation ist laut Softwarecenter fehlgeschlagen ({status}).",
+    "sccmInstallTimeout": "Nach 45 Minuten ist die Installation noch nicht fertig. Schau im Softwarecenter unter „Installationsstatus“ nach.",
+    "shaMismatch": "Prüfsumme stimmt nicht! Erwartet {expected}, erhalten {actual}.",
+    "softwareCenterMissing": "Das Softwarecenter lässt sich nicht öffnen. Ist der Configuration-Manager-Client installiert?",
+    "toolMissing": "{tool} wurde nicht gefunden.",
+    "uiPackageInvalid": "Das heruntergeladene Oberflächen-Paket ist ungültig.",
+    "unknownAction": "Unbekannte Aktion: {action}",
+    "unknownFolder": "Unbekannter Ordner: {key}",
+    "unknownMethod": "Unbekannte Funktion: {method}",
+    "unknownTool": "Unbekanntes Werkzeug: {tool}",
+    "webView2InstallFailed": "WebView2 ließ sich nicht installieren (Exitcode {code}).",
+    "webView2Signature": "Die Signatur des WebView2-Installers ist ungültig. Aus Sicherheitsgründen wird er nicht gestartet.",
+    "wolNoAnswer": "{host} antwortet nach 3 Minuten nicht. Ist Wake-on-LAN im BIOS und am Netzwerkadapter aktiv?",
+    "wolSendFailed": "Das Magic Packet konnte über keine Netzwerkverbindung gesendet werden.",
+    "zipInvalidPath": "Ungültiger Pfad im Zip: {entry}",
+    "devToolDirectDisabled": "Laut Team-Konfiguration installiert Ember nichts direkt vom Hersteller. Frag beim Service-Center an.",
+    "devToolUnsigned": "{file} ist nicht gültig signiert. Ember hat die Datei gelöscht und nichts installiert.",
+    "devToolSigner": "{file} ist von „{signer}“ signiert, erwartet war „{expected}“. Ember hat die Datei gelöscht und nichts installiert.",
+    "devToolNotFound": "{tool} ist nach der Installation nicht zu finden. Details stehen im Log.",
+    "devToolExit": "Der Installer von {tool} hat mit Code {code} aufgehört.",
+    "devToolNoRelease": "Für {tool} war keine passende Version zu finden.",
+    "devToolNoChecksum": "Für {file} gibt es keine Prüfsumme, deshalb installiert Ember es nicht.",
+    "nodeInUse": "Node.js ist gerade in Benutzung ({path}). Schließ alle Konsolen und Editoren, die node verwenden, und versuch es noch einmal.",
+    "devToolNothingToDo": "Es fehlt nichts.",
+    "certsNone": "Im Windows-Zertifikatsspeicher war kein gültiges Zertifikat zu finden.",
+    "playwrightNoNode": "Node.js mit npm fehlt. Installier es oben unter Entwicklerwerkzeuge.",
+    "playwrightNoProject": "In {path} gibt es keine package.json.",
+    "playwrightNotInProject": "Das Projekt in {path} nutzt noch kein Playwright. Mit „Playwright hinzufügen“ richtet Ember es ein.",
+    "playwrightPackageJson": "Die package.json ist kein gültiges JSON: {detail}",
+    "playwrightNoBrowsers": "Nach der Installation liegen keine Browser in {path}.",
+    "playwrightCertificates": "Der Download ist am Zertifikat gescheitert: Der Firmenproxy bricht TLS auf, und Node.js kennt das Firmenzertifikat nicht. Richte unter Proxy → Diagnose „Node.js-Zertifikate“ ein und versuch es noch einmal.",
+    "playwrightProxyAuth": "Der Proxy verlangt eine Anmeldung (407). Läuft px? Unter Proxy siehst du den Status; ohne px kommen npx und Playwright nicht durch.",
+    "playwrightBlocked": "Der Download-Server ist nicht erreichbar oder gesperrt. Läuft px? Sonst ist cdn.playwright.dev vermutlich blockiert. Dann teste mit Edge (unten „Edge verwenden“) oder lass dir einen internen Spiegel in die Team-Konfiguration eintragen (playwright.downloadHost).",
+    "playwrightNameInvalid": "„{name}“ geht als Projektname nicht. Erlaubt sind Kleinbuchstaben, Ziffern, Punkt, Binde- und Unterstrich, vorne ein Buchstabe oder eine Ziffer.",
+    "playwrightFolderNotEmpty": "{path} gibt es schon, und der Ordner ist nicht leer. Nimm einen anderen Namen.",
+    "playwrightNoEdge": "Microsoft Edge ist auf diesem Rechner nicht installiert. Nimm Chromium oder frag das Service-Center nach Edge.",
+    "playwrightEdgeLibrary": "Dein Projekt nutzt {package} ohne Test-Runner, dafür gibt es keine playwright.config. Starte den Browser im Code mit chromium.launch({ channel: 'msedge' }).",
+    "accessDenied": "Ember ist für dein Konto nicht freigeschaltet.",
+    "accessSelfLockout": "So würdest du dich selbst als Admin austragen. Bleib in der Admin-Liste (direkt oder über eine deiner Gruppen) und speichere noch einmal.",
+    "accessContactInvalid": "„{value}“ ist keine Mailadresse.",
+    "accessNoTeamFile": "Ember kennt keine team.json. Trag unter Einstellungen den Pfad ein, dann lassen sich die Listen dort speichern.",
+    "teamChanged": "Die team.json ({path}) hat sich geändert, seit du die Seite geöffnet hast. Lade neu, prüf die Listen und speichere dann.",
+    "teamInvalid": "Die team.json ist kein gültiges JSON: {detail}",
+    "teamOffline": "Die team.json ist gerade nicht erreichbar (VPN, Netzlaufwerk). Ember nutzt die lokale Kopie, speichern geht erst wieder mit Verbindung."
+  },
+  "jobs": {
+    "started": "gestartet",
+    "finished": "abgeschlossen",
+    "done": "{title} abgeschlossen ✔",
+    "failedAt": "Fehler bei „{step}“ – Details am Schritt und im Log",
+    "retryFrom": "Wiederholung ab „{step}“",
+    "cancelled": "Abgebrochen",
+    "skipped": "übersprungen",
+    "disabledInSettings": "In den Einstellungen abgeschaltet",
+    "downloadProgress": "{done} von {total}",
+    "downloaded": "{size} heruntergeladen → {path}",
+    "extracted": "{count} Dateien nach {path}",
+    "deleted": "Gelöscht: {items}",
+    "shaOk": "Prüfsumme stimmt: {hash}",
+    "status": {
+      "pending": "wartet",
+      "running": "läuft",
+      "done": "erledigt",
+      "failed": "Fehler",
+      "skipped": "übersprungen"
+    },
+    "states": {
+      "running": "läuft",
+      "done": "fertig",
+      "failed": "fehlgeschlagen",
+      "cancelled": "abgebrochen"
+    },
+    "cancel": "Abbrechen",
+    "retry": "Ab Fehler wiederholen",
+    "dismiss": "Ausblenden"
+  },
+  "net": {
+    "systemProxy": "Windows-Systemproxy",
+    "pacFailed": "PAC-Datei konnte nicht geladen werden: {detail}",
+    "githubRateLimit": "GitHub-API-Limit erreicht, Ember weicht auf die Release-Webseite aus."
+  },
+  "start": {
+    "title": "Hallo {name}",
+    "subtitle": "So steht es um deinen Rechner",
+    "cards": {
+      "px": "px-Proxy",
+      "proxy": "Proxy-Diagnose",
+      "git": "Git-Identität",
+      "team": "Team-Konfiguration",
+      "update": "Updates",
+      "power": "Energie"
+    },
+    "pxRunning": "läuft auf {url}",
+    "pxStopped": "installiert, läuft aber nicht",
+    "pxMissing": "noch nicht installiert",
+    "proxySummary": "{ok} von {total} Werkzeugen zeigen auf px",
+    "gitSet": "{name} · {email}",
+    "gitMissing": "noch nicht eingerichtet",
+    "teamOk": "Stand {date}",
+    "teamCache": "aus der lokalen Kopie vom {date}",
+    "teamNone": "nicht eingerichtet",
+    "updateCurrent": "Ember {version} ist aktuell",
+    "updateAvailable": "Version {version} ist verfügbar",
+    "goTo": "Öffnen",
+    "quick": "Schnellzugriff",
+    "report": "Diagnosebericht erstellen",
+    "contact": "Service-Center kontaktieren",
+    "reportSaved": "Bericht gespeichert und kopiert: {path}"
+  },
+  "proxy": {
+    "title": "Proxy",
+    "subtitle": "px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an. Deine Werkzeuge sprechen nur mit {url}, Passwörter braucht es nirgends.",
+    "px": {
+      "title": "px-Proxy",
+      "install": "Installieren / Aktualisieren",
+      "uninstall": "Deinstallieren",
+      "start": "Starten",
+      "stop": "Stoppen",
+      "restart": "Neu starten",
+      "debugStart": "px-Debug starten",
+      "debugStop": "px-Debug beenden",
+      "running": "px läuft · {url}",
+      "debugRunning": "px läuft im Debug-Modus · {url}",
+      "portClosed": "px läuft, der Port ist aber noch nicht offen",
+      "stopped": "px läuft nicht",
+      "notInstalled": "px ist nicht installiert",
+      "outdated": "Die px-Konfiguration passt nicht mehr zu den Einstellungen (z. B. neuer Proxy in der Team-Konfiguration). „Installieren / Aktualisieren“ bringt sie auf den neuen Stand.",
+      "confirmUninstall": "px wird beendet, der Autostart entfernt, die Proxy-Einträge von Umgebungsvariablen, git, npm, NuGet, pip und VS Code zurückgenommen und der Installationsordner gelöscht. Einträge, die nicht auf px zeigen, bleiben unverändert.",
+      "debugHint": "Im Debug-Modus läuft px in einem eigenen Konsolenfenster mit ausführlicher Ausgabe. Ember schreibt sie unter C:\\Ember\\Logs mit und öffnet den Ordner, sobald px-Debug endet."
+    },
+    "diag": {
+      "title": "Diagnose",
+      "subtitle": "Welches Werkzeug nutzt welchen Proxy?",
+      "tool": "Werkzeug",
+      "value": "Aktueller Wert",
+      "state": "Status",
+      "set": "Auf px setzen",
+      "remove": "Entfernen",
+      "confirmSet": "{tool} auf {url} umstellen?",
+      "kerberosNote": "npm, pip und die meisten Node-, Python-, Go- und Rust-Werkzeuge können kein Kerberos. Deshalb zeigen sie auf px, und px übernimmt die Anmeldung."
+    },
+    "tools": {
+      "windows": "Windows (PAC/Systemproxy)",
+      "env": "Umgebungsvariablen",
+      "git": "git",
+      "npm": "npm",
+      "nuget": "NuGet / .NET",
+      "pip": "pip",
+      "vscode": "VS Code",
+      "nodeCerts": "Node.js-Zertifikate (NODE_EXTRA_CA_CERTS)"
+    },
+    "states": {
+      "px": "zeigt auf px",
+      "other": "zeigt woanders hin",
+      "unset": "nicht gesetzt",
+      "missing": "nicht installiert",
+      "info": "Firmenvorgabe"
+    },
+    "hints": {
+      "windows": "Bleibt unverändert: px liest genau diese Einstellung, um den Firmenproxy zu finden.",
+      "nuget": "dotnet restore und Visual Studio lesen http_proxy und no_proxy aus %APPDATA%\\NuGet\\NuGet.Config.",
+      "vscode": "Ember ändert nur „http.proxy“ und „http.noProxy“ in settings.json, Kommentare und andere Einträge bleiben.",
+      "nodeCerts": "Node.js, npm, npx und Playwright kennen den Windows-Zertifikatsspeicher nicht. Bricht der Firmenproxy TLS auf, scheitern Downloads mit „unable to get local issuer certificate“. „Einrichten“ exportiert die vertrauenswürdigen Zertifikate von Windows nach C:\\Ember\\Certs und setzt NODE_EXTRA_CA_CERTS.",
+      "env": "NO_PROXY enthält die internen Domains. git, npm, pip, Python und Node.js gehen damit direkt zu internen Servern, ohne Umweg über px.",
+      "git": "Für jede interne Domain setzt Ember zusätzlich http.<url>.proxy auf leer. So erreicht git interne Server direkt, auch wenn px gerade nicht läuft. Tiefere Subdomains deckt NO_PROXY ab.",
+      "gitExceptionsMissing": "Für diese internen Adressen fehlt die Ausnahme noch: {list}. „Auf px setzen“ ergänzt sie.",
+      "pip": "pip.ini kennt keine Ausnahmeliste. Interne Server erreicht pip direkt über NO_PROXY (Zeile Umgebungsvariablen)."
+    },
+    "none": "keiner",
+    "toolMissing": "nicht installiert",
+    "toolNotFound": "{tool} nicht gefunden",
+    "removed": "Entfernt: {items}",
+    "nothingToRemove": "Nichts zu entfernen",
+    "unchanged": "Unverändert (zeigt auf {value})",
+    "keptForeign": "Nicht von Ember gesetzt, bleibt unverändert: {value}",
+    "detect": {
+      "atStart": "Firmenproxy beim Start erkannt: PAC {pac}, Proxy {proxy}. Diese Werte gelten, solange weder du noch die Team-Konfiguration etwas anderes einträgt.",
+      "nothing": "Beim Start keinen Firmenproxy erkannt (keine PAC-Adresse, kein Systemproxy).",
+      "failed": "Proxy-Erkennung beim Start fehlgeschlagen: {detail}"
+    },
+    "nodeCerts": {
+      "done": "{count} Zertifikate aus Windows nach {path} exportiert, NODE_EXTRA_CA_CERTS ist gesetzt. Gilt für neu geöffnete Konsolen.",
+      "set": "Einrichten",
+      "renew": "Erneuern",
+      "states": {
+        "px": "eingerichtet",
+        "other": "Datei fehlt",
+        "unset": "nicht gesetzt",
+        "missing": "–",
+        "info": "–"
+      }
+    },
+    "noProxyFor": "ohne Proxy: {list}"
+  },
+  "px": {
+    "title": "px",
+    "jobs": {
+      "install": "px-Installation",
+      "uninstall": "px-Deinstallation"
+    },
+    "steps": {
+      "detectProxy": "Proxy und PAC-Datei ermitteln",
+      "resolveRelease": "Aktuelles px-Release ermitteln",
+      "download": "px herunterladen",
+      "verifyHash": "SHA256-Prüfsumme prüfen",
+      "stop": "Laufendes px beenden",
+      "extract": "Entpacken",
+      "writeConfig": "px-Konfiguration schreiben (px.ini)",
+      "autostart": "Autostart beim Login einrichten",
+      "start": "px starten",
+      "test": "Verbindungstest über px",
+      "envVars": "Umgebungsvariablen setzen",
+      "git": "git einrichten",
+      "npm": "npm einrichten",
+      "nuget": "NuGet einrichten",
+      "pip": "pip einrichten",
+      "removeAutostart": "Autostart entfernen",
+      "removeEnvVars": "Umgebungsvariablen zurücknehmen",
+      "removeGit": "git-Proxy entfernen",
+      "removeNpm": "npm-Proxy entfernen",
+      "removeNuget": "NuGet-Proxy entfernen",
+      "removePip": "pip-Proxy entfernen",
+      "removeVscode": "VS-Code-Proxy entfernen",
+      "deleteFiles": "px-Dateien löschen"
+    },
+    "pacFile": "PAC-Datei: {value}",
+    "noneFound": "keine gefunden",
+    "tcpOk": "TCP-Verbindung zu {proxy}: OK",
+    "routeSummary": "Download über {download} · px nutzt {px}",
+    "localZipUsed": "Lokales Zip wird verwendet",
+    "noShaFile": "Keine .sha256-Datei im Release",
+    "wasNotRunning": "px lief nicht",
+    "stoppedCount": "{count} Prozess(e) beendet",
+    "iniBackedUp": "Bisherige px.ini gesichert als px.ini.bak",
+    "saveHung": "px hat sich nach --save nicht beendet, die px.ini wurde aber geschrieben.",
+    "autostartOk": "px startet künftig automatisch beim Login",
+    "autostartRemoved": "Autostart-Eintrag entfernt",
+    "listening": "px lauscht auf {url}",
+    "testOk": "github.com über px erreichbar (HTTP {code})",
+    "notFound": "px nicht gefunden",
+    "started": "px gestartet: {path}",
+    "processStopped": "{name} ({pid}) beendet",
+    "processStopFailed": "{name} ({pid}) ließ sich nicht beenden: {detail}",
+    "debugStarted": "px läuft im Debug-Modus in einem eigenen Fenster. Die Ausgabe wird in {file} mitgeschrieben.",
+    "debugEnded": "px-Debug beendet (Exitcode {code})",
+    "debugWindow": "px-Debug läuft. Die Ausgabe steht zusätzlich in {file}. Fenster schließen oder in Ember auf „px-Debug beenden“ klicken, um aufzuhören."
+  },
+  "git": {
+    "title": "Git",
+    "subtitle": "Name und E-Mail für deine Commits, dazu der Weg ins Netz: nach draußen über px, zu internen Servern direkt.",
+    "current": "Aktuell in git",
+    "suggested": "Vorschlag",
+    "sources": {
+      "ad": "aus dem Active Directory (Attribut „mail“)",
+      "upn": "aus deinem Windows-Anmeldenamen (UPN)"
+    },
+    "name": "Name",
+    "email": "E-Mail",
+    "useSuggestion": "Vorschlag übernehmen",
+    "save": "In git speichern",
+    "confirm": "git config --global user.name „{name}“ und user.email „{email}“ setzen?",
+    "notSet": "nicht gesetzt",
+    "gitMissing": "git ist auf diesem Rechner nicht installiert. Hol es dir über das Softwarecenter.",
+    "identitySet": "git-Identität gesetzt: {name} <{email}>",
+    "saved": "git-Identität gespeichert",
+    "identity": "Identität",
+    "proxy": {
+      "title": "Proxy für git",
+      "subtitle": "Externe Repositories (GitHub, npm-Registries, …) laufen über px. Für interne Server setzt Ember Ausnahmen, denn die sind über den Firmenproxy oft gar nicht erreichbar.",
+      "httpProxy": "http.proxy",
+      "direct": "Ohne Proxy",
+      "noDomains": "Noch keine internen Domains eingetragen. Dann geht auch git zu internen Servern über den Proxy.",
+      "editDomains": "Interne Domains bearbeiten",
+      "set": "Auf px setzen",
+      "missing": "Ausnahmen fehlen noch für: {list}",
+      "envMissing": "NO_PROXY in den Umgebungsvariablen kennt die internen Domains noch nicht. Ohne diesen Eintrag gehen Server mit tieferen Subdomains (z. B. gitlab.dev.firma.local) noch über den Proxy.",
+      "envFix": "Zur Proxy-Seite",
+      "ok": "git geht über px nach draußen und direkt zu den internen Servern."
+    }
+  },
+  "software": {
+    "title": "Software",
+    "subtitle": "Entwicklerwerkzeuge, Playwright und alles, was das Softwarecenter anbietet.",
+    "client": "Softwarecenter-Client {version}",
+    "noClient": "Kein Softwarecenter-Client gefunden. Installieren geht dann nur über das Service-Center.",
+    "empty": "In der Team-Konfiguration stehen noch keine Programme (Abschnitt „software“).",
+    "installed": "installiert · {version}",
+    "notInstalled": "nicht installiert",
+    "package": "Paket",
+    "application": "Anwendung",
+    "notInCenter": "nicht im Softwarecenter gefunden",
+    "install": "Installieren",
+    "open": "Im Softwarecenter öffnen",
+    "request": "Beim Service-Center anfragen",
+    "confirmInstall": "„{name}“ über das Softwarecenter installieren? Das ist dasselbe wie „Installieren“ im Softwarecenter.",
+    "jobs": {
+      "install": "{name} installieren"
+    },
+    "steps": {
+      "trigger": "Installation im Softwarecenter anstoßen",
+      "wait": "Auf die Installation warten"
+    },
+    "triggered": "Das Softwarecenter hat die Installation übernommen.",
+    "states": {
+      "available": "verfügbar",
+      "preparing": "wird vorbereitet",
+      "downloading": "wird heruntergeladen",
+      "waiting": "wartet (z. B. auf ein Wartungsfenster)",
+      "installing": "wird installiert",
+      "reboot": "installiert – Neustart nötig",
+      "installed": "installiert",
+      "error": "Fehler",
+      "unknown": "unbekannter Status"
+    },
+    "center": "Softwarecenter",
+    "centerHint": "Alles, was das Softwarecenter auf diesem Rechner anbietet. Installiert wird über den Configuration-Manager-Client, mit den Freigaben eurer IT.",
+    "filter": "Suchen …",
+    "more": "Weitere im Softwarecenter",
+    "nothingOffered": "Das Softwarecenter bietet diesem Rechner gerade nichts an.",
+    "openShort": "Softwarecenter"
+  },
+  "mail": {
+    "title": "Nachricht ans Service-Center",
+    "subtitle": "Ember bereitet die Mail vor. Du prüfst sie und schickst sie selbst ab.",
+    "template": "Anliegen",
+    "templateNames": {
+      "softwareRequest": "Software anfordern",
+      "adminAction": "Adminrechte für eine Aktion",
+      "problem": "Problem melden",
+      "accessRequest": "Zugriff auf Ember"
+    },
+    "details": "Was genau?",
+    "attachReport": "Diagnosebericht anhängen",
+    "to": "An",
+    "compose": "Mail vorbereiten",
+    "outlookDraft": "Outlook-Entwurf an {to} geöffnet",
+    "mailtoOpened": "Mailprogramm für {to} geöffnet",
+    "attachHint": "Den Diagnosebericht bitte anhängen: {path}",
+    "resultOutlook": "Der Entwurf ist in Outlook offen, der Bericht hängt an.",
+    "resultMailto": "Dein Mailprogramm ist offen. Der Bericht liegt in der Zwischenablage und als Datei bereit – bitte anhängen.",
+    "noServiceCenter": "Es ist noch keine Service-Center-Adresse eingetragen (team.json → serviceCenter.email).",
+    "templates": {
+      "softwareRequest": {
+        "subject": "Softwarebereitstellung: {app} für {user}",
+        "body": "Hallo Service-Center,\n\nbitte stellt {app} für mich bereit.\n\nBenutzer: {user}\nRechner: {computer}\n\n{details}\n\nVielen Dank!"
+      },
+      "adminAction": {
+        "subject": "Adminrechte benötigt auf {computer}",
+        "body": "Hallo Service-Center,\n\nfür meine Entwicklungsumgebung braucht es auf {computer} einmalig Adminrechte für folgende Einstellung:\n\n{details}\n\nBenutzer: {user}\n\nVielen Dank!"
+      },
+      "problem": {
+        "subject": "Problem auf {computer}",
+        "body": "Hallo Service-Center,\n\nich habe folgendes Problem:\n\n{details}\n\nBenutzer: {user}\nRechner: {computer}\nDer Diagnosebericht von Ember hängt an.\n\nVielen Dank!"
+      },
+      "accessRequest": {
+        "subject": "Zugriff auf Ember für {user}",
+        "body": "Hallo,\n\nich möchte Ember auf {computer} nutzen, um meinen Entwicklerrechner einzurichten. Bitte nehmt mich in die Zugriffsliste auf.\n\n{details}\n\nBenutzer: {user}\n\nDanke!"
+      }
+    }
+  },
+  "diagnostics": {
+    "title": "Ember-Diagnosebericht",
+    "created": "Erstellt",
+    "computer": "Rechner",
+    "user": "Benutzer",
+    "language": "Sprache",
+    "admin": "Mit Adminrechten",
+    "team": "Team-Konfiguration",
+    "cache": "lokale Kopie",
+    "installed": "Installiert",
+    "running": "Läuft",
+    "port": "Port",
+    "closed": "geschlossen",
+    "upstream": "Firmenproxy",
+    "proxyTable": "Proxy je Werkzeug",
+    "tools": "Werkzeuge",
+    "log": "Letzte Log-Einträge"
+  },
+  "power": {
+    "title": "Energie",
+    "subtitle": "Ember ändert nur Werte im Schema „{scheme}“. Den Energiesparplan selbst wechselt es nie, „Höchstleistung“ oder „Ultimative Leistung“ legt es nicht an.",
+    "activeScheme": "Aktiver Plan: {name}",
+    "notActive": "Der aktive Plan ist nicht „{scheme}“. Änderungen greifen erst, wenn er aktiv ist.",
+    "schemeByPolicy": "Der aktive Plan wird per Gruppenrichtlinie vorgegeben.",
+    "schemes": {
+      "balanced": "Ausbalanciert"
+    },
+    "setting": "Einstellung",
+    "ac": "Netzbetrieb",
+    "dc": "Akku",
+    "currentValue": "Ist",
+    "target": "Ziel",
+    "factory": "Standard",
+    "unsupported": "gibt es auf diesem Rechner nicht",
+    "locked": "per Richtlinie festgelegt",
+    "status": {
+      "applied": "aktiv",
+      "partial": "teilweise aktiv",
+      "notApplied": "nicht aktiv",
+      "unsupported": "nicht verfügbar"
+    },
+    "atDefault": "Werkseinstellung",
+    "applyProfile": "Anwenden",
+    "resetDefaults": "Auf Standard zurücksetzen",
+    "restoreBackup": "Vorherigen Stand wiederherstellen",
+    "confirmApply": "Profil „{name}“ anwenden? Ember sichert vorher die aktuellen Werte.",
+    "confirmDefaults": "Alle Werte von „{name}“ auf die Werkseinstellung zurücksetzen?",
+    "applied": "{count} Wert(e) geändert",
+    "elevatedNote": "Für einige Werte waren Adminrechte nötig.",
+    "setFailed": "{setting} ließ sich nicht setzen",
+    "changed": "Energieprofil „{profile}“: {count} Wert(e) geändert",
+    "seconds": "{value} s",
+    "minutes": "{value} min",
+    "never": "nie",
+    "profiles": {
+      "ai-performance": {
+        "name": "KI-Leistung (Netzbetrieb)",
+        "description": "Volle CPU-Leistung für lokale Modelle und Builds, solange das Netzteil steckt: aggressiver Boost, Energieeffizienz-Präferenz 0 für alle Kernklassen, 5–100 % Takt. Der Akkubetrieb bleibt unverändert."
+      },
+      "sleep-ac": {
+        "name": "Kein Standby am Netzteil",
+        "description": "Am Netzteil geht der Rechner nicht in den Standby oder Ruhezustand, der Bildschirm schaltet nach 15 Minuten ab. Lange Builds und Downloads laufen so durch."
+      },
+      "lid-ac": {
+        "name": "Deckel & Netzschalter",
+        "description": "Am Dock passiert beim Zuklappen nichts, der Netzschalter fährt herunter."
+      }
+    },
+    "options": {
+      "LIDACTION": {
+        "0": "Nichts unternehmen",
+        "1": "Energie sparen",
+        "2": "Ruhezustand",
+        "3": "Herunterfahren"
+      },
+      "PBUTTONACTION": {
+        "0": "Nichts unternehmen",
+        "1": "Energie sparen",
+        "2": "Ruhezustand",
+        "3": "Herunterfahren",
+        "4": "Bildschirm ausschalten"
+      },
+      "PERFBOOSTMODE": {
+        "0": "Deaktiviert",
+        "1": "Aktiviert",
+        "2": "Hoch (aggressiv)",
+        "3": "Aktiviert – effizient",
+        "4": "Hoch – effizient",
+        "5": "Aggressiv bei Zusicherung",
+        "6": "Effizient aggressiv bei Zusicherung"
+      }
+    }
+  },
+  "wol": {
+    "title": "Wake-on-LAN für diesen Rechner",
+    "subtitle": "Damit sich dieser Rechner aus dem ausgeschalteten Zustand wecken lässt. Zielzustand ist ein Rechner, auf dem es bereits funktioniert.",
+    "ready": "bereit zum Wecken",
+    "notReady": "noch nicht bereit",
+    "adapter": "Adapter",
+    "mac": "MAC-Adresse",
+    "macHint": "Diese MAC trägst du auf dem anderen Rechner im KI-Tab als Weckziel ein.",
+    "armed": "darf den PC wecken",
+    "notArmed": "darf den PC nicht wecken",
+    "fastStartup": "Schnellstart",
+    "fastStartupOff": "aus (richtig für WOL aus dem ausgeschalteten Zustand)",
+    "fastStartupOn": "an – verhindert das Wecken aus dem ausgeschalteten Zustand",
+    "required": "Pflicht",
+    "optional": "Hinweis",
+    "noAdapters": "Kein kabelgebundener Netzwerkadapter gefunden. Wake-on-LAN funktioniert nur per Kabel (auch über das Dock).",
+    "apply": "Zielzustand herstellen",
+    "reset": "Auf Standard zurücksetzen",
+    "confirmApply": "Wake-on-LAN-Einstellungen setzen? Windows fragt nach Adminrechten, die Netzwerkverbindung ist kurz weg.",
+    "confirmReset": "Adapter-Einstellungen auf den Treiber-Standard zurücksetzen und den Schnellstart wieder einschalten?",
+    "biosHint": "Das BIOS kann Ember nicht prüfen. Bei Dell: „Wake on LAN“, „Wake on Dell USB-C Dock“ und ggf. „MAC Address Pass-Through“ einschalten, „Deep Sleep Control“ aus.",
+    "local": {
+      "changed": "Wake-on-LAN: {count} Einstellung(en) geändert"
+    }
+  },
+  "system": {
+    "title": "System & Richtlinien",
+    "subtitle": "Gruppenrichtlinien kann Ember nicht ändern. Es zeigt, was gilt, frischt sie auf und richtet die Dinge ein, die du selbst ändern darfst.",
+    "run": "Prüfen",
+    "status": {
+      "ok": "in Ordnung",
+      "warn": "prüfen",
+      "locked": "per Richtlinie",
+      "info": "Info",
+      "missing": "fehlt",
+      "error": "Fehler",
+      "pending": "wird geprüft"
+    },
+    "checks": {
+      "gpo": {
+        "title": "Gruppenrichtlinien (Benutzer)",
+        "applied": "{count} Richtlinien angewendet",
+        "noResult": "gpresult hat kein Ergebnis geliefert",
+        "actions": {
+          "gpupdate": "Richtlinien jetzt aktualisieren"
+        },
+        "timeout": "gpresult hat nach {seconds} s nicht geantwortet. „Richtlinien jetzt aktualisieren“ hilft oft, danach erneut prüfen."
+      },
+      "executionPolicy": {
+        "title": "PowerShell-Ausführungsrichtlinie",
+        "byPolicy": "{policy} (per Gruppenrichtlinie)",
+        "actions": {
+          "remoteSigned": "Für mich auf RemoteSigned setzen"
+        }
+      },
+      "gitLongPaths": {
+        "title": "git: lange Pfade (core.longpaths)",
+        "actions": {
+          "enable": "Einschalten"
+        }
+      },
+      "winLongPaths": {
+        "title": "Windows: Pfade über 260 Zeichen",
+        "actions": {
+          "enable": "Einschalten"
+        }
+      },
+      "proxyPolicy": {
+        "title": "Proxy per Gruppenrichtlinie",
+        "managed": "wird per Richtlinie verwaltet",
+        "notManaged": "nicht per Richtlinie festgelegt"
+      },
+      "devMode": {
+        "title": "Windows-Entwicklermodus",
+        "hint": "Nur zur Info. Einschalten geht in den Windows-Einstellungen unter „Für Entwickler“, falls erlaubt."
+      }
+    }
+  },
+  "ai": {
+    "title": "KI",
+    "subtitle": "Diesen Rechner für Wake-on-LAN freischalten, llama.cpp und Modelle verwalten, llama-server starten.",
+    "gpu": {
+      "title": "Grafikkarte",
+      "none": "Keine NVIDIA-Grafikkarte gefunden (nvidia-smi fehlt).",
+      "driver": "Treiber {driver} · CUDA {cuda}",
+      "memory": "{used} von {total} MB belegt",
+      "power": "{draw} W von {limit} W",
+      "temperature": "{value} °C",
+      "utilization": "{value} % Auslastung",
+      "readOnly": "Nur Anzeige – Ember ändert keine Leistungsgrenzen."
+    },
+    "llama": {
+      "title": "llama.cpp",
+      "installed": "Installierte Versionen",
+      "none": "Noch nicht installiert.",
+      "recommended": "Empfohlene Variante: {variant}",
+      "install": "Neueste Version installieren",
+      "use": "Verwenden",
+      "current": "aktiv",
+      "variant": "Variante: {variant}",
+      "variants": {
+        "auto": "automatisch",
+        "cuda": "CUDA (NVIDIA)",
+        "vulkan": "Vulkan (andere GPUs)",
+        "cpu": "nur CPU"
+      },
+      "jobs": {
+        "install": "llama.cpp installieren"
+      },
+      "steps": {
+        "detect": "Grafikkarte erkennen",
+        "release": "Aktuelles Release ermitteln",
+        "download": "Herunterladen",
+        "extract": "Entpacken",
+        "cleanup": "Alte Versionen aufräumen"
+      }
+    },
+    "models": {
+      "title": "Modelle",
+      "empty": "Noch keine Modelle eingetragen. Füge eine GGUF-Download-Adresse hinzu, z. B. von Hugging Face.",
+      "downloaded": "heruntergeladen · {size}",
+      "notDownloaded": "nicht heruntergeladen",
+      "download": "Herunterladen",
+      "folder": "Ordner: {path}",
+      "addUrl": "Download-Adresse (…/resolve/main/modell.gguf)",
+      "addName": "Anzeigename",
+      "add": "Modell hinzufügen",
+      "confirmDelete": "Modelldatei „{name}“ löschen?",
+      "noSha": "Keine Prüfsumme angegeben",
+      "jobs": {
+        "download": "{name} herunterladen"
+      },
+      "steps": {
+        "download": "Modell herunterladen (setzt bei Abbruch fort)",
+        "verify": "Prüfsumme prüfen"
+      }
+    },
+    "server": {
+      "title": "llama-server",
+      "model": "Modell",
+      "port": "Port",
+      "args": "Weitere Argumente",
+      "start": "Server starten",
+      "stop": "Server stoppen",
+      "running": "läuft auf http://127.0.0.1:{port} mit {model}",
+      "stopped": "llama-server beendet",
+      "started": "llama-server gestartet: {model} auf Port {port}",
+      "openUi": "Weboberfläche öffnen"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Gespeichert in {path}",
+    "saved": "Einstellungen gespeichert: {path}",
+    "loadFailed": "Einstellungen konnten nicht gelesen werden, Ember nimmt die Standardwerte: {detail}",
+    "team": {
+      "title": "Team-Konfiguration",
+      "description": "Eine gemeinsame team.json auf dem Netzlaufwerk liefert interne Domains, Softwareliste, Admins, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start. Den Firmenproxy erkennt Ember selbst.",
+      "path": "Pfad zur team.json",
+      "placeholder": "\\\\server\\freigabe\\ember\\team.json",
+      "reload": "Neu laden",
+      "status": "Geladen von {path} am {date}",
+      "fromCache": "Netzlaufwerk nicht erreichbar ({error}) – Ember nutzt die lokale Kopie vom {date}.",
+      "failed": "Nicht geladen: {error}",
+      "none": "Noch keine Team-Konfiguration eingerichtet.",
+      "source": {
+        "settings": "aus den Einstellungen",
+        "file": "aus ember-team.txt neben der Exe",
+        "env": "aus der Umgebungsvariable EMBER_TEAM_CONFIG"
+      }
+    },
+    "proxy": {
+      "title": "Firmenproxy",
+      "mode": "px nutzt",
+      "pac": "die PAC-Datei",
+      "fixed": "einen festen Proxy",
+      "pacUrl": "PAC-Adresse",
+      "pacAuto": "leer = automatisch aus Windows ({value})",
+      "upstream": "Firmenproxy (host:port)",
+      "upstreamHint": "Wird auch für Downloads genutzt, solange px noch nicht läuft. Leer = Windows-Systemproxy.",
+      "domains": "Interne Domains (ohne Proxy)",
+      "domainsHint": "Durch Komma getrennt, z. B. firma.local, intranet.firma.de",
+      "port": "px-Port",
+      "detect": "Automatisch erkennen",
+      "detected": "Gefunden: {items}. Zum Übernehmen speichern.",
+      "notDetected": "Keine Proxy-Einstellungen gefunden. Bitte von Hand eintragen.",
+      "autoHint": "Ember erkennt den Firmenproxy bei jedem Start aus Windows (PAC-Adresse, Proxy aus der PAC-Datei, Systemproxy). Trag nur etwas ein, wenn die Erkennung danebenliegt."
+    },
+    "px": {
+      "title": "px",
+      "installDir": "Installationsordner",
+      "localZip": "Lokales px-Zip statt Download (optional)",
+      "autostart": "px beim Windows-Login starten"
+    },
+    "tools": {
+      "title": "Werkzeuge bei der px-Installation umstellen",
+      "envVars": "Umgebungsvariablen (HTTP_PROXY, HTTPS_PROXY, NO_PROXY)",
+      "git": "git",
+      "npm": "npm",
+      "nuget": "NuGet / .NET",
+      "pip": "pip"
+    },
+    "language": {
+      "title": "Sprache",
+      "de": "Deutsch",
+      "en": "English",
+      "windows": "Windows-Sprache"
+    },
+    "updates": {
+      "title": "Updates",
+      "auto": "Automatisch nach Updates suchen",
+      "check": "Jetzt prüfen",
+      "checking": "Suche nach Updates …",
+      "current": "Ember {version} · Oberfläche {ui}",
+      "latest": "Neueste Version: {version}",
+      "upToDate": "Alles aktuell.",
+      "lastCheck": "Zuletzt geprüft: {date}",
+      "source": "Quelle: {source}"
+    },
+    "advanced": {
+      "title": "Erweiterte Module",
+      "admin": "Du stehst in der Team-Konfiguration als Admin. Mit Strg + E blendest du die Tabs KI und Energie ein und aus.",
+      "notAdmin": "KI und Energie gibt es nur für Admins aus der Team-Konfiguration (team.json → admins)."
+    },
+    "folders": {
+      "title": "Ordner",
+      "logs": "Logs",
+      "settings": "Einstellungen",
+      "px": "px",
+      "pxConfig": "px-Konfiguration",
+      "reports": "Berichte"
+    },
+    "unsaved": "Ungespeicherte Änderungen",
+    "appearance": {
+      "title": "Darstellung",
+      "description": "Farbschema und Design wechselst du auch unten in der Seitenleiste. Efeu ist am Tag salbeigrün und nachts waldgrün, Glut hat einen warmen, rötlichen Grund. An beiden rankt Efeu."
+    }
+  },
+  "log": {
+    "title": "Log",
+    "subtitle": "Alles, was Ember tut. Zusätzlich landet jede Sitzung in {path}.",
+    "filter": "Filtern …",
+    "levels": {
+      "debug": "Debug",
+      "info": "Info",
+      "warning": "Warnung",
+      "error": "Fehler"
+    },
+    "autoscroll": "Automatisch scrollen",
+    "copy": "Kopieren",
+    "save": "Speichern",
+    "clear": "Leeren",
+    "openFolder": "Log-Ordner",
+    "empty": "Noch keine Einträge.",
+    "savedTo": "Log gespeichert: {path}"
+  },
+  "update": {
+    "uiReadyTitle": "Neue Oberfläche bereit",
+    "uiReadyText": "Version {version} ist geladen. Neu laden dauert eine Sekunde, Ember bleibt offen.",
+    "reload": "Jetzt neu laden",
+    "exeReadyTitle": "Ember {version} ist bereit",
+    "exeReadyText": "Für dieses Update startet Ember einmal kurz neu.",
+    "restart": "Neu starten",
+    "later": "Später",
+    "checked": "Update-Prüfung: neueste Version {latest}, installiert {current}, Oberfläche {ui}",
+    "failed": "Update-Prüfung fehlgeschlagen: {detail}",
+    "uiReady": "Neue Oberfläche {version} heruntergeladen",
+    "exeReady": "Ember {version} heruntergeladen",
+    "restarting": "Ember startet für das Update neu …"
+  },
+  "team": {
+    "notConfigured": "Keine Team-Konfiguration eingerichtet",
+    "loaded": "Team-Konfiguration geladen: {path}",
+    "fromCache": "Team-Konfiguration {path} nicht erreichbar ({detail}), nutze lokale Kopie vom {date}",
+    "failed": "Team-Konfiguration {path} konnte nicht geladen werden: {detail}"
+  },
+  "install": {
+    "prerelease": "Testversion {version}: Ember läuft portabel, ohne Kopie nach C:\\Ember\\App und ohne automatische Updates.",
+    "portable": "Portabler Modus (--portable): keine Kopie nach {path}",
+    "notSingleFile": "Kein Single-File-Build: Ember läuft vom aktuellen Ort.",
+    "newerInstalled": "In C:\\Ember\\App liegt bereits die neuere Version {version} – Ember startet diese.",
+    "copied": "Ember {version} nach {path} kopiert",
+    "noRights": "Keine Schreibrechte für {path}: {detail} – Ember läuft vom aktuellen Ort.",
+    "locked": "Kopie nach {path} nicht möglich ({detail}). Läuft Ember dort schon? Ember läuft vorerst vom aktuellen Ort.",
+    "failed": "Selbstkopie fehlgeschlagen: {detail} – Ember läuft vom aktuellen Ort.",
+    "shortcut": "Startmenü-Eintrag angelegt: {path}",
+    "shortcutFailed": "Startmenü-Eintrag konnte nicht angelegt werden: {detail}"
+  },
+  "webview2": {
+    "title": "Ember wird eingerichtet",
+    "preparing": "Die Oberfläche braucht Microsoft WebView2. Ember holt es einmalig …",
+    "missing": "WebView2-Runtime fehlt – Ember lädt sie herunter.",
+    "downloading": "WebView2 wird heruntergeladen (über {route}) …",
+    "installing": "WebView2 wird installiert …",
+    "installed": "WebView2 {version} installiert",
+    "failed": "WebView2 konnte nicht eingerichtet werden:\n\n{detail}\n\nSoll die Download-Seite von Microsoft geöffnet werden?"
+  },
+  "devtools": {
+    "title": "Entwicklerwerkzeuge",
+    "subtitle": "Der Grundstock für die Entwicklung. Stellt eure IT ein Werkzeug im Softwarecenter bereit, installiert Ember es von dort. Sonst kommt es direkt vom Hersteller über px, mit geprüfter Prüfsumme und Signatur.",
+    "nodejs": {
+      "description": "JavaScript-Laufzeit mit npm. Ember legt sie für dein Konto unter C:\\Ember\\Tools\\node ab, ohne Adminrechte."
+    },
+    "git": {
+      "description": "git mit Git Bash und Credential Manager, ohne Adminrechte für dein Konto."
+    },
+    "vscode": {
+      "description": "Editor von Microsoft als Benutzer-Installation, ohne Adminrechte."
+    },
+    "python": {
+      "description": "Aktuelles Python 3 mit pip und py-Launcher, für dein Konto."
+    },
+    "visualstudio": {
+      "description": "Visual Studio Professional mit den Workloads für .NET-Desktop und ASP.NET. Braucht Adminrechte und eine Lizenz; anmelden musst du dich danach selbst."
+    },
+    "dotnet": {
+      "description": "Aktuelles .NET SDK mit Langzeit-Support (LTS) für dotnet build und dotnet run. Braucht Adminrechte."
+    },
+    "pwsh": {
+      "description": "PowerShell 7 neben Windows PowerShell 5.1. Braucht Adminrechte."
+    },
+    "steps": {
+      "resolve": "Version ermitteln",
+      "download": "Herunterladen",
+      "verify": "Prüfsumme und Signatur prüfen",
+      "install": "Installieren",
+      "check": "Installation prüfen"
+    },
+    "jobs": {
+      "install": "{name} installieren",
+      "installMany": "{count} Werkzeug(e) installieren"
+    },
+    "signedBy": "signiert von {signer}",
+    "noChecksum": "keine Prüfsumme veröffentlicht",
+    "uacHint": "Windows fragt gleich nach Adminrechten.",
+    "reboot": "Installiert. Ein Neustart schließt die Installation ab.",
+    "installed": "{name} {version} ist installiert.",
+    "nodeReady": "Node.js liegt in {path}. Neu geöffnete Konsolen finden node und npm über den PATH.",
+    "pathAdded": "Zum PATH hinzugefügt: {dirs}. Gilt für neu geöffnete Konsolen.",
+    "channel": "aktuelle Version",
+    "visualstudioHint": "Der Visual-Studio-Installer lädt die Workloads selbst nach. Je nach Leitung dauert das 20 bis 60 Minuten.",
+    "installedVersion": "installiert · {version}",
+    "notInstalled": "nicht installiert",
+    "latest": "aktuell {version}",
+    "updateAvailable": "neu: {version}",
+    "viaSccm": "über Softwarecenter",
+    "direct": "vom Hersteller",
+    "mailOnly": "nur über Service-Center",
+    "needsAdmin": "braucht Adminrechte",
+    "install": "Installieren",
+    "update": "Aktualisieren",
+    "installMissing": "Fehlende installieren",
+    "confirmInstall": "{name} installieren? Ember lädt den Installer über px, prüft ihn und installiert. Schließ das Programm vorher, falls es schon läuft.",
+    "confirmMany": "Diese Werkzeuge installieren: {names}. Bei Visual Studio, .NET SDK und PowerShell 7 fragt Windows nach Adminrechten.",
+    "allInstalled": "Alles da.",
+    "bruno": {
+      "description": "API-Client wie Postman, ohne Konto; Sammlungen liegen als Dateien im Repo. Für dein Konto, ohne Adminrechte."
+    },
+    "unsigned": "nicht signiert, Prüfsumme von GitHub stimmt"
+  },
+  "playwright": {
+    "title": "Playwright",
+    "subtitle": "Playwright gehört zum Projekt, die Browser liegen in einem gemeinsamen Cache. Ember installiert genau die Browser, die die Playwright-Version deines Projekts braucht, über px und mit den Firmenzertifikaten. Klappt der Download nicht, testest du mit dem Edge, der schon da ist.",
+    "project": "Projektordner",
+    "pick": "Ordner wählen",
+    "noProject": "Wähle den Ordner deines Projekts oder leg ein neues an.",
+    "found": "{package} {version} im Projekt",
+    "foundWanted": "{package} {wanted} laut package.json, npm install steht noch aus",
+    "notInProject": "In der package.json steht noch kein Playwright. Ember kann es hinzufügen.",
+    "noPackageJson": "In diesem Ordner gibt es noch keine package.json. Ember legt eine an und fügt Playwright hinzu.",
+    "browsersChromium": "Nur Chromium (reicht für die meisten Tests)",
+    "browsersAll": "Alle Browser (Chromium, Firefox, WebKit)",
+    "install": "Browser installieren",
+    "cache": "Installierte Browser",
+    "cacheEmpty": "Noch keine Browser im Cache.",
+    "openCache": "Cache-Ordner öffnen",
+    "certsMissing": "Node.js kennt die Firmenzertifikate noch nicht. Wenn der Download mit einem Zertifikatsfehler abbricht, richte unter Proxy → Diagnose „Node.js-Zertifikate“ ein.",
+    "mirror": "Downloads über den Spiegel {host}",
+    "edgeTitle": "Edge mit Playwright als Bibliothek",
+    "edgeText": "Dein Projekt nutzt Playwright ohne Test-Runner, da gibt es keine playwright.config. Starte den Browser so:",
+    "steps": {
+      "project": "Projekt prüfen",
+      "environment": "Proxy und Zertifikate vorbereiten",
+      "npm": "npm-Pakete installieren",
+      "browsers": "Browser herunterladen",
+      "check": "Installation prüfen",
+      "template": "Vorlage anlegen",
+      "edge": "Edge-Konfiguration anlegen"
+    },
+    "jobs": {
+      "install": "Playwright für {path}",
+      "create": "Neues Playwright-Projekt {name}"
+    },
+    "alreadyInstalled": "Playwright {version} ist schon installiert",
+    "browsers": "Im Cache: {list} ({path})",
+    "browsersEdge": "Microsoft Edge (kein Download)",
+    "browsersLabel": "Browser",
+    "edgeMissing": "Microsoft Edge ist auf diesem Rechner nicht installiert.",
+    "add": "Playwright hinzufügen",
+    "addConfirm": "Ember installiert @playwright/test in {path}. Gibt es noch keine playwright.config, legt Ember eine nach der Vorlage an, dazu einen Beispieltest. Vorhandene Dateien bleiben, wie sie sind.",
+    "addConfirmInit": "In {path} gibt es noch keine package.json. Ember legt mit „npm init -y“ eine an und installiert dann @playwright/test, dazu Konfiguration und Beispieltest nach der Vorlage.",
+    "setupEdge": "Edge einrichten",
+    "usesEdge": "Testet mit Edge",
+    "config": "Konfiguration: {file}",
+    "openProject": "Ordner öffnen",
+    "openInCode": "In VS Code öffnen",
+    "edgeFallbackTitle": "Der Download klappt nicht?",
+    "edgeFallback": "Dann teste mit dem Edge, der schon installiert ist. Ember legt die Konfiguration dafür an (channel: 'msedge'), heruntergeladen wird nichts.",
+    "useEdge": "Edge verwenden",
+    "edgeCreated": "{file} angelegt. Tests starten mit „{command}“.",
+    "edgeExisting": "Das Projekt testet schon mit Edge ({file}). Tests starten mit „{command}“.",
+    "edgeFound": "Edge {version} unter {path}",
+    "willAdd": "Noch kein Playwright in {path}, Ember fügt es hinzu",
+    "added": "@playwright/test {version} hinzugefügt. Neu oder ergänzt: {files}",
+    "created": "Angelegt in {path}: {files}",
+    "newProject": "Neues Projekt",
+    "create": {
+      "title": "Neues Projekt aus der Ember-Vorlage",
+      "parent": "Speicherort",
+      "name": "Projektname",
+      "namePlaceholder": "z. B. kundenportal-tests",
+      "target": "Wird angelegt als {path}",
+      "nameRule": "Kleinbuchstaben, Ziffern, Punkt, Binde- und Unterstrich. Ember macht aus „Mein Projekt“ automatisch „mein-projekt“.",
+      "files": "Die Vorlage bringt mit: package.json mit den üblichen Skripten (test, test:ui, report, codegen), playwright.config.ts, einen Beispieltest, .gitignore, eine README und die Empfehlung für die Playwright-Erweiterung in VS Code. Danach installiert npm @playwright/test.",
+      "submit": "Projekt anlegen"
+    }
+  },
+  "appearance": {
+    "scheme": "Farbschema",
+    "design": "Design",
+    "schemes": {
+      "system": "Wie Windows",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
+    "designs": {
+      "efeu": "Efeu",
+      "glut": "Glut"
+    }
+  },
+  "access": {
+    "saved": "Berechtigungen in {path} gespeichert: {members} Einträge mit Zugriff, {admins} Admins",
+    "title": "Berechtigungen",
+    "subtitle": "Wer Ember nutzen darf und wer Admin ist. Das steht in der team.json, alle bekommen es beim nächsten Start.",
+    "restrict": "Nur ausgewählte Benutzer und Gruppen dürfen Ember nutzen",
+    "everyone": "Im Moment darf jeder Ember nutzen, der die team.json lesen kann.",
+    "members": "Zugriff",
+    "membersHint": "Benutzer und AD-Gruppen. Admins dürfen immer, sie müssen hier nicht stehen.",
+    "membersEmpty": "Noch niemand eingetragen. Mit eingeschalteter Beschränkung kämen dann nur die Admins rein.",
+    "admins": "Admins",
+    "adminsHint": "Sehen KI, Energie und Berechtigungen (Strg + E blendet sie aus) und dürfen Ember immer nutzen.",
+    "adminsEmpty": "Keine Admins eingetragen.",
+    "contact": "Zugriffsanfragen gehen an",
+    "contactHint": "Leer: an das Service-Center ({email}).",
+    "addPlaceholder": "Name oder FIRMA\\Name",
+    "add": "Hinzufügen",
+    "user": "Benutzer",
+    "group": "Gruppe",
+    "remove": "{name} entfernen",
+    "notFound": "„{name}“ gibt es im Verzeichnis nicht.",
+    "unchecked": "„{name}“ ließ sich gerade nicht im Verzeichnis prüfen (VPN?) und ist als {kind} eingetragen.",
+    "duplicate": "„{name}“ steht schon in der Liste.",
+    "me": "Deine Anmeldung",
+    "meHint": "Deine Domänengruppen. Ein Klick trägt eine Gruppe bei Zugriff oder bei den Admins ein.",
+    "groupsFilter": "Gruppen filtern",
+    "noGroups": "Keine Domänengruppen gefunden.",
+    "toMembers": "+ Zugriff",
+    "toAdmins": "+ Admin",
+    "save": "In team.json speichern",
+    "discard": "Verwerfen",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "savedToast": "Gespeichert. Alle anderen bekommen die Listen beim nächsten Start von Ember.",
+    "file": "Gespeichert wird in {path}",
+    "problems": {
+      "noTeamFile": "Ember kennt keine team.json. Ohne sie gibt es keine Listen: Trag unter Einstellungen den Pfad ein.",
+      "teamOffline": "Die team.json ist gerade nicht erreichbar. Du siehst die lokale Kopie, speichern geht erst wieder mit Verbindung.",
+      "teamReadOnly": "Du darfst die team.json ({path}) nur lesen. Speichern geht mit Schreibrechten auf die Datei, die vergibt die IT für das Netzlaufwerk."
+    },
+    "locked": {
+      "title": "Ember ist für dich noch nicht freigeschaltet",
+      "text": "Ember ist nur für ausgewählte Benutzer und Gruppen freigegeben. Du bist angemeldet als {user}.",
+      "request": "Zugriff anfragen",
+      "contact": "Anfragen gehen an {email}.",
+      "retry": "Erneut prüfen",
+      "stillLocked": "Noch nicht freigeschaltet. Steht die Freigabe in der team.json, klappt es nach dem nächsten Prüfen."
+    }
+  }
+}

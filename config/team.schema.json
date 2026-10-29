@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelshober.github.io/Ember/team.schema.json",
+  "title": "Ember-Team-Konfiguration",
+  "description": "Gemeinsame Einstellungen für alle Ember-Installationen eines Teams (team.json auf dem Netzlaufwerk). Alles ist optional.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "text": {
+      "description": "Text in einer Sprache oder je Sprache.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": { "de": { "type": "string" }, "en": { "type": "string" } },
+          "additionalProperties": { "type": "string" }
+        }
+      ]
+    },
+    "account": {
+      "type": "string",
+      "description": "Konto oder Gruppe, z. B. FIRMA\\max.mustermann oder nur der Name ohne Domäne."
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1, "description": "Wird nur angezeigt, hilft beim Nachvollziehen von Änderungen." },
+    "name": { "type": "string", "description": "Name des Teams, erscheint in der Seitenleiste." },
+    "proxy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Den Firmenproxy selbst (PAC-Adresse, Proxy) erkennt Ember bei jedem Start aus Windows.",
+      "properties": {
+        "internalDomains": { "type": "array", "items": { "type": "string" }, "description": "Domains, die nicht über den Proxy laufen." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Port von px (Standard 3128)." }
+      }
+    },
+    "serviceCenter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "subjectPrefix": { "type": "string", "description": "Wird jedem Betreff vorangestellt, z. B. [Ember]." }
+      }
+    },
+    "mailTemplates": {
+      "type": "object",
+      "description": "Eigene Vorlagen. Platzhalter: {user}, {computer}, {app}, {details}, {date}, {ember}.",
+      "propertyNames": { "enum": ["softwareRequest", "adminAction", "problem", "accessRequest"] },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": { "subject": { "$ref": "#/$defs/text" }, "body": { "$ref": "#/$defs/text" } }
+      }
+    },
+    "software": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "sccmName": { "type": "string", "description": "Name im Softwarecenter (Platzhalter * und ?), Standard: name." },
+          "displayName": { "type": "string", "description": "Name unter „Programme und Features“ (Platzhalter), Standard: name + *." },
+          "category": { "type": "string" },
+          "note": { "$ref": "#/$defs/text" },
+          "softwareCenterLink": { "type": "string", "pattern": "^softwarecenter:", "description": "Direktlink, z. B. über „Teilen“ im Softwarecenter kopiert." }
+        }
+      }
+    },
+    "power": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowedSchemes": { "type": "array", "items": { "type": "string" }, "description": "Schemas, die Ember ändern darf. Standard: SCHEME_BALANCED." },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "settings"],
+            "properties": {
+              "id": { "type": "string", "description": "Gleiche id wie ein eingebautes Profil (ai-performance, sleep-ac, lid-ac) ersetzt dieses." },
+              "name": { "$ref": "#/$defs/text" },
+              "description": { "$ref": "#/$defs/text" },
+              "settings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["sub", "setting"],
+                  "properties": {
+                    "sub": { "type": "string", "description": "Untergruppe als Alias (SUB_PROCESSOR) oder GUID." },
+                    "setting": { "type": "string", "description": "Einstellung als Alias (PERFEPP) oder GUID." },
+                    "ac": { "type": "integer", "minimum": 0, "description": "Zielwert am Netzteil." },
+                    "dc": { "type": "integer", "minimum": 0, "description": "Zielwert im Akkubetrieb." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "admins": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Wer Admin ist: sieht die erweiterten Module KI, Energie und Berechtigungen und darf Ember immer nutzen. Ohne Einträge gibt es keine Admins. Admins pflegen diese Liste im Tab „Berechtigungen“.",
+      "properties": {
+        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+      }
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Wer Ember überhaupt nutzen darf. Ohne Einträge (oder mit enabled: false) darf jeder. Admins dürfen immer. Admins pflegen die Liste im Tab „Berechtigungen“.",
+      "properties": {
+        "enabled": { "type": "boolean", "description": "false: Liste bleibt stehen, gilt aber nicht. Standard: an, sobald es einen Eintrag gibt." },
+        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+        "contact": { "type": "string", "format": "email", "description": "Wohin Zugriffsanfragen gehen. Standard: die Mailadresse des Service-Centers." }
+      }
+    },
+    "devTools": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Entwicklerwerkzeuge im Software-Tab.",
+      "properties": {
+        "tools": {
+          "type": "array",
+          "description": "Welche Werkzeuge erscheinen. Standard: alle.",
+          "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh", "bruno"] }
+        },
+        "allowDirect": { "type": "boolean", "description": "false: nie direkt vom Hersteller installieren, nur über das Softwarecenter oder das Service-Center. Standard: true." },
+        "visualStudio": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bootstrapperUrl": { "type": "string", "format": "uri", "description": "Standard: https://aka.ms/vs/17/release/vs_professional.exe" },
+            "workloads": { "type": "array", "items": { "type": "string" }, "description": "Workload-IDs für --add. Standard: ManagedDesktop und NetWeb." }
+          }
+        }
+      }
+    },
+    "playwright": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "downloadHost": { "type": "string", "format": "uri", "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist." }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "update": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mirror": { "type": "string", "description": "Optionaler UNC-Ordner mit latest.json und den Release-Dateien, falls GitHub gesperrt ist." }
+      }
+    },
+    "webView2InstallerUrl": { "type": "string", "format": "uri", "description": "Eigene Download-Adresse für den WebView2-Installer." }
+  }
+}
