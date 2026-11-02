@@ -1,10 +1,13 @@
 // Shapes of the data the host (Ember.Core, C#) sends. Property names are camelCase JSON.
 
-export type Route = 'start' | 'proxy' | 'git' | 'software' | 'power' | 'system' | 'ai' | 'access' | 'settings' | 'log';
+export type Route = 'start' | 'proxy' | 'git' | 'software' | 'playwright' | 'power' | 'system' | 'ai' | 'access' | 'settings' | 'log';
+
+/** What roles and keys unlock; the start page is there as soon as any module is. */
+export type ModuleId = Exclude<Route, 'start'>;
 
 export interface TeamStatus {
   path: string | null;
-  source: 'settings' | 'file' | 'env' | null;
+  source: 'settings' | 'policy' | 'file' | 'beside' | 'env' | null;
   loadedAt: string | null;
   fromCache: boolean;
   error: string | null;
@@ -24,16 +27,23 @@ export interface AppInfo {
   user: string;
   computer: string;
   elevated: boolean;
-  /** Admin in the team configuration: may use the advanced modules (KI, Energie). */
+  /** Modules this account sees: from its roles in team.json, or from a starter key while there is none. */
+  modules: ModuleId[];
+  grant: { source: 'team' | 'key' | 'dev' | 'none'; roles: string[]; keyLevel: KeyLevel | null };
+  /** setup: no team.json and no key; notListed: team.json has no role for this account. */
+  locked: 'setup' | 'notListed' | null;
+  /** Has the Berechtigungen tab. */
   admin: boolean;
-  /** Advanced tabs visible (admin and not hidden with Ctrl+E). */
+  /** Has one of the advanced tabs (KI, Energie, Berechtigungen): Ctrl+E shows or hides them. */
+  advanced: boolean;
+  /** Advanced tabs visible (has one and Ctrl+E did not hide them). */
   showAdvanced: boolean;
-  /** On the access list from team.json (or there is none). */
+  /** At least one module. */
   access: boolean;
   /** Where access requests go: access.contact, else the service center. */
   accessContact: string | null;
   /** Colour scheme and design as Ember.exe stored them. */
-  appearance?: { scheme: 'system' | 'light' | 'dark'; design: 'efeu' | 'glut' };
+  appearance?: { scheme: 'light' | 'dark'; design: 'efeu' | 'glut' };
   /** C:\\Ember (or the fallback under %LOCALAPPDATA%). */
   root: string;
   logDir: string;
@@ -118,10 +128,17 @@ export interface AccessEntry {
   kind: 'user' | 'group';
 }
 
-export interface AccessView {
-  restricted: boolean;
+export type KeyLevel = 'proxy' | 'proxyPlaywright' | 'all';
+
+export interface AccessRole {
+  name: string;
+  /** Module ids or "*" for all. */
+  modules: string[];
   members: AccessEntry[];
-  admins: AccessEntry[];
+}
+
+export interface AccessView {
+  roles: AccessRole[];
   contact: string | null;
   teamPath: string | null;
   writable: boolean;
@@ -129,6 +146,10 @@ export interface AccessView {
   problem: 'noTeamFile' | 'teamOffline' | 'teamReadOnly' | null;
   account: string;
   myGroups: string[];
+  /** Every module a role can contain. */
+  modules: ModuleId[];
+  /** team.json still has "admins" or the old access list; saving writes roles. */
+  legacy: boolean;
 }
 
 export interface AccessLookup {

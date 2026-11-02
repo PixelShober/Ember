@@ -42,23 +42,33 @@ public sealed class EmberHost : IDisposable
     /// <summary>Company proxy as Windows reports it (detected once at start, see <see cref="DetectProxyAtStartAsync"/>).</summary>
     ProxyDetectionResult? _detected;
 
-    /// <summary>Admin in the team configuration: may use the advanced modules (KI, Energie).</summary>
-    public bool IsAdmin => AdminCheck.IsAdmin(Team.Config);
+    /// <summary>Which modules this account sees: roles in team.json, or a starter key while there is none.</summary>
+    public Grant Grant => Permissions.Compute(Team.Config, Team.Status, Settings.UnlockKey, Elevation.AccountName, Access.MyGroups, Access.DevBuild);
 
-    /// <summary>The advanced tabs are visible (admin, and not hidden with Ctrl+E). Also switches the DevTools.</summary>
-    public bool ShowAdvanced => IsAdmin && !Settings.HideAdvanced;
+    /// <summary>The advanced tabs are visible (the account has one, and Ctrl+E did not hide them).</summary>
+    public bool ShowAdvanced => ModuleIds.Advanced.Any(Grant.Has) && !Settings.HideAdvanced;
 
-    /// <summary>What still works for someone who is not on the access list: the lock screen and the request mail.</summary>
+    /// <summary>DevTools (F12) only for whoever manages the permissions, and not while Ctrl+E hides the advanced tabs.</summary>
+    public bool DevToolsAllowed => Grant.Has("access") && !Settings.HideAdvanced;
+
+    /// <summary>
+    /// What works without any module: the lock and setup screens (key, team.json path, request mail).
+    /// Everything else needs a module (see <see cref="Permissions.ModulesFor"/>).
+    /// </summary>
     static readonly HashSet<string> OpenMethods = new(StringComparer.Ordinal)
-        { "app.info", "app.ready", "app.setAppearance", "app.openExternal", "team.reload", "mail.compose", "mail.preview" };
+    {
+        "app.info", "app.ready", "app.setAppearance", "app.openExternal", "app.unlock", "app.pickFile",
+        "team.reload", "team.setPath", "mail.compose", "mail.preview",
+    };
 
     /// <summary>Loads the team configuration and starts the background timers.</summary>
     public async Task InitializeAsync()
     {
         Log.Cleanup();
         Log.Info(L.T("app.started", ("version", AppInfo.Version), ("mode", AppInfo.Mode), ("language", L.Tag)));
+        FixColorScheme();
         await Team.LoadAsync(Settings, _cts.Token);
-        Shell.SetDevTools(ShowAdvanced);
+        Shell.SetDevTools(DevToolsAllowed);
         _ = DetectProxyAtStartAsync();
 
         _logTimer = new Timer(_ => FlushLog(), null, 150, 150);
@@ -121,18 +131,21 @@ public sealed class EmberHost : IDisposable
         }
     }
 
-    void RequireAdmin()
-    {
-        if (!IsAdmin) throw new EmberException("moduleNotAllowed");
-    }
-
-    /// <summary>Whether the window frame should be dark for a colour scheme ("system" follows Windows).</summary>
-    public static bool DarkFrame(string scheme) => scheme switch
+    /// <summary>Whether the window frame should be dark for a colour scheme (no choice yet: like Windows).</summary>
+    public static bool DarkFrame(string? scheme) => scheme switch
     {
         "dark" => true,
         "light" => false,
         _ => WindowsUsesDarkTheme(),
     };
+
+    /// <summary>Only light or dark: the first start takes what Windows uses and keeps it.</summary>
+    void FixColorScheme()
+    {
+        if (Settings.ColorScheme is "light" or "dark") return;
+        Settings.ColorScheme = WindowsUsesDarkTheme() ? "dark" : "light";
+        Settings.Save();
+    }
 
     public static bool WindowsUsesDarkTheme()
     {
@@ -146,6 +159,13 @@ public sealed class EmberHost : IDisposable
         {
             return false;
         }
+    }
+
+    /// <summary>After team.json or the key changed: DevTools and the UI follow the new modules.</summary>
+    void GrantChanged()
+    {
+        Shell.SetDevTools(DevToolsAllowed);
+        Bridge.Emit("app.info", Info());
     }
 
     void RequireNoPxJob()
@@ -165,9 +185,13 @@ public sealed class EmberHost : IDisposable
         user = Elevation.AccountName,
         computer = Environment.MachineName,
         elevated = Elevation.IsElevated,
-        admin = IsAdmin,
+        modules = ModuleIds.Known.Where(Grant.Has).ToList(),
+        grant = new { Grant.Source, Grant.Roles, Grant.KeyLevel },
+        locked = Grant.Locked,
+        admin = Grant.Has("access"),
+        advanced = ModuleIds.Advanced.Any(Grant.Has),
         showAdvanced = ShowAdvanced,
-        access = Access.Allowed(Team.Config),
+        access = Grant.Any,
         accessContact = Team.Config.Access?.Contact ?? Team.Config.ServiceCenter?.Email,
         appearance = new { scheme = Settings.ColorScheme, design = Settings.Design },
         root = Paths.Root,
@@ -182,14 +206,14 @@ public sealed class EmberHost : IDisposable
     void RegisterApi()
     {
         var b = Bridge;
-        b.Guard = method => OpenMethods.Contains(method) || Access.Allowed(Team.Config);
+        b.Guard = method => OpenMethods.Contains(method) || Permissions.MayCall(Grant, method);
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
         // Colour scheme and design (switch in the sidebar). The window frame follows.
         b.Register("app.setAppearance", (args, _) =>
         {
-            var scheme = args.OptStr("scheme") is "light" or "dark" ? args.OptStr("scheme")! : "system";
+            var scheme = args.OptStr("scheme") is "light" or "dark" ? args.OptStr("scheme")! : Settings.ColorScheme!;
             var design = args.OptStr("design") == "glut" ? "glut" : "efeu";
             if (scheme != Settings.ColorScheme || design != Settings.Design)
             {
@@ -200,15 +224,26 @@ public sealed class EmberHost : IDisposable
             Shell.SetDarkFrame(DarkFrame(scheme));
             return Task.FromResult<object?>(null);
         });
-        // Ctrl+E: admins show or hide the advanced tabs (KI, Energie).
+        // Ctrl+E: whoever has one of the advanced tabs (KI, Energie, Berechtigungen) shows or hides them.
         b.Register("app.toggleAdvanced", () =>
         {
-            RequireAdmin();
+            if (!ModuleIds.Advanced.Any(Grant.Has)) throw new EmberException("moduleNotAllowed");
             Settings.HideAdvanced = !Settings.HideAdvanced;
             Settings.Save();
-            Shell.SetDevTools(ShowAdvanced);
+            Shell.SetDevTools(DevToolsAllowed);
             Bridge.Emit("app.info", Info());
             return ShowAdvanced;
+        });
+        // Starter key (only counts while there is no team.json).
+        b.Register("app.unlock", (args, _) =>
+        {
+            var key = args.Req("key");
+            var level = StarterKeys.Level(key) ?? throw new EmberException("keyInvalid");
+            Settings.UnlockKey = key.Trim();
+            Settings.Save();
+            Log.Info(L.T("access.unlocked", ("level", L.T($"access.keyLevels.{level}"))));
+            GrantChanged();
+            return Task.FromResult<object?>(Info());
         });
         b.Register("app.ready", (args, _) =>
         {
@@ -258,7 +293,7 @@ public sealed class EmberHost : IDisposable
             Settings = next;
             if (languageChanged) L.Configure(next.Language);
             if (teamChanged) await Team.LoadAsync(Settings, ct);
-            if (teamChanged) Shell.SetDevTools(ShowAdvanced);
+            if (teamChanged) Shell.SetDevTools(DevToolsAllowed);
             Log.Info(L.T("settings.saved", ("path", Paths.SettingsFile)));
             if (languageChanged || teamChanged) Bridge.Emit("app.info", Info());
             return SettingsView();
@@ -268,32 +303,34 @@ public sealed class EmberHost : IDisposable
         b.Register("team.reload", async ct =>
         {
             await Team.LoadAsync(Settings, ct);
-            Shell.SetDevTools(ShowAdvanced);
-            Bridge.Emit("app.info", Info());
-            return SettingsView();
+            GrantChanged();
+            return Grant.Has("settings") ? SettingsView() : null;
+        });
+        // Setup screen and start page: point Ember at a team.json. Without one anybody may (that is
+        // how a new machine gets started); once one is loaded only the settings module may change it.
+        b.Register("team.setPath", async (args, ct) =>
+        {
+            if (Team.Status.LoadedAt != null && !Grant.Has("settings")) throw new EmberException("accessDenied");
+            var path = args.Req("path").Trim().Trim('"');
+            await TeamConfigService.TryReadAsync(path, ct);   // throws with the reason when the file is unreadable
+            Settings.TeamConfigPath = path;
+            Settings.Save();
+            await Team.LoadAsync(Settings, ct);
+            GrantChanged();
+            return Info();
         });
 
         // ------------------------------------------------------------------ access (admins)
-        b.Register("access.get", async ct =>
-        {
-            RequireAdmin();
-            return await Access.ViewAsync(Team.Config, Team.Status, ct);
-        });
-        b.Register("access.lookup", (args, _) =>
-        {
-            RequireAdmin();
-            return Task.FromResult<object?>(Access.Lookup(args.Req("name")));
-        });
+        b.Register("access.get", async ct => await Access.ViewAsync(Team.Config, Team.Status, ct));
+        b.Register("access.lookup", (args, _) => Task.FromResult<object?>(Access.Lookup(args.Req("name"))));
         b.Register("access.save", async (args, ct) =>
         {
-            RequireAdmin();
             var change = args.Get<AccessChange>("change") ?? throw new EmberException("missingParam", ("name", "change"));
             var path = Team.Status.Path ?? throw new EmberException("accessNoTeamFile");
             if (Team.Status.FromCache) throw new EmberException("teamOffline", ("path", path));
             await Task.Run(() => Access.Save(path, change, Elevation.AccountName, Access.MyGroups), ct).WaitAsync(TimeSpan.FromSeconds(20), ct);
             await Team.LoadAsync(Settings, ct);
-            Shell.SetDevTools(ShowAdvanced);
-            Bridge.Emit("app.info", Info());
+            GrantChanged();
             return await Access.ViewAsync(Team.Config, Team.Status, ct);
         });
 
@@ -301,7 +338,14 @@ public sealed class EmberHost : IDisposable
         b.Register("proxy.detect", async ct => await Net.DetectProxyAsync(ct));
         b.Register("proxy.diagnose", async ct => await ProxyTools.DiagnoseAsync(Effective, ct));
         b.Register("git.proxy", async ct => await ProxyTools.GitAsync(Effective, ct));
-        b.Register("proxy.set", async (args, ct) => await ProxyTools.SetAsync(args.Req("tool"), Effective, ct));
+        b.Register("proxy.set", async (args, ct) =>
+        {
+            var tool = args.Req("tool");
+            // Pointing a tool at px while px is missing or stopped would cut it off the network.
+            if (tool != "nodeCerts" && await PxControl.StatusAsync(Effective) is not { Installed: true, PortOpen: true })
+                throw new EmberException("pxNotRunning");
+            return await ProxyTools.SetAsync(tool, Effective, ct);
+        });
         b.Register("proxy.remove", async (args, ct) => await ProxyTools.RemoveAsync(args.Req("tool"), Effective, ct, onlyIfOurs: !args.Flag("force")));
         b.Register("px.status", async _ => await PxControl.StatusAsync(Effective));
         b.Register("px.install", () =>
@@ -484,16 +528,15 @@ public sealed class EmberHost : IDisposable
         });
 
         // ------------------------------------------------------------------ power
-        // ------------------------------------------------------------------ power (advanced)
-        b.Register("power.state", async ct => { RequireAdmin(); return await PowerProfiles.GetStateAsync(Team.Config, ct); });
-        b.Register("power.apply", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Apply, ct); });
-        b.Register("power.defaults", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Defaults, ct); });
-        b.Register("power.restore", async (args, ct) => { RequireAdmin(); return await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Backup, ct); });
+        b.Register("power.state", async ct => await PowerProfiles.GetStateAsync(Team.Config, ct));
+        b.Register("power.apply", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Apply, ct));
+        b.Register("power.defaults", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Defaults, ct));
+        b.Register("power.restore", async (args, ct) => await PowerProfiles.ChangeAsync(Team.Config, args.Req("profile"), PowerProfiles.Mode.Backup, ct));
 
-        // ------------------------------------------------------------------ wake-on-LAN for this machine (KI tab, advanced)
-        b.Register("wol.local", async ct => { RequireAdmin(); return await WolTarget.GetStateAsync(ct); });
-        b.Register("wol.apply", async ct => { RequireAdmin(); var errors = await WolTarget.ApplyAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
-        b.Register("wol.reset", async ct => { RequireAdmin(); var errors = await WolTarget.ResetAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
+        // ------------------------------------------------------------------ wake-on-LAN for this machine (KI tab)
+        b.Register("wol.local", async ct => await WolTarget.GetStateAsync(ct));
+        b.Register("wol.apply", async ct => { var errors = await WolTarget.ApplyAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
+        b.Register("wol.reset", async ct => { var errors = await WolTarget.ResetAsync(ct); return new { errors, state = await WolTarget.GetStateAsync(ct) }; });
 
         // ------------------------------------------------------------------ system
         b.Register("system.checks", async ct => await SystemChecks.RunAsync(ct));
@@ -503,10 +546,9 @@ public sealed class EmberHost : IDisposable
         b.Register("system.adminCommands", (args, _) =>
             Task.FromResult<object?>(SystemChecks.AdminCommands(args.Req("check"), args.Req("action"))));
 
-        // ------------------------------------------------------------------ AI (advanced)
+        // ------------------------------------------------------------------ AI
         b.Register("ai.status", async ct =>
         {
-            RequireAdmin();
             return new
             {
                 gpus = await Gpu.NvidiaAsync(ct),
@@ -517,7 +559,6 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.llama.install", () =>
         {
-            RequireAdmin();
             return Jobs.Start("llama", "llama", L.T("ai.llama.jobs.install"), LlamaCpp.InstallSteps(Settings, Effective, current =>
             {
                 Settings.LlamaCurrent = current;
@@ -526,14 +567,12 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.llama.select", (args, _) =>
         {
-            RequireAdmin();
             Settings.LlamaCurrent = args.Req("name");
             Settings.Save();
             return Task.FromResult<object?>(null);
         });
         b.Register("ai.server.start", (args, _) =>
         {
-            RequireAdmin();
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("model")) ?? throw new EmberException("modelUnknown");
             LlamaCpp.StartServer(Settings, model.Path);
             return Task.FromResult<object?>(null);
@@ -541,7 +580,6 @@ public sealed class EmberHost : IDisposable
         b.Register("ai.server.stop", () => { LlamaCpp.StopServer(); return null; });
         b.Register("ai.models.download", (args, _) =>
         {
-            RequireAdmin();
             var id = args.Req("id");
             var model = Models.All(Settings, Team.Config).FirstOrDefault(m => m.Id == id) ?? throw new EmberException("modelUnknown");
             return Task.FromResult<object?>(Jobs.Start("model:" + id, "model", L.T("ai.models.jobs.download", ("name", model.Name.Length > 0 ? model.Name : id)),
@@ -549,7 +587,6 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.models.delete", (args, _) =>
         {
-            RequireAdmin();
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("id")) ?? throw new EmberException("modelUnknown");
             if (File.Exists(model.Path)) File.Delete(model.Path);
             return Task.FromResult<object?>(null);

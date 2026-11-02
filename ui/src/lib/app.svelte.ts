@@ -3,7 +3,7 @@ import { flushSync } from 'svelte';
 import { BridgeError, getBridge, type Bridge } from './bridge';
 import { applyAppearance, normalize, storedAppearance } from './appearance';
 import { host, setLanguage, t } from './i18n.svelte';
-import type { AppInfo, JobSnapshot, LogEntry, PxStatus, Route, UpdateStatus } from './types';
+import type { AppInfo, JobSnapshot, LogEntry, ModuleId, PxStatus, Route, UpdateStatus } from './types';
 
 export interface Toast {
   id: number;
@@ -26,7 +26,7 @@ export interface MailRequest {
   attachReport: boolean;
 }
 
-const routes: Route[] = ['start', 'proxy', 'git', 'software', 'power', 'system', 'ai', 'access', 'settings', 'log'];
+const routes: Route[] = ['start', 'proxy', 'git', 'software', 'playwright', 'power', 'system', 'ai', 'access', 'settings', 'log'];
 const MAX_LOG = 3000;
 
 export const app = $state({
@@ -45,6 +45,18 @@ export const app = $state({
 
 let bridge: Bridge | null = null;
 let toastId = 0;
+
+/** The account sees this module (roles in team.json, or the starter key). */
+export const can = (module: ModuleId): boolean => !!app.info?.modules?.includes(module);
+
+/** A page may be shown: the start page always, the advanced tabs only while Ctrl+E has not hidden them. */
+export function canOpen(route: Route): boolean {
+  if (route === 'start') return !!app.info?.access;
+  if (!can(route)) return false;
+  return !advancedModules.includes(route) || !!app.info?.showAdvanced;
+}
+
+export const advancedModules: ModuleId[] = ['power', 'ai', 'access'];
 
 export async function api<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
   bridge ??= await getBridge();
@@ -91,7 +103,7 @@ export async function init(): Promise<void> {
   bridge.on('px.status', (s: PxStatus) => (app.px = s));
   bridge.on('update', (s: UpdateStatus) => (app.update = s));
   bridge.on('app.info', (info: AppInfo) => {
-    // Just got access (team.json changed): start over, so everything loads that the lock screen skipped.
+    // Just got access (key, team.json changed): start over, so everything loads that the lock screen skipped.
     if (app.info && !app.info.access && info.access) location.reload();
     app.info = info;
     setLanguage(info.language);
@@ -102,7 +114,7 @@ export async function init(): Promise<void> {
   setLanguage(info.language);
   // The browser storage may be empty (new UI cache, cleared data): Ember.exe's copy wins then.
   if (!storedAppearance() && info.appearance) applyAppearance(normalize(info.appearance));
-  // Not on the access list: only the lock screen, the host refuses everything else anyway.
+  // No module (setup screen or not in any role): the host refuses everything else anyway.
   if (!info.access) {
     app.ready = true;
     return;
@@ -110,7 +122,7 @@ export async function init(): Promise<void> {
   const [px, jobs, logs, update] = await Promise.all([
     bridge.call<PxStatus>('px.status'),
     bridge.call<JobSnapshot[]>('jobs.list'),
-    bridge.call<LogEntry[]>('log.recent'),
+    info.modules.includes('log') ? bridge.call<LogEntry[]>('log.recent') : Promise.resolve([] as LogEntry[]),
     bridge.call<UpdateStatus>('update.status'),
   ]);
   app.px = px;

@@ -28,6 +28,20 @@ public class DevToolsTests
     }
 
     [Fact]
+    public void Bruno_comes_as_the_x64_zip_not_the_installer()
+    {
+        var urls = new[]
+        {
+            "https://github.com/usebruno/bruno/releases/download/v4.3.0/bruno_4.3.0_x64_win.exe",
+            "https://github.com/usebruno/bruno/releases/download/v4.3.0/bruno_4.3.0_arm64_win.zip",
+            "https://github.com/usebruno/bruno/releases/download/v4.3.0/bruno_4.3.0_x64_win.zip",
+            "https://github.com/usebruno/bruno/releases/download/v4.3.0/bruno_4.3.0_x64_mac.zip",
+        };
+        Assert.EndsWith("/bruno_4.3.0_x64_win.zip", DevTools.BrunoAsset(urls));
+        Assert.Null(DevTools.BrunoAsset(urls.Take(2)));
+    }
+
+    [Fact]
     public void Python_versions_skip_prereleases_and_sort_numerically()
     {
         using var doc = JsonDocument.Parse("""["3.9.13", "3.13.9", "3.15.0-a1", "3.14.2", "3.14.10", "3.15.0-rc2"]""");

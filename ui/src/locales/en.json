@@ -17,15 +17,16 @@
       "portable": "portable",
       "dev": "development"
     },
-    "advancedOn": "KI and Energy are visible now. Ctrl + E hides them again.",
-    "advancedOff": "KI and Energy are hidden. Ctrl + E shows them again.",
-    "advancedNotAllowed": "KI and Energy are only available to admins listed in the team configuration (team.json → admins)."
+    "advancedOn": "Power, AI and Permissions are visible again, as far as your roles have them. Ctrl + E hides them.",
+    "advancedOff": "Power, AI and Permissions are hidden. Ctrl + E shows them again.",
+    "advancedNotAllowed": "None of your roles has Power, AI or Permissions."
   },
   "nav": {
     "start": "Home",
     "proxy": "Proxy",
     "git": "Git",
     "software": "Software",
+    "playwright": "Playwright",
     "power": "Power",
     "system": "System",
     "ai": "AI",
@@ -102,7 +103,7 @@
     "missingParam": "Missing parameter: {name}",
     "modelMissing": "The model file is missing: {path}",
     "modelUnknown": "This model is not in the list.",
-    "moduleNotAllowed": "The advanced module is not enabled.",
+    "moduleNotAllowed": "This area is not enabled for your account.",
     "noDownloadLink": "No download link was found.",
     "noHttpClient": "No network connection prepared – please start the installation from the beginning.",
     "pacMissing": "px should use the PAC file, but none was found. Enter it in the settings or choose \"fixed proxy\".",
@@ -149,6 +150,7 @@
     "devToolNoRelease": "No suitable version of {tool} was found.",
     "devToolNoChecksum": "There is no checksum for {file}, so Ember does not install it.",
     "nodeInUse": "Node.js is in use right now ({path}). Close all terminals and editors that use node and try again.",
+    "brunoInUse": "Bruno is running ({path}). Close Bruno and try again.",
     "devToolNothingToDo": "Nothing is missing.",
     "certsNone": "No valid certificate was found in the Windows certificate store.",
     "playwrightNoNode": "Node.js with npm is missing. Install it above under Developer tools.",
@@ -163,13 +165,19 @@
     "playwrightFolderNotEmpty": "{path} already exists and is not empty. Pick another name.",
     "playwrightNoEdge": "Microsoft Edge is not installed on this computer. Use Chromium or ask the service center for Edge.",
     "playwrightEdgeLibrary": "Your project uses {package} without the test runner, so there is no playwright.config. Launch the browser in code with chromium.launch({ channel: 'msedge' }).",
-    "accessDenied": "Ember is not enabled for your account.",
-    "accessSelfLockout": "This would remove you as an admin. Stay on the admin list (directly or through one of your groups) and save again.",
+    "accessDenied": "This area is not enabled for your account.",
+    "accessSelfLockout": "This would lock you out: none of your roles would have the Permissions module any more.",
     "accessContactInvalid": "\"{value}\" is not a mail address.",
     "accessNoTeamFile": "Ember knows no team.json. Enter its path under Settings, then the lists can be saved there.",
     "teamChanged": "team.json ({path}) changed since you opened this page. Reload, check the lists and save again.",
     "teamInvalid": "team.json is not valid JSON: {detail}",
-    "teamOffline": "team.json cannot be reached right now (VPN, network share). Ember uses the local copy; saving works again once connected."
+    "teamOffline": "team.json cannot be reached right now (VPN, network share). Ember uses the local copy; saving works again once connected.",
+    "pxNotRunning": "px is not installed or not running. Start px first, otherwise the tools lose their network connection.",
+    "teamUnreadable": "Cannot read team.json at {path}: {detail}",
+    "keyInvalid": "Ember does not know this key. Check the spelling; dashes and spaces do not matter.",
+    "accessRoleNameMissing": "Every role needs a name.",
+    "accessRoleDuplicate": "The role “{name}” exists twice.",
+    "accessModuleUnknown": "Ember does not know the module “{module}” in the role “{role}”."
   },
   "jobs": {
     "started": "started",
@@ -233,7 +241,9 @@
     "quick": "Quick actions",
     "report": "Create diagnosis report",
     "contact": "Contact the service center",
-    "reportSaved": "Report saved and copied: {path}"
+    "reportSaved": "Report saved and copied: {path}",
+    "byKey": "Unlocked with the key “{level}”. Once you enter team.json, its roles decide what you see.",
+    "setUpTeam": "Set up team configuration"
   },
   "proxy": {
     "title": "Proxy",
@@ -263,6 +273,7 @@
       "value": "Current value",
       "state": "Status",
       "set": "Point to px",
+      "needsPx": "px has to be installed and running. Start px above, then switch the tools to it.",
       "remove": "Remove",
       "confirmSet": "Point {tool} to {url}?",
       "kerberosNote": "npm, pip and most Node, Python, Go and Rust tools cannot do Kerberos. That is why they point to px, and px handles the sign-in."
@@ -408,7 +419,7 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Developer tools, Playwright and everything Software Center offers.",
+    "subtitle": "Developer tools and everything Software Center offers.",
     "client": "Software Center client {version}",
     "noClient": "No Software Center client found. Installing then only works through the service center.",
     "empty": "The team configuration does not list any programs yet (section \"software\").",
@@ -799,9 +810,12 @@
       "source": "Source: {source}"
     },
     "advanced": {
-      "title": "Advanced modules",
-      "admin": "You are listed as an admin in the team configuration. Ctrl + E shows and hides the KI and Energy tabs.",
-      "notAdmin": "KI and Energy are only available to admins listed in the team configuration (team.json → admins)."
+      "title": "Your modules",
+      "roles": "Your roles from team.json: {roles}.",
+      "byKey": "Unlocked with the key “{level}” until a team.json is entered.",
+      "dev": "Development build: every module is visible.",
+      "toggle": "Ctrl + E shows and hides Power, AI and Permissions.",
+      "none": "Power, AI and Permissions are not enabled for you."
     },
     "folders": {
       "title": "Folders",
@@ -865,7 +879,9 @@
     "locked": "Copy to {path} not possible ({detail}). Is Ember already running there? Ember runs from its current location for now.",
     "failed": "Self-copy failed: {detail} – Ember runs from its current location.",
     "shortcut": "Start menu entry created: {path}",
-    "shortcutFailed": "Start menu entry could not be created: {detail}"
+    "shortcutFailed": "Start menu entry could not be created: {detail}",
+    "teamPointer": "Created by Ember: this is where team.json is (started from the network share).",
+    "teamPointerFailed": "Could not take the path to team.json along to C:\\Ember\\App: {detail}"
   },
   "webview2": {
     "title": "Setting up Ember",
@@ -917,6 +933,7 @@
     "reboot": "Installed. A restart completes the installation.",
     "installed": "{name} {version} is installed.",
     "nodeReady": "Node.js is in {path}. Newly opened terminals find node and npm through PATH.",
+    "brunoReady": "Bruno is in {path}. Start it from the Start menu.",
     "pathAdded": "Added to PATH: {dirs}. Applies to newly opened terminals.",
     "channel": "current version",
     "visualstudioHint": "The Visual Studio installer downloads the workloads itself. Depending on the connection this takes 20 to 60 minutes.",
@@ -935,7 +952,7 @@
     "confirmMany": "Install these tools: {names}. For Visual Studio, .NET SDK and PowerShell 7 Windows asks for admin rights.",
     "allInstalled": "All there.",
     "bruno": {
-      "description": "API client like Postman, without an account; collections live as files in the repo. For your account, no admin rights needed."
+      "description": "API client like Postman, no account; collections are plain files in the repo. Ember unpacks Bruno for your account into C:\\Ember\\Tools, without an installer and without admin rights."
     },
     "unsigned": "not signed, checksum from GitHub matches"
   },
@@ -1010,7 +1027,6 @@
     "scheme": "Colour scheme",
     "design": "Design",
     "schemes": {
-      "system": "Like Windows",
       "light": "Light",
       "dark": "Dark"
     },
@@ -1020,50 +1036,77 @@
     }
   },
   "access": {
-    "saved": "Permissions saved to {path}: {members} entries with access, {admins} admins",
+    "saved": "Permissions saved to {path}: {roles} roles, {members} entries",
+    "unlocked": "Unlocked with a key: {level}",
     "title": "Permissions",
-    "subtitle": "Who may use Ember and who is an admin. It lives in team.json; everyone gets it the next time Ember starts.",
-    "restrict": "Only selected users and groups may use Ember",
-    "everyone": "Right now anyone who can read team.json may use Ember.",
-    "members": "Access",
-    "membersHint": "Users and AD groups. Admins always may and need not be listed here.",
-    "membersEmpty": "Nobody listed yet. With the restriction on, only admins would get in.",
-    "admins": "Admins",
-    "adminsHint": "See AI, Power and Permissions (Ctrl + E hides them) and may always use Ember.",
-    "adminsEmpty": "No admins listed.",
+    "subtitle": "Who sees which modules. The roles live in team.json; everybody else gets them at their next start.",
+    "roles": "Roles",
+    "rolesHint": "A role decides which modules its members see. Whoever is in several roles sees all of them together. Whoever is in none only sees the lock screen.",
+    "noRoles": "No roles yet. Nobody sees anything that way, not even you.",
+    "addRole": "Add role",
+    "newRole": "New role",
+    "roleName": "Role name",
+    "removeRole": "Delete role {name}",
+    "memberCount": "{count} entries",
+    "modules": "Modules",
+    "allModules": "All modules",
+    "allModulesHint": "including modules added later",
+    "advancedHint": "Ctrl + E hides and shows Power, AI and Permissions.",
+    "membersEmpty": "Nobody in this role yet.",
+    "legacy": "team.json still uses the old format with “admins” and an access list. Ember shows both as roles and writes the new format when you save.",
     "contact": "Access requests go to",
-    "contactHint": "Empty: to the service center ({email}).",
+    "contactHint": "Empty: the service center ({email}).",
     "addPlaceholder": "Name or COMPANY\\Name",
     "add": "Add",
     "user": "User",
     "group": "Group",
     "remove": "Remove {name}",
-    "notFound": "\"{name}\" does not exist in the directory.",
-    "unchecked": "\"{name}\" could not be checked in the directory right now (VPN?) and was added as {kind}.",
-    "duplicate": "\"{name}\" is already on the list.",
+    "notFound": "“{name}” does not exist in the directory.",
+    "unchecked": "“{name}” could not be checked in the directory right now (VPN?) and was added as {kind}.",
+    "duplicate": "“{name}” is already in this role.",
     "me": "Your sign-in",
-    "meHint": "Your domain groups. One click adds a group to Access or to Admins.",
+    "meHint": "Your domain groups. Put a group straight into a role.",
+    "addTo": "To role",
+    "addToRole": "Put {name} into a role",
     "groupsFilter": "Filter groups",
     "noGroups": "No domain groups found.",
-    "toMembers": "+ Access",
-    "toAdmins": "+ Admin",
     "save": "Save to team.json",
     "discard": "Discard",
     "unsaved": "Unsaved changes",
-    "savedToast": "Saved. Everyone else gets the lists the next time Ember starts.",
-    "file": "Saved to {path}",
+    "savedToast": "Saved. Everybody else gets the roles the next time they start Ember.",
+    "file": "Saving to {path}",
+    "keyLevels": {
+      "proxy": "Proxy",
+      "proxyPlaywright": "Proxy and Playwright",
+      "all": "Full access"
+    },
     "problems": {
-      "noTeamFile": "Ember knows no team.json, so there are no lists. Enter its path under Settings.",
+      "noTeamFile": "Ember knows no team.json. Without it there are no roles: enter the path under Settings.",
       "teamOffline": "team.json cannot be reached right now. You see the local copy; saving works again once connected.",
-      "teamReadOnly": "You may only read team.json ({path}). Saving needs write access to the file, which IT grants on the network share."
+      "teamReadOnly": "You may only read team.json ({path}). Saving needs write access to the file, which IT grants for the share."
     },
     "locked": {
       "title": "Ember is not enabled for you yet",
-      "text": "Ember is only available to selected users and groups. You are signed in as {user}.",
+      "text": "team.json has no role for you. You are signed in as {user}.",
       "request": "Request access",
       "contact": "Requests go to {email}.",
       "retry": "Check again",
-      "stillLocked": "Not enabled yet. Once team.json lists you, the next check lets you in."
+      "stillLocked": "Not enabled yet. Once team.json has a role for you, the next check lets you in."
+    },
+    "setup": {
+      "title": "Set up Ember",
+      "text": "Ember learns from your team's team.json who sees what. Until you have it, a key unlocks Ember.",
+      "key": "Key",
+      "keyHint": "Your team gives it to you. Depending on the key you see Proxy, Proxy and Playwright, or everything.",
+      "unlock": "Unlock",
+      "team": "Team configuration",
+      "teamHint": "The path to team.json, usually on the network share. Then its roles decide who sees what, and the key no longer counts.",
+      "teamPlaceholder": "\\\\server\\share\\ember\\team.json",
+      "browse": "Browse",
+      "useTeam": "Use it",
+      "teamSaved": "Team configuration set: {path}",
+      "teamFailed": "team.json at {path} cannot be reached right now: {detail}",
+      "account": "Signed in as {user}."
     }
   }
 }

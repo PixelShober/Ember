@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AccessView, AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -27,17 +27,36 @@ export function createMockBridge(): Bridge {
     models: [],
   };
 
+  // ?setup: no team.json and no key; ?locked: no role in team.json; ?key=proxy|proxyPlaywright|all: unlocked by a starter key.
+  const params = new URLSearchParams(location.search);
+  const allModules: ModuleId[] = ['proxy', 'git', 'software', 'playwright', 'system', 'power', 'ai', 'access', 'settings', 'log'];
+  const keyModules: Record<KeyLevel, ModuleId[]> = { proxy: ['proxy'], proxyPlaywright: ['proxy', 'playwright'], all: allModules };
+  const keyLevel = (['proxy', 'proxyPlaywright', 'all'] as const).find((k) => k === params.get('key')) ?? null;
+  const setup = params.has('setup');
+  const modules: ModuleId[] = setup || params.has('locked') ? [] : keyLevel ? keyModules[keyLevel] : allModules;
+  const withTeam = !setup && !keyLevel;
+
   const team = {
-    path: '\\\\fs01\\entwicklung\\ember\\team.json', source: 'settings' as const, loadedAt: now(), fromCache: false,
-    error: null, version: 3, name: 'Team Entwicklung',
+    path: withTeam ? '\\\\fs01\\entwicklung\\ember\\team.json' : null, source: withTeam ? ('settings' as const) : null, loadedAt: withTeam ? now() : null, fromCache: false,
+    error: null, version: withTeam ? 3 : 0, name: withTeam ? 'Team Entwicklung' : null,
   };
 
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
     languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
-    admin: true, showAdvanced: true, access: !new URLSearchParams(location.search).has('locked'), accessContact: 'ember-admins@firma.example', root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: 'Team Entwicklung', serviceCenter: 'servicecenter@firma.example',
+    modules, grant: { source: setup ? 'none' : keyLevel ? 'key' : 'team', roles: withTeam && modules.length ? ['Admins'] : [], keyLevel },
+    locked: setup ? 'setup' : modules.length ? null : 'notListed',
+    admin: modules.includes('access'), advanced: modules.some((m) => ['power', 'ai', 'access'].includes(m)), showAdvanced: true, access: modules.length > 0,
+    accessContact: withTeam ? 'ember-admins@firma.example' : null, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: withTeam ? 'Team Entwicklung' : null,
+    serviceCenter: withTeam ? 'servicecenter@firma.example' : null,
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
   };
+
+  /** Starts over with other URL parameters (the real host keeps this state in settings.json). */
+  function restartWith(query: string) {
+    history.replaceState(null, '', `?${query}${location.hash}`);
+    location.reload();
+  }
 
   let px: PxStatus = { installed: true, running: true, portOpen: true, debug: false, url: 'http://127.0.0.1:3128', configOutdated: false };
   const pxUrl = px.url;
@@ -209,13 +228,17 @@ export function createMockBridge(): Bridge {
 
   let pwFailedOnce = false;
   const accessView: AccessView = {
-    restricted: true,
-    members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }, { name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }],
-    admins: [{ name: 'FIRMA\\jmoessner', kind: 'user' }],
+    roles: [
+      { name: 'Admins', modules: ['*'], members: [{ name: 'FIRMA\\jmoessner', kind: 'user' }, { name: 'FIRMA\\GG-Ember-Admins', kind: 'group' }] },
+      { name: 'Entwicklung', modules: ['proxy', 'git', 'software', 'playwright', 'system', 'settings', 'log'], members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }] },
+      { name: 'Test', modules: ['proxy', 'playwright'], members: [{ name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }] },
+    ],
     contact: 'ember-admins@firma.example',
     teamPath: '\\\\fs01\\entwicklung\\ember\\team.json', writable: true, version: 'a1b2c3', problem: null,
     account: 'FIRMA\\jmoessner',
     myGroups: ['FIRMA\\Domain Users', 'FIRMA\\GG-Entwicklung', 'FIRMA\\GG-Ember-Admins', 'FIRMA\\GG-VPN', 'FIRMA\\SCCM-Software-Entwicklung', 'FIRMA\\Teams-Entwicklung'],
+    modules: allModules,
+    legacy: false,
   };
   const playwright: PlaywrightState = {
     browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
@@ -257,7 +280,7 @@ export function createMockBridge(): Bridge {
     'app.toggleAdvanced': () => { user.hideAdvanced = !user.hideAdvanced; info.showAdvanced = !user.hideAdvanced; emit('app.info', { ...info }); return info.showAdvanced; },
     'settings.defaults': () => ({ ...user, usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null }),
     'team.status': () => ({ status: team, name: info.teamName }),
-    'team.reload': () => settingsView(),
+    'team.reload': () => (modules.includes('settings') ? settingsView() : null),
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'] }),
     'proxy.diagnose': () => proxyRows,
     'access.get': () => structuredClone(accessView),
@@ -268,9 +291,20 @@ export function createMockBridge(): Bridge {
       return { name: name.includes('\\') ? name : `FIRMA\\${name}`, kind: group ? 'group' : 'user', found: true };
     },
     'access.save': (p) => {
-      const c = p.change as { restricted: boolean; members: AccessView['members']; admins: AccessView['admins']; contact: string | null };
-      Object.assign(accessView, { restricted: c.restricted, members: c.members, admins: c.admins, contact: c.contact || null, version: String(Date.now()) });
+      const c = p.change as { roles: AccessView['roles']; contact: string | null };
+      Object.assign(accessView, { roles: c.roles, contact: c.contact || null, version: String(Date.now()), legacy: false });
       return structuredClone(accessView);
+    },
+    'app.unlock': (p) => {
+      const key = String(p.key).toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^EMBER(?=.{20}$)/, '');
+      if (key.length !== 20) throw new BridgeError('keyInvalid', t('errors.keyInvalid'));
+      restartWith('lang=' + lang + '&clean&key=proxyPlaywright');
+      return info;
+    },
+    'team.setPath': (p) => {
+      if (!/\.json$/i.test(String(p.path))) throw new BridgeError('teamUnreadable', t('errors.teamUnreadable', { path: String(p.path), detail: '–' }));
+      restartWith('lang=' + lang + '&clean');
+      return info;
     },
     'git.proxy': () => {
       const r = proxyRows.find((x) => x.tool === 'git')!;

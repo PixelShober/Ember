@@ -115,7 +115,7 @@ public sealed class TeamPlaywright
     public string? DownloadHost { get; set; }
 }
 
-/// <summary>Who counts as admin and sees the advanced modules (KI, Energie). Accounts and AD groups, with or without domain.</summary>
+/// <summary>Format before roles: these accounts and groups get every module (see <see cref="Permissions.Roles"/>).</summary>
 public sealed class TeamAdmins
 {
     public List<string>? Users { get; set; }
@@ -143,8 +143,9 @@ public sealed class TeamConfig
     public TeamDevTools? DevTools { get; set; }
     public TeamPlaywright? Playwright { get; set; }
     public TeamPower? Power { get; set; }
+    /// <summary>Format before roles; still read, the Berechtigungen tab turns it into a role.</summary>
     public TeamAdmins? Admins { get; set; }
-    /// <summary>Who may use Ember at all (users and AD groups); admins always may.</summary>
+    /// <summary>Roles: who sees which module. Without roles nobody sees anything.</summary>
     public TeamAccess? Access { get; set; }
     public List<ModelEntry>? Models { get; set; }
     public TeamUpdate? Update { get; set; }
@@ -165,17 +166,25 @@ public sealed record TeamStatus(
 public sealed class TeamConfigService
 {
     public const string PointerFileName = "ember-team.txt";
+    public const string FileName = "team.json";
     public const string EnvVariable = "EMBER_TEAM_CONFIG";
+    /// <summary>Group policy (HKCU or HKLM): string value "TeamConfig" with the path.</summary>
+    public const string PolicyKey = @"Software\Policies\Ember";
 
     sealed record Cache(string Path, DateTime LoadedAt, TeamConfig Config);
 
     public TeamConfig Config { get; private set; } = new();
     public TeamStatus Status { get; private set; } = TeamStatus.None;
 
-    /// <summary>Order: settings → ember-team.txt next to the exe → %EMBER_TEAM_CONFIG%.</summary>
+    /// <summary>
+    /// Where team.json is, first match wins: the settings (chosen by the user) → group policy
+    /// (HKCU, then HKLM) → ember-team.txt next to the exe or in C:\Ember\App → team.json next to the
+    /// exe (Ember started from the team share) → %EMBER_TEAM_CONFIG%.
+    /// </summary>
     public static (string? Path, string? Source) ResolvePath(UserSettings s)
     {
         if (!string.IsNullOrWhiteSpace(s.TeamConfigPath)) return (s.TeamConfigPath.Trim(), "settings");
+        if (PolicyPath() is { } policy) return (policy, "policy");
         foreach (var dir in new[] { AppContext.BaseDirectory, Paths.AppDir })
         {
             try
@@ -192,8 +201,43 @@ public sealed class TeamConfigService
                 // unreadable pointer file: ignore
             }
         }
+        var beside = System.IO.Path.Combine(AppContext.BaseDirectory, FileName);
+        if (File.Exists(beside)) return (beside, "beside");
         var env = Environment.GetEnvironmentVariable(EnvVariable);
         return string.IsNullOrWhiteSpace(env) ? (null, null) : (env.Trim(), "env");
+    }
+
+    static string? PolicyPath()
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        foreach (var hive in new[] { Microsoft.Win32.Registry.CurrentUser, Microsoft.Win32.Registry.LocalMachine })
+        {
+            try
+            {
+                using var key = hive.OpenSubKey(PolicyKey);
+                if (key?.GetValue("TeamConfig") is string value && value.Trim().Length > 0) return value.Trim();
+            }
+            catch
+            {
+                // no read access to the policy key: ignore
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Reads and parses a team.json without using it; throws with the reason (setup screen).</summary>
+    public static async Task<TeamConfig> TryReadAsync(string path, CancellationToken ct)
+    {
+        if (path.Length == 0) throw new EmberException("missingParam", ("name", "path"));
+        try
+        {
+            var text = await Task.Run(() => File.ReadAllText(path), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
+            return TeamConfig.Parse(text);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException and not EmberException)
+        {
+            throw new EmberException("teamUnreadable", ("path", path), ("detail", ex is TimeoutException ? L.T("errors.timeoutSuffix") : Net.Describe(ex)));
+        }
     }
 
     public async Task LoadAsync(UserSettings settings, CancellationToken ct)

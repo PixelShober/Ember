@@ -4,7 +4,8 @@
   try {
     var a = JSON.parse(localStorage.getItem('ember-appearance') || 'null') || {};
     var root = document.documentElement;
-    if (a.scheme === 'light' || a.scheme === 'dark') root.classList.add(a.scheme);
+    var dark = a.scheme === 'dark' || (a.scheme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.classList.add(dark ? 'dark' : 'light');
     root.dataset.design = a.design === 'glut' ? 'glut' : 'efeu';
   } catch (e) {
     document.documentElement.dataset.design = 'efeu';

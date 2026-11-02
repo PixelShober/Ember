@@ -51,6 +51,7 @@ public static class SelfInstaller
 
         try
         {
+            RememberTeamConfig(currentDir);
             var ownVersion = AppInfo.Version;
             var installedVersion = InstalledVersion();
             if (installedVersion != null && AppInfo.CompareVersions(installedVersion, ownVersion) > 0)
@@ -63,9 +64,6 @@ public static class SelfInstaller
             {
                 Directory.CreateDirectory(Paths.AppDir);
                 File.Copy(exe, Paths.InstalledExe, overwrite: true);
-                // A pointer to the team configuration travels with the exe.
-                var pointer = Path.Combine(currentDir, TeamConfigService.PointerFileName);
-                if (File.Exists(pointer)) File.Copy(pointer, Path.Combine(Paths.AppDir, TeamConfigService.PointerFileName), overwrite: true);
                 Log.Info(L.T("install.copied", ("version", ownVersion), ("path", Paths.AppDir)));
                 CreateStartMenuShortcut();
             }
@@ -115,26 +113,35 @@ public static class SelfInstaller
         return Result.Relaunched;
     }
 
-    /// <summary>Start menu entry "Ember" (per user, no admin rights needed).</summary>
-    public static void CreateStartMenuShortcut()
+    /// <summary>
+    /// Started from the team share: the way to team.json travels to C:\Ember\App, either the
+    /// ember-team.txt next to the exe or a pointer to the team.json next to it.
+    /// </summary>
+    static void RememberTeamConfig(string dir)
     {
         try
         {
-            var programs = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
-            var link = Path.Combine(programs, "Ember.lnk");
-            var shellType = Type.GetTypeFromProgID("WScript.Shell") ?? throw new InvalidOperationException("WScript.Shell");
-            dynamic shell = Activator.CreateInstance(shellType)!;
-            dynamic shortcut = shell.CreateShortcut(link);
-            shortcut.TargetPath = Paths.InstalledExe;
-            shortcut.WorkingDirectory = Paths.AppDir;
-            shortcut.Description = L.T("app.shortcutDescription");
-            shortcut.Save();
-            Log.Info(L.T("install.shortcut", ("path", link)));
+            var target = Path.Combine(Paths.AppDir, TeamConfigService.PointerFileName);
+            var pointer = Path.Combine(dir, TeamConfigService.PointerFileName);
+            var team = Path.Combine(dir, TeamConfigService.FileName);
+            if (File.Exists(pointer))
+            {
+                Directory.CreateDirectory(Paths.AppDir);
+                File.Copy(pointer, target, overwrite: true);
+            }
+            else if (File.Exists(team))
+            {
+                Directory.CreateDirectory(Paths.AppDir);
+                File.WriteAllText(target, "# " + L.T("install.teamPointer") + Environment.NewLine + team + Environment.NewLine);
+            }
         }
         catch (Exception ex)
         {
-            // e.g. when Windows Script Host is disabled by policy
-            Log.Warn(L.T("install.shortcutFailed", ("detail", ex.Message)));
+            Log.Warn(L.T("install.teamPointerFailed", ("detail", ex.Message)));
         }
     }
+
+    /// <summary>Start menu entry "Ember" (per user, no admin rights needed).</summary>
+    public static void CreateStartMenuShortcut() =>
+        Shortcut.CreateInStartMenu("Ember", Paths.InstalledExe, Paths.AppDir, L.T("app.shortcutDescription"));
 }

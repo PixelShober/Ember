@@ -93,8 +93,8 @@
 
 <section class="card">
   <div class="card-head">
-    <Icon name="play" />
-    <div class="grow"><h2>{t('playwright.title')}</h2><p class="small muted">{t('playwright.subtitle')}</p></div>
+    <Icon name="folder" />
+    <div class="grow"><h2>{t('playwright.project')}</h2></div>
     {#if !creating}
       <button class="btn small" disabled={running} onclick={() => (creating = true)}><Icon name="plus" size={14} />{t('playwright.newProject')}</button>
     {/if}

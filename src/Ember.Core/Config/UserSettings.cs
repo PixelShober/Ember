@@ -42,13 +42,16 @@ public sealed class UserSettings
     /// <summary>"auto" (the Windows language), "de" or "en".</summary>
     public string Language { get; set; } = "auto";
 
-    /// <summary>"system", "light" or "dark" (the UI keeps a copy for the first paint).</summary>
-    public string ColorScheme { get; set; } = "system";
+    /// <summary>"light" or "dark" (the UI keeps a copy for the first paint). Empty: taken once from Windows at start.</summary>
+    public string? ColorScheme { get; set; }
     /// <summary>"efeu" or "glut".</summary>
     public string Design { get; set; } = "efeu";
 
-    /// <summary>Admins hid the advanced tabs with Ctrl+E (who is admin comes from the team configuration).</summary>
+    /// <summary>Ctrl+E hid the advanced tabs (KI, Energie, Berechtigungen); who has them comes from the roles.</summary>
     public bool HideAdvanced { get; set; }
+
+    /// <summary>Starter key entered on the setup screen; only counts while there is no team.json.</summary>
+    public string? UnlockKey { get; set; }
 
     /// <summary>UNC path of team.json; empty = ember-team.txt next to the exe or EMBER_TEAM_CONFIG.</summary>
     public string TeamConfigPath { get; set; } = "";

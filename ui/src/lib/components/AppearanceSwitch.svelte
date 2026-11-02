@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Colour scheme (System / Light / Dark) and design (Efeu / Glut) as native radio groups:
+  // Colour scheme (Light / Dark) and design (Efeu / Glut) as native radio groups:
   // arrow keys move within a group, Tab leaves it. The new look grows from the chosen option.
   import { onMount } from 'svelte';
   import { api } from '../app.svelte';
@@ -12,7 +12,6 @@
   const id = $props.id();
 
   const schemes: { value: Scheme; icon: string }[] = [
-    { value: 'system', icon: 'monitor' },
     { value: 'light', icon: 'sun' },
     { value: 'dark', icon: 'moon' },
   ];
@@ -21,7 +20,7 @@
     { value: 'glut', icon: 'flame' },
   ];
 
-  let appearance = $state<Appearance>({ scheme: 'system', design: 'efeu' });
+  let appearance = $state<Appearance>(current());
   onMount(() => {
     appearance = current();
     const sync = (e: Event) => (appearance = (e as CustomEvent<Appearance>).detail);

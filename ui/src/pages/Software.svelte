@@ -7,7 +7,6 @@
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
-  import PlaywrightCard from '../lib/components/PlaywrightCard.svelte';
 
   let list = $state<SoftwareList | null>(null);
   let loading = $state(false);
@@ -137,8 +136,6 @@
       {/each}
     </div>
   </section>
-
-  <div class="section"><PlaywrightCard /></div>
 
   <!-- Software Center -->
   <section class="section">

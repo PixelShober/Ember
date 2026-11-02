@@ -1,21 +1,28 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, app, copyText, navigate, openMail, run, toast } from '../lib/app.svelte';
+  import { slide } from 'svelte/transition';
+  import { api, app, can, canOpen, copyText, navigate, openMail, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { firstName, formatDate } from '../lib/format';
   import type { GitIdentityInfo, ProxyRow, Route } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
+  import TeamPathForm from '../lib/components/TeamPathForm.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
   let rows = $state<ProxyRow[] | null>(null);
 
+  // Only what this account's modules cover.
   onMount(async () => {
     [git, rows] = await Promise.all([
-      api<GitIdentityInfo>('git.get').catch(() => null),
-      api<ProxyRow[]>('proxy.diagnose').catch(() => null),
+      can('git') ? api<GitIdentityInfo>('git.get').catch(() => null) : null,
+      can('proxy') ? api<ProxyRow[]>('proxy.diagnose').catch(() => null) : null,
     ]);
   });
+
+  // Unlocked with a starter key: the team.json can follow at any time.
+  const byKey = $derived(app.info?.grant.source === 'key');
+  let settingUp = $state(false);
 
   const name = $derived(firstName(git?.name ?? git?.suggestedName, app.info?.user ?? ''));
   // Tools that should point to px (the Node.js certificates are no proxy setting).
@@ -24,27 +31,31 @@
   const team = $derived(app.info?.team);
 
   // todo: something is missing or set up wrong (an available update is not one of those).
-  type Card = { route: Route; icon: string; title: string; text: string; tone: 'ok' | 'warn' | 'muted'; todo?: boolean };
-  const cards = $derived<Card[]>([
+  type Card = { route: Route; icon: string; title: string; text: string; tone: 'ok' | 'warn' | 'muted'; todo?: boolean; show?: boolean };
+  const allCards = $derived<Card[]>([
     {
+      show: can('proxy'),
       route: 'proxy', icon: 'proxy', title: t('start.cards.px'),
       text: app.px?.portOpen ? t('start.pxRunning', { url: app.px.url }) : app.px?.installed ? t('start.pxStopped') : t('start.pxMissing'),
       tone: app.px?.portOpen ? 'ok' : 'warn',
       todo: !!app.px && !app.px.portOpen,
     },
     {
+      show: can('proxy'),
       route: 'proxy', icon: 'check', title: t('start.cards.proxy'),
       text: rows ? t('start.proxySummary', { ok: okCount, total: relevant.length }) : t('common.loading'),
       tone: !rows ? 'muted' : okCount === relevant.length ? 'ok' : 'warn',
       todo: !!rows && okCount !== relevant.length,
     },
     {
+      show: can('git'),
       route: 'git', icon: 'git', title: t('start.cards.git'),
       text: git?.name && git?.email ? t('start.gitSet', { name: git.name, email: git.email }) : t('start.gitMissing'),
       tone: git?.name && git?.email ? 'ok' : 'warn',
       todo: !!git && !(git.name && git.email),
     },
     {
+      show: can('settings'),
       route: 'settings', icon: 'folder', title: t('start.cards.team'),
       text: !team?.path ? t('start.teamNone') : team.fromCache ? t('start.teamCache', { date: formatDate(team.loadedAt) }) : t('start.teamOk', { date: formatDate(team.loadedAt) }),
       tone: !team?.path ? 'warn' : team.fromCache || team.error ? 'warn' : 'ok',
@@ -56,6 +67,7 @@
       tone: app.update?.uiAvailable || app.update?.exeAvailable ? 'warn' : 'ok',
     },
   ]);
+  const cards = $derived(allCards.filter((c) => c.show !== false));
 
   async function report() {
     const r = await run(() => api<{ text: string; path: string }>('diagnostics.report'));
@@ -73,16 +85,32 @@
 
 <section class="grid">
   {#each cards as card, i (i)}
-    <button class="card status {card.tone}" onclick={() => navigate(card.route)}>
+    {@const open = canOpen(card.route)}
+    <svelte:element this={open ? 'button' : 'div'} class="card status {card.tone}" class:static={!open} role={open ? undefined : 'group'} onclick={open ? () => navigate(card.route) : undefined}>
       <div class="row">
         {#if card.todo}<Calcifer size={32} />{:else}<span class="icon"><Icon name={card.icon} /></span>{/if}
         <h3>{card.title}</h3>
       </div>
       <p class="break">{card.text}</p>
-      <span class="go small">{t('start.goTo')} <Icon name="chevron" size={14} /></span>
-    </button>
+      {#if open}<span class="go small">{t('start.goTo')} <Icon name="chevron" size={14} /></span>{/if}
+    </svelte:element>
   {/each}
+  {#if byKey}
+    <div class="card status warn static">
+      <div class="row"><span class="icon"><Icon name="shield" /></span><h3>{t('start.cards.team')}</h3></div>
+      <p>{t('start.byKey', { level: t(`access.keyLevels.${app.info?.grant.keyLevel ?? 'proxy'}`) })}</p>
+      {#if !settingUp}<button class="btn small set-up" onclick={() => (settingUp = true)}><Icon name="folder" size={14} />{t('start.setUpTeam')}</button>{/if}
+    </div>
+  {/if}
 </section>
+
+{#if settingUp}
+  <section class="card stack tight team" transition:slide={{ duration: 180 }}>
+    <div class="row between"><h2>{t('access.setup.team')}</h2><button class="btn ghost small" onclick={() => (settingUp = false)}>{t('common.cancel')}</button></div>
+    <p class="small muted">{t('access.setup.teamHint')}</p>
+    <TeamPathForm onDone={() => (settingUp = false)} />
+  </section>
+{/if}
 
 <section class="stack quick">
   <h2>{t('start.quick')}</h2>
@@ -98,7 +126,10 @@
     display: flex; flex-direction: column; gap: 8px; border-top: 3px solid var(--border-strong);
     transition: transform 0.15s, box-shadow 0.15s;
   }
-  .status:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .status:hover:not(.static) { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .static { cursor: default; }
+  .set-up { align-self: flex-start; margin-top: auto; }
+  .team { margin-top: 16px; max-width: 640px; }
   .status.ok { border-top-color: var(--ok); }
   .status.warn { border-top-color: var(--warn); }
   .icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--text-muted); }

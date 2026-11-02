@@ -18,6 +18,8 @@
   onMount(load);
 
   const px = $derived(app.px);
+  // Tools only point to px once it is installed and answers; otherwise they would lose the network.
+  const pxReady = $derived(!!px?.installed && !!px?.portOpen);
   const busy = $derived(app.jobs['px']?.state === 'running');
   const statusText = $derived(
     !px ? t('common.loading')
@@ -99,7 +101,10 @@
               </td>
               <td><span class="badge {stateTone[row.state]}">{row.tool === 'nodeCerts' ? t(`proxy.nodeCerts.states.${row.state}`) : t(`proxy.states.${row.state}`)}</span></td>
               <td class="nowrap right">
-                {#if row.canSet}<button class="btn small" onclick={() => setTool(row)}>{row.tool !== 'nodeCerts' ? t('proxy.diag.set') : row.state === 'px' ? t('proxy.nodeCerts.renew') : t('proxy.nodeCerts.set')}</button>{/if}
+                {#if row.canSet}
+                  {@const blocked = row.tool !== 'nodeCerts' && !pxReady}
+                  <button class="btn small" disabled={blocked} title={blocked ? t('proxy.diag.needsPx') : undefined} onclick={() => setTool(row)}>{row.tool !== 'nodeCerts' ? t('proxy.diag.set') : row.state === 'px' ? t('proxy.nodeCerts.renew') : t('proxy.nodeCerts.set')}</button>
+                {/if}
                 {#if row.canRemove}<button class="btn small ghost" onclick={() => removeTool(row)}>{t('proxy.diag.remove')}</button>{/if}
               </td>
             </tr>

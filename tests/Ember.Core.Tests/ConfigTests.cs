@@ -79,17 +79,4 @@ public class ConfigTests
         Assert.Equal(@"D:\Modelle für Jürgen", back.ModelsDir);
         Assert.Null(back.UsePac);
     }
-
-    [Fact]
-    public void Advanced_modules_only_for_admins_from_the_team_config()
-    {
-        var groups = new[] { @"FIRMA\Domänen-Benutzer", @"FIRMA\Entwicklung-Admins" };
-        Assert.False(AdminCheck.IsAdmin(new TeamConfig(), @"FIRMA\jmoessner", groups));   // no admins list: nobody
-        var byUser = TeamConfig.Parse("""{ "admins": { "users": ["jmoessner"] } }""");
-        Assert.True(AdminCheck.IsAdmin(byUser, @"FIRMA\JMoessner", Array.Empty<string>()));
-        Assert.False(AdminCheck.IsAdmin(byUser, @"FIRMA\someone", Array.Empty<string>()));
-        var byGroup = TeamConfig.Parse("""{ "admins": { "groups": ["FIRMA\\entwicklung-admins"] } }""");
-        Assert.True(AdminCheck.IsAdmin(byGroup, @"FIRMA\someone", groups));
-        Assert.False(AdminCheck.IsAdmin(byGroup, @"FIRMA\someone", new[] { @"FIRMA\Domänen-Benutzer" }));
-    }
 }

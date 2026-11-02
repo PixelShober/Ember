@@ -5,25 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace Ember.Core;
 
-/// <summary>
-/// Who may see the advanced modules. This only hides UI – Ember is open source, so it is not a
-/// security boundary. The host checks it as well so the UI and the bridge agree.
-/// </summary>
-/// <summary>
-/// Admins (from team.json → admins) see the advanced modules KI and Energie. Without an admins
-/// list nobody does – except local developer builds. This shapes the UI and is enforced by the
-/// bridge, but it is no security boundary: the code is open and the actions run with the user's rights.
-/// </summary>
-public static class AdminCheck
-{
-    public static bool IsAdmin(TeamConfig team) =>
-        AppInfo.Version.EndsWith("-dev", StringComparison.Ordinal) ||
-        IsAdmin(team, Elevation.AccountName, Access.MyGroups);
-
-    internal static bool IsAdmin(TeamConfig team, string account, IEnumerable<string> groups) =>
-        Access.Listed(team.Admins?.Users, team.Admins?.Groups, account, groups.ToList());
-}
-
 public sealed record GpuInfo(string Name, string? Driver, string? Cuda, int? MemoryTotalMb, int? MemoryUsedMb,
                              double? PowerDraw, double? PowerLimit, int? Temperature, int? Utilization);
 

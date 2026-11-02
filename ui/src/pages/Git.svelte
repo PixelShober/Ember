@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, confirm, navigate, run } from '../lib/app.svelte';
+  import { api, app, confirm, navigate, run } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import type { GitIdentityInfo, GitProxyInfo } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
@@ -11,6 +11,7 @@
   let email = $state('');
   let proxy = $state<GitProxyInfo | null>(null);
 
+  const pxReady = $derived(!!app.px?.installed && !!app.px?.portOpen);
   const loadProxy = async () => (proxy = (await run(() => api<GitProxyInfo | null>('git.proxy'))) ?? null);
 
   async function setProxy() {
@@ -110,7 +111,7 @@
           <button class="btn small" onclick={() => navigate('proxy')}>{t('git.proxy.envFix')}</button></div>
       {/if}
       <div class="row">
-        {#if proxy.canSet}<button class="btn primary small" onclick={setProxy}><Icon name="check" size={14} />{t('git.proxy.set')}</button>{/if}
+        {#if proxy.canSet}<button class="btn primary small" disabled={!pxReady} title={pxReady ? undefined : t('proxy.diag.needsPx')} onclick={setProxy}><Icon name="check" size={14} />{t('git.proxy.set')}</button>{/if}
         <button class="btn small ghost" onclick={() => navigate('settings')}><Icon name="settings" size={14} />{t('git.proxy.editDomains')}</button>
       </div>
     </section>

@@ -82,7 +82,7 @@ public sealed class MainWindow : Window, IHostShell
 #else
         bool debug = false;
 #endif
-        settings.AreDevToolsEnabled = debug || Host.ShowAdvanced;
+        settings.AreDevToolsEnabled = debug || Host.DevToolsAllowed;
         settings.AreBrowserAcceleratorKeysEnabled = debug;   // no F5 / Ctrl+P / Ctrl+F in an app
         settings.IsStatusBarEnabled = false;
         settings.IsGeneralAutofillEnabled = false;

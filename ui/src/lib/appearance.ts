@@ -1,17 +1,18 @@
-// Appearance = colour scheme (System | Light | Dark) + design (Efeu | Glut).
-// System = no class on <html>; `color-scheme: light dark` and light-dark() in app.css then
-// follow Windows live. public/appearance-boot.js applies the stored value before the first paint;
-// Ember.exe keeps a copy in the settings (title bar, window background, and after a cache wipe).
-export type Scheme = 'system' | 'light' | 'dark';
+// Appearance = colour scheme (Light | Dark) + design (Efeu | Glut). Without a stored choice the
+// Windows setting decides once; from then on the choice stays. public/appearance-boot.js applies the
+// stored value before the first paint; Ember.exe keeps a copy in the settings (title bar, window
+// background, and after a cache wipe).
+export type Scheme = 'light' | 'dark';
 export type Design = 'efeu' | 'glut';
 export interface Appearance { scheme: Scheme; design: Design }
 
 const KEY = 'ember-appearance';
-export const defaultAppearance: Appearance = { scheme: 'system', design: 'efeu' };
+const windowsScheme = (): Scheme => (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
-export function normalize(value: Partial<Appearance> | null | undefined): Appearance {
+/** Anything else (also "system" from older versions) becomes what Windows uses right now. */
+export function normalize(value: { scheme?: string; design?: string } | null | undefined): Appearance {
   return {
-    scheme: value?.scheme === 'light' || value?.scheme === 'dark' ? value.scheme : 'system',
+    scheme: value?.scheme === 'light' || value?.scheme === 'dark' ? value.scheme : windowsScheme(),
     design: value?.design === 'glut' ? 'glut' : 'efeu',
   };
 }
@@ -19,7 +20,7 @@ export function normalize(value: Partial<Appearance> | null | undefined): Appear
 export function current(): Appearance {
   const root = document.documentElement;
   return {
-    scheme: root.classList.contains('dark') ? 'dark' : root.classList.contains('light') ? 'light' : 'system',
+    scheme: root.classList.contains('dark') ? 'dark' : root.classList.contains('light') ? 'light' : windowsScheme(),
     design: root.dataset.design === 'glut' ? 'glut' : 'efeu',
   };
 }
@@ -33,8 +34,6 @@ export function storedAppearance(): Appearance | null {
   }
 }
 
-export const looksDark = (scheme: Scheme) =>
-  scheme === 'dark' || (scheme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
 
 /** Sets classes and data attribute, remembers the choice and tells every mounted switch. */
 export function applyAppearance(next: Appearance, notify?: (a: Appearance) => void) {
@@ -61,7 +60,7 @@ export function applyWithReveal(next: Appearance, origin: Element, notify?: (a: 
   const root = document.documentElement;
   const before = current();
   const doc = document as Document & { startViewTransition?: (update: () => void) => { finished: Promise<void> } };
-  const visible = looksDark(before.scheme) !== looksDark(next.scheme) || before.design !== next.design;
+  const visible = before.scheme !== next.scheme || before.design !== next.design;
   if (!doc.startViewTransition || !visible || matchMedia('(prefers-reduced-motion: reduce)').matches) {
     applyAppearance(next, notify);
     return;

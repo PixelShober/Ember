@@ -35,6 +35,7 @@ public static class DevTools
     static readonly Dictionary<string, (DateTime At, DevToolRelease Release)> LatestCache = new();
 
     static string NodeDir => Path.Combine(Paths.ToolsDir, "node");
+    static string BrunoDir => Path.Combine(Paths.ToolsDir, "bruno");
     static string NpmGlobalDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm");
 
     static readonly Recipe[] All =
@@ -99,12 +100,18 @@ public static class DevTools
         var app = installed.Where(a => r.DisplayNames.Any(p => InstalledSoftware.Matches(a.Name, p)))
                            .OrderByDescending(a => a.Version ?? "0", Comparer<string>.Create(AppInfo.CompareVersions))
                            .FirstOrDefault();
-        if (app != null || r.Id != "nodejs") return app;
-        // Node.js installed by Ember (zip) has no Uninstall entry.
-        var exe = Path.Combine(NodeDir, "node.exe");
-        if (!File.Exists(exe)) return null;
+        if (app != null) return app;
+        // Node.js and Bruno installed by Ember (zip) have no Uninstall entry.
+        var (dir, exeName, publisher) = r.Id switch
+        {
+            "nodejs" => (NodeDir, "node.exe", "OpenJS Foundation"),
+            "bruno" => (BrunoDir, "Bruno.exe", "Bruno"),
+            _ => (null, "", ""),
+        };
+        var exe = dir == null ? null : Path.Combine(dir, exeName);
+        if (exe == null || !File.Exists(exe)) return null;
         var version = FileVersionInfo.GetVersionInfo(exe).ProductVersion?.TrimStart('v');
-        return new InstalledApp("Node.js (C:\\Ember\\Tools\\node)", version, "OpenJS Foundation");
+        return new InstalledApp($"{r.Name} ({dir})", version, publisher);
     }
 
     /// <summary>Git installed for all users (Program Files) can only be updated with admin rights.</summary>
@@ -285,22 +292,7 @@ public static class DevTools
         var inner = Directory.GetDirectories(temp).FirstOrDefault(d => File.Exists(Path.Combine(d, "node.exe")))
                     ?? throw new EmberException("devToolNotFound", ("tool", "node.exe"));
 
-        if (Directory.Exists(NodeDir))
-        {
-            var old = NodeDir + ".old-" + DateTime.Now.ToString("yyyyMMddHHmmss");
-            try
-            {
-                Directory.Move(NodeDir, old);
-            }
-            catch (IOException)
-            {
-                Directory.Delete(temp, recursive: true);
-                throw new EmberException("nodeInUse", ("path", NodeDir));
-            }
-            try { Directory.Delete(old, recursive: true); } catch { /* removed on the next update */ }
-        }
-        Directory.Move(inner, NodeDir);
-        try { Directory.Delete(temp, recursive: true); } catch { }
+        Replace(NodeDir, inner, temp, "nodeInUse");
 
         // Like the official MSI: global packages go to %APPDATA%\npm, so they survive Node updates.
         Directory.CreateDirectory(NpmGlobalDir);
@@ -310,6 +302,27 @@ public static class DevTools
 
         UserEnvironment.AddToPath(NodeDir, NpmGlobalDir);
         step.Report(L.T("devtools.nodeReady", ("path", NodeDir)));
+    }
+
+    /// <summary>Swaps an unpacked tool folder in: the old one is moved aside first, which fails while a program from it runs.</summary>
+    static void Replace(string target, string unpacked, string temp, string inUseCode)
+    {
+        if (Directory.Exists(target))
+        {
+            var old = target + ".old-" + DateTime.Now.ToString("yyyyMMddHHmmss");
+            try
+            {
+                Directory.Move(target, old);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Directory.Delete(temp, recursive: true);
+                throw new EmberException(inUseCode, ("path", target));
+            }
+            try { Directory.Delete(old, recursive: true); } catch { /* removed on the next update */ }
+        }
+        Directory.Move(unpacked, target);
+        try { Directory.Delete(temp, recursive: true); } catch { }
     }
 
     // ------------------------------------------------------------------ Git for Windows (per user unless installed for all users)
@@ -439,21 +452,37 @@ public static class DevTools
     static Task InstallDotnetAsync(string file, DevToolRelease r, TeamConfig team, SetupStep step, CancellationToken ct) =>
         RunInstallerAsync(file, "/install /quiet /norestart", admin: true, ".NET SDK", step, ct);
 
-    // ------------------------------------------------------------------ Bruno (API client, per user)
+    // ------------------------------------------------------------------ Bruno (API client, zip, per user)
 
+    /// <summary>
+    /// The zip, not the installer: the per-user NSIS installer of electron-builder crashes on a fresh
+    /// install (exit code -1073741819, access violation in multiUser.nsh) when Bruno was never installed.
+    /// </summary>
     static async Task<DevToolRelease> BrunoReleaseAsync(HttpClient http, TeamConfig team, CancellationToken ct)
     {
         var rel = await Net.GetLatestReleaseAsync(http, "usebruno/bruno", ct);
-        var url = rel.AssetUrls.FirstOrDefault(u => Regex.IsMatch(Net.FileName(u), @"^bruno_[\d.]+_x64_win\.exe$", RegexOptions.IgnoreCase))
-                  ?? throw new EmberException("devToolNoRelease", ("tool", "Bruno"));
+        var url = BrunoAsset(rel.AssetUrls) ?? throw new EmberException("devToolNoRelease", ("tool", "Bruno"));
         var file = Net.FileName(url);
         var version = Regex.Match(file, @"^bruno_([\d.]+)_", RegexOptions.IgnoreCase).Groups[1].Value;
         return new DevToolRelease(version, url, file, rel.Sha256?.GetValueOrDefault(file));
     }
 
-    /// <summary>NSIS installer from electron-builder: /S installs silently for the current user.</summary>
-    static Task InstallBrunoAsync(string file, DevToolRelease r, TeamConfig team, SetupStep step, CancellationToken ct) =>
-        RunInstallerAsync(file, "/S", admin: false, "Bruno", step, ct);
+    internal static string? BrunoAsset(IEnumerable<string> urls) =>
+        urls.FirstOrDefault(u => Regex.IsMatch(Net.FileName(u), @"^bruno_[\d.]+_x64_win\.zip$", RegexOptions.IgnoreCase));
+
+    static async Task InstallBrunoAsync(string zip, DevToolRelease r, TeamConfig team, SetupStep step, CancellationToken ct)
+    {
+        var temp = Path.Combine(Paths.Ensure(Paths.ToolsDir), $".bruno-{Guid.NewGuid():N}");
+        await Task.Run(() => Zip.ExtractSafe(zip, temp, ct), ct);
+        var exe = Directory.EnumerateFiles(temp, "Bruno.exe", SearchOption.AllDirectories).FirstOrDefault()
+                  ?? throw new EmberException("devToolNotFound", ("tool", "Bruno.exe"));
+        if (Authenticode.Signer(exe) is { } signer) step.Report(L.T("devtools.signedBy", ("signer", signer)));
+
+        Replace(BrunoDir, Path.GetDirectoryName(exe)!, temp, "brunoInUse");
+        var target = Path.Combine(BrunoDir, "Bruno.exe");
+        Shortcut.CreateInStartMenu("Bruno", target, BrunoDir, "Bruno");
+        step.Report(L.T("devtools.brunoReady", ("path", BrunoDir)));
+    }
 
     // ------------------------------------------------------------------ PowerShell 7 (admin, MSI)
 

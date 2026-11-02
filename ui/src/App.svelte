@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { api, app, init, navigate, openMail, run, toast } from './lib/app.svelte';
+  import { api, app, can, canOpen, init, navigate, openMail, run, toast } from './lib/app.svelte';
   import { t } from './lib/i18n.svelte';
-  import type { Route } from './lib/types';
+  import type { ModuleId, Route } from './lib/types';
   import Icon from './lib/components/Icon.svelte';
   import AppearanceSwitch from './lib/components/AppearanceSwitch.svelte';
   import ivy from './assets/ivy.svg';
@@ -15,6 +15,8 @@
   import Proxy from './pages/Proxy.svelte';
   import Git from './pages/Git.svelte';
   import Software from './pages/Software.svelte';
+  import Playwright from './pages/Playwright.svelte';
+  import Setup from './pages/Setup.svelte';
   import Power from './pages/Power.svelte';
   import System from './pages/System.svelte';
   import Ai from './pages/Ai.svelte';
@@ -36,24 +38,22 @@
     init().catch((e) => (failed = String(e?.message ?? e)));
   });
 
-  // KI, Energie and Berechtigungen are advanced modules: only admins from the team configuration
-  // see them, and Ctrl+E shows or hides them.
-  const advancedRoutes: Route[] = ['power', 'ai', 'access'];
-  const showAdvanced = $derived(!!app.info?.showAdvanced);
-
-  const nav = $derived(
-    [
-      { route: 'start', icon: 'home' },
-      { route: 'proxy', icon: 'proxy' },
-      { route: 'git', icon: 'git' },
-      { route: 'software', icon: 'software' },
-      { route: 'system', icon: 'system' },
-      ...(showAdvanced ? [{ route: 'power', icon: 'power' }, { route: 'ai', icon: 'ai' }, { route: 'access', icon: 'users' }] : []),
-    ] as { route: Route; icon: string }[],
-  );
+  // Every tab is a module: the roles in team.json (or the starter key) decide which ones show.
+  // KI, Energie and Berechtigungen are advanced: Ctrl+E hides them.
+  const modules: { route: ModuleId; icon: string }[] = [
+    { route: 'proxy', icon: 'proxy' },
+    { route: 'git', icon: 'git' },
+    { route: 'software', icon: 'software' },
+    { route: 'playwright', icon: 'browser' },
+    { route: 'system', icon: 'system' },
+    { route: 'power', icon: 'power' },
+    { route: 'ai', icon: 'ai' },
+    { route: 'access', icon: 'users' },
+  ];
+  const nav = $derived([{ route: 'start' as Route, icon: 'home' }, ...modules.filter((m) => canOpen(m.route))]);
 
   $effect(() => {
-    if (app.ready && advancedRoutes.includes(app.route) && !showAdvanced) navigate('start');
+    if (app.ready && app.info?.access && !canOpen(app.route)) navigate('start');
   });
 
   /** Lock screen: check team.json again (an admin may just have added this account). */
@@ -69,11 +69,11 @@
     !app.px ? 'muted' : app.px.portOpen ? 'ok' : app.px.installed ? 'warn' : 'muted',
   );
 
-  /** Ctrl+E shows or hides the advanced tabs (admins only; remembered in the settings). */
+  /** Ctrl+E shows or hides the advanced tabs (whoever has one; remembered in the settings). */
   async function onKey(e: KeyboardEvent) {
     if (!(e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'e') || !app.info?.access) return;
     e.preventDefault();
-    if (!app.info.admin) {
+    if (!app.info.advanced) {
       toast('info', t('app.advancedNotAllowed'));
       return;
     }
@@ -90,6 +90,8 @@
   <main class="center"><div class="note error"><Icon name="alert" /><p>{failed}</p></div></main>
 {:else if !app.ready}
   <main class="center" in:fade><div class="loading"><img src="./favicon.svg" alt="" width="64" height="64" /><p>{t('app.loading')}</p></div></main>
+{:else if app.info?.locked === 'setup'}
+  <Setup />
 {:else if app.info && !app.info.access}
   <main class="center" in:fade>
     <div class="locked">
@@ -121,17 +123,19 @@
             <span>{t(`nav.${item.route}`)}</span>
           </a>
         {/each}
-        <div class="sep"></div>
-        <a href="#/settings" class:active={app.route === 'settings'}><Icon name="settings" /><span>{t('nav.settings')}</span></a>
-        <a href="#/log" class:active={app.route === 'log'}><Icon name="log" /><span>{t('nav.log')}</span></a>
+        {#if can('settings') || can('log')}<div class="sep"></div>{/if}
+        {#if can('settings')}<a href="#/settings" class:active={app.route === 'settings'}><Icon name="settings" /><span>{t('nav.settings')}</span></a>{/if}
+        {#if can('log')}<a href="#/log" class:active={app.route === 'log'}><Icon name="log" /><span>{t('nav.log')}</span></a>{/if}
       </nav>
 
       <div class="foot">
         <AppearanceSwitch />
-        <a class="px-pill {pxState}" href="#/proxy">
-          <span class="dot"></span>
-          <span>{app.px?.portOpen ? 'px · ' + app.px.url.replace('http://', '') : app.px?.installed ? t('proxy.px.stopped') : t('proxy.px.notInstalled')}</span>
-        </a>
+        {#if can('proxy')}
+          <a class="px-pill {pxState}" href="#/proxy">
+            <span class="dot"></span>
+            <span>{app.px?.portOpen ? 'px · ' + app.px.url.replace('http://', '') : app.px?.installed ? t('proxy.px.stopped') : t('proxy.px.notInstalled')}</span>
+          </a>
+        {/if}
         <span class="small muted">Ember {app.info?.version} · {t(`app.modes.${app.info?.mode ?? 'dev'}`)}</span>
       </div>
     </aside>
@@ -147,6 +151,7 @@
           {:else if app.route === 'proxy'}<Proxy />
           {:else if app.route === 'git'}<Git />
           {:else if app.route === 'software'}<Software />
+          {:else if app.route === 'playwright'}<Playwright />
           {:else if app.route === 'power'}<Power />
           {:else if app.route === 'system'}<System />
           {:else if app.route === 'ai'}<Ai />

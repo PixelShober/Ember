@@ -7,34 +7,38 @@ using System.Text.Json.Nodes;
 namespace Ember.Core;
 
 /// <summary>
-/// Who may use Ember (team.json "access"). Without a list, or with "enabled": false, everyone may.
-/// Admins always may. Like the admin list this keeps Ember out of the wrong hands; it is not a
-/// security boundary, since Ember runs with the user's own rights and its code is public.
+/// Who sees which module (team.json "access"): roles with modules, users and AD groups, plus where
+/// access requests go. Without roles nobody sees anything. "enabled", "users" and "groups" are the
+/// format before roles; Ember still reads them (see <see cref="Permissions.Roles"/>).
 /// </summary>
 public sealed class TeamAccess
 {
-    /// <summary>Default: on as soon as there is at least one entry.</summary>
-    public bool? Enabled { get; set; }
-    public List<string>? Users { get; set; }
-    public List<string>? Groups { get; set; }
+    public List<TeamRole>? Roles { get; set; }
     /// <summary>Where access requests go (mail address); default: the service center.</summary>
     public string? Contact { get; set; }
 
-    public bool Restricted => Enabled ?? ((Users?.Count ?? 0) + (Groups?.Count ?? 0) > 0);
+    // Format before roles.
+    public bool? Enabled { get; set; }
+    public List<string>? Users { get; set; }
+    public List<string>? Groups { get; set; }
 }
 
 /// <param name="Kind">"user" or "group".</param>
 public sealed record AccessEntry(string Name, string Kind);
 
+/// <summary>A role as the Berechtigungen tab shows and saves it.</summary>
+public sealed record AccessRole(string Name, List<string> Modules, List<AccessEntry> Members);
+
 /// <param name="Version">SHA-256 of team.json as read; saving refuses when the file changed in between.</param>
 /// <param name="Writable">This account may write team.json (and it was not loaded from the offline copy).</param>
-public sealed record AccessView(bool Restricted, IReadOnlyList<AccessEntry> Members, IReadOnlyList<AccessEntry> Admins, string? Contact,
-                                string? TeamPath, bool Writable, string? Version, string? Problem, string Account, IReadOnlyList<string> MyGroups);
+/// <param name="Legacy">The file still has "admins" or the old access list; saving turns them into roles.</param>
+public sealed record AccessView(IReadOnlyList<AccessRole> Roles, string? Contact, string? TeamPath, bool Writable, string? Version,
+                                string? Problem, string Account, IReadOnlyList<string> MyGroups, IReadOnlyList<string> Modules, bool Legacy);
 
 /// <param name="Found">true: exists in the directory; false: does not exist; null: could not be checked (e.g. no VPN).</param>
 public sealed record AccessLookup(string Name, string? Kind, bool? Found);
 
-public sealed record AccessChange(bool Restricted, List<AccessEntry> Members, List<AccessEntry> Admins, string? Contact, string Version);
+public sealed record AccessChange(List<AccessRole> Roles, string? Contact, string Version);
 
 public static class Access
 {
@@ -43,16 +47,7 @@ public static class Access
     /// <summary>The current account's groups (read once; the token does not change while Ember runs).</summary>
     public static IReadOnlyList<string> MyGroups => Groups.Value;
 
-    static bool DevBuild => AppInfo.Version.EndsWith("-dev", StringComparison.Ordinal);
-
-    public static bool Allowed(TeamConfig team) => DevBuild || Allowed(team, Elevation.AccountName, MyGroups);
-
-    internal static bool Allowed(TeamConfig team, string account, IEnumerable<string> groups)
-    {
-        var groupList = groups.ToList();
-        if (team.Access is not { Restricted: true } access) return true;
-        return Listed(access.Users, access.Groups, account, groupList) || AdminCheck.IsAdmin(team, account, groupList);
-    }
+    public static bool DevBuild => AppInfo.Version.EndsWith("-dev", StringComparison.Ordinal);
 
     internal static bool Listed(List<string>? users, List<string>? groups, string account, IReadOnlyList<string> mine) =>
         (users ?? new List<string>()).Any(u => Same(u, account)) ||
@@ -101,14 +96,16 @@ public static class Access
             }
         }
 
-        var access = team.Access;
         var domain = Environment.UserDomainName + "\\";
         var mine = MyGroups.Where(g => g.StartsWith(domain, StringComparison.OrdinalIgnoreCase) &&
                                        !g.StartsWith(Environment.MachineName + "\\", StringComparison.OrdinalIgnoreCase))
                            .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
                            .ToList();
-        return new AccessView(access?.Restricted ?? false, Entries(access?.Users, access?.Groups), Entries(team.Admins?.Users, team.Admins?.Groups),
-                              access?.Contact, status.Path, writable && problem == null, version, problem, Elevation.AccountName, mine);
+        var roles = Permissions.Roles(team)
+            .Select(r => new AccessRole(r.Name, (r.Modules ?? new()).ToList(), Entries(r.Users, r.Groups)))
+            .ToList();
+        return new AccessView(roles, team.Access?.Contact, status.Path, writable && problem == null, version, problem,
+                              Elevation.AccountName, mine, ModuleIds.Known, Permissions.UsesLegacyFormat(team));
     }
 
     static List<AccessEntry> Entries(List<string>? users, List<string>? groups) =>
@@ -119,11 +116,13 @@ public static class Access
     static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
 
     /// <summary>
-    /// Writes the lists back into team.json: only "access" and "admins" change, everything else stays as it
-    /// was (key order, indentation, line endings, BOM). A copy of the old file goes to C:\Ember\Config\team-backups.
+    /// Writes the roles back into team.json: only "access" changes (and an old "admins" section goes),
+    /// everything else stays as it was (key order, indentation, line endings, BOM). A copy of the old
+    /// file goes to C:\Ember\Config\team-backups.
     /// </summary>
     public static string Save(string path, AccessChange change, string account, IReadOnlyList<string> myGroups)
     {
+        Validate(change);
         if (!DevBuild) EnsureStillAdmin(change, account, myGroups);
         if (change.Contact is { Length: > 0 } contact && !contact.Contains('@')) throw new EmberException("accessContactInvalid", ("value", contact));
 
@@ -135,17 +134,32 @@ public static class Access
 
         Backup(path, bytes);
         File.WriteAllText(path, updated, new UTF8Encoding(bom));
-        Log.Info(L.T("access.saved", ("path", path), ("members", change.Members.Count), ("admins", change.Admins.Count)));
+        Log.Info(L.T("access.saved", ("path", path), ("roles", change.Roles.Count), ("members", change.Roles.Sum(r => r.Members.Count))));
         return updated;
     }
 
-    /// <summary>Nobody locks themselves out: whoever saves must still be an admin afterwards.</summary>
+    internal static void Validate(AccessChange change)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var role in change.Roles)
+        {
+            var name = role.Name.Trim();
+            if (name.Length == 0) throw new EmberException("accessRoleNameMissing");
+            if (!names.Add(name)) throw new EmberException("accessRoleDuplicate", ("name", name));
+            if (role.Modules.FirstOrDefault(m => !ModuleIds.IsKnown(m)) is { } unknown)
+                throw new EmberException("accessModuleUnknown", ("module", unknown), ("role", name));
+        }
+    }
+
+    /// <summary>Nobody locks themselves out: whoever saves must still be able to open this tab afterwards.</summary>
     internal static void EnsureStillAdmin(AccessChange change, string account, IReadOnlyList<string> myGroups)
     {
-        var users = change.Admins.Where(e => e.Kind == "user").Select(e => e.Name).ToList();
-        var groups = change.Admins.Where(e => e.Kind == "group").Select(e => e.Name).ToList();
-        if (!Listed(users, groups, account, myGroups)) throw new EmberException("accessSelfLockout");
+        var mine = change.Roles.Where(r => Listed(Names(r.Members, "user").ToList(), Names(r.Members, "group").ToList(), account, myGroups));
+        if (!mine.Any(r => r.Modules.Contains(ModuleIds.All) || r.Modules.Contains("access"))) throw new EmberException("accessSelfLockout");
     }
+
+    static IEnumerable<string> Names(IEnumerable<AccessEntry> entries, string kind) =>
+        entries.Where(e => e.Kind == kind).Select(e => e.Name.Trim()).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase);
 
     internal static string Apply(string json, AccessChange change)
     {
@@ -160,22 +174,24 @@ public static class Access
             throw new EmberException("teamInvalid", ("detail", ex.Message));
         }
 
-        static JsonArray Names(IEnumerable<AccessEntry> entries, string kind) =>
-            new(entries.Where(e => e.Kind == kind).Select(e => e.Name.Trim()).Where(n => n.Length > 0)
-                       .Distinct(StringComparer.OrdinalIgnoreCase).Select(n => (JsonNode?)JsonValue.Create(n)).ToArray());
+        static JsonArray Array(IEnumerable<string> values) => new(values.Select(v => (JsonNode?)JsonValue.Create(v)).ToArray());
 
         var access = root["access"] as JsonObject ?? new JsonObject();
-        access["enabled"] = change.Restricted;
-        access["users"] = Names(change.Members, "user");
-        access["groups"] = Names(change.Members, "group");
+        // The format before roles goes; its people are in the roles now.
+        access.Remove("enabled");
+        access.Remove("users");
+        access.Remove("groups");
+        access["roles"] = new JsonArray(change.Roles.Select(r => (JsonNode?)new JsonObject
+        {
+            ["name"] = r.Name.Trim(),
+            ["modules"] = Array(r.Modules.Select(m => m.Trim()).Distinct(StringComparer.Ordinal)),
+            ["users"] = Array(Names(r.Members, "user")),
+            ["groups"] = Array(Names(r.Members, "group")),
+        }).ToArray());
         if (string.IsNullOrWhiteSpace(change.Contact)) access.Remove("contact");
         else access["contact"] = change.Contact.Trim();
         root["access"] = access;
-
-        var admins = root["admins"] as JsonObject ?? new JsonObject();
-        admins["users"] = Names(change.Admins, "user");
-        admins["groups"] = Names(change.Admins, "group");
-        root["admins"] = admins;
+        root.Remove("admins");
         return Json.WriteLike(root, json);
     }
 
