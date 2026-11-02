@@ -39,6 +39,8 @@ Die Tabelle zeigt pro Werkzeug den aktuellen Proxy und einen Status:
 - **nicht gesetzt**: das Werkzeug geht ohne Proxy raus, was im Firmennetz meist scheitert.
 - **Firmenvorgabe**: die Windows-Einstellung (PAC-Datei). Die bleibt, wie sie ist, denn px liest genau sie.
 
+„Auf px setzen“ geht nur, solange px installiert ist und läuft. Sonst ist der Knopf ausgegraut, denn ein Werkzeug, das auf ein fehlendes px zeigt, kommt gar nicht mehr ins Netz. Dasselbe gilt für den Knopf auf der Git-Seite.
+
 Folgende Werkzeuge kennt Ember:
 
 | Werkzeug | Wo Ember liest und schreibt |

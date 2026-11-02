@@ -29,6 +29,7 @@ export default defineConfig({
             'handbuch/proxy',
             'handbuch/git',
             'handbuch/software',
+            'handbuch/playwright',
             'handbuch/service-center',
             'handbuch/energie',
             'handbuch/system',

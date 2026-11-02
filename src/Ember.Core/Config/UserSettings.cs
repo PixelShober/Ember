@@ -46,6 +46,11 @@ public sealed class UserSettings
     public string? ColorScheme { get; set; }
     /// <summary>"efeu" or "glut".</summary>
     public string Design { get; set; } = "efeu";
+    /// <summary>
+    /// Inactive window: "auto" lets the desktop shine through as much as the window manager asks for
+    /// (GlazeWM/WinMarchy), "always" 90 % opaque, "off" never.
+    /// </summary>
+    public string BackgroundTransparency { get; set; } = "auto";
 
     /// <summary>Ctrl+E hid the advanced tabs (KI, Energie, Berechtigungen); who has them comes from the roles.</summary>
     public bool HideAdvanced { get; set; }

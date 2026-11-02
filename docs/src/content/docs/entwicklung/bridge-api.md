@@ -23,14 +23,15 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 
 | Bereich | Methoden |
 |---|---|
-| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
-| Einstellungen | `settings.get`, `settings.save`, `settings.defaults`, `team.status`, `team.reload` |
+| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.unlock`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
+| Einstellungen | `settings.get`, `settings.save`, `settings.defaults`, `team.status`, `team.reload`, `team.setPath` |
 | Proxy | `proxy.detect`, `proxy.diagnose`, `proxy.set`, `proxy.remove` |
 | Berechtigungen | `access.get`, `access.lookup`, `access.save` |
 | px | `px.status`, `px.install`, `px.uninstall`, `px.start`, `px.stop`, `px.restart`, `px.debug` |
 | Jobs | `jobs.list`, `jobs.cancel`, `jobs.retry`, `jobs.dismiss` |
 | Git | `git.get`, `git.set`, `git.proxy` |
-| Software & Mail | `software.list`, `software.open`, `software.install`, `devtools.latest`, `devtools.install`, `devtools.installMany`, `playwright.state`, `playwright.inspect`, `playwright.install`, `playwright.create`, `playwright.useEdge`, `playwright.openInCode`, `mail.preview`, `mail.compose`, `diagnostics.report` |
+| Software & Mail | `software.list`, `software.open`, `software.install`, `devtools.latest`, `devtools.install`, `devtools.installMany`, `mail.preview`, `mail.compose`, `diagnostics.report` |
+| Playwright | `playwright.state`, `playwright.inspect`, `playwright.install`, `playwright.create`, `playwright.useEdge`, `playwright.openInCode` |
 | Energie | `power.state`, `power.apply`, `power.defaults`, `power.restore` |
 | Wake-on-LAN (lokal) | `wol.local`, `wol.apply`, `wol.reset` |
 | System | `system.list`, `system.check`, `system.checks`, `system.action`, `system.adminCommands` |
@@ -38,9 +39,28 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 | Updates | `update.status`, `update.check`, `update.applyUi`, `update.applyExe` |
 | Log | `log.recent`, `log.clear`, `log.save` |
 
-Die Methoden für KI, Energie, Wake-on-LAN und Berechtigungen prüfen auch auf der Exe-Seite, ob das Konto Admin in der Team-Konfiguration ist (`admins`). `app.toggleAdvanced` (<kbd>Strg</kbd> + <kbd>E</kbd>) blendet die Tabs nur ein und aus.
+## Module und Rechte
 
-Steht ein Konto nicht auf der Zugriffsliste (`access`), lässt `Bridge.Guard` nur noch `app.info`, `app.ready`, `app.setAppearance`, `app.openExternal`, `team.reload`, `mail.preview` und `mail.compose` durch. Alles andere antwortet mit dem Fehler `accessDenied`. `app.info.access` sagt der Oberfläche, ob sie den Sperrbildschirm zeigen soll.
+Jede Methode gehört zu einem Modul, und `Bridge.Guard` lässt sie nur durch, wenn das Konto das Modul hat (`Permissions.ModulesFor`, `Permissions.MayCall`). Die Module kommen aus den Rollen der `team.json` oder, solange es keine gibt, aus dem Startschlüssel (`Permissions.Compute`).
+
+| Modul | Methoden |
+|---|---|
+| `proxy` | `proxy.*`, `px.*` außer `px.status`; `proxy.detect` auch mit `settings` |
+| `git` | `git.*` |
+| `software` | `software.*`, `devtools.*` |
+| `playwright` | `playwright.*` |
+| `system` | `system.*` |
+| `power` | `power.*` |
+| `ai` | `ai.*`, `wol.*` (Wake-on-LAN sitzt im KI-Tab); `settings.save` auch mit `settings` |
+| `access` | `access.*` |
+| `settings` | `settings.save` |
+| `log` | `log.*` |
+
+Alles andere (`jobs.*`, `update.*`, `mail.*`, `settings.get`, `app.openFolder` …) geht mit irgendeinem Modul. Ganz ohne Modul bleiben nur die Methoden für Sperr- und Einrichtungsbildschirm: `app.info`, `app.ready`, `app.setAppearance`, `app.openExternal`, `app.unlock`, `app.pickFile`, `team.reload`, `team.setPath`, `mail.preview` und `mail.compose`. Alles andere antwortet mit `accessDenied`.
+
+`app.info` sagt der Oberfläche, was sie zeigt: `modules` (die freigegebenen Module), `grant` (Quelle `team`, `key`, `dev` oder `none`, die Rollen, die Schlüsselstufe), `locked` (`setup` ohne `team.json` und Schlüssel, `notListed` ohne Rolle) und `showAdvanced` (Energie, KI und Berechtigungen nicht mit <kbd>Strg</kbd> + <kbd>E</kbd> ausgeblendet).
+
+`app.unlock` nimmt einen Schlüssel (`{ key }`) und antwortet mit `app.info`, oder mit `keyInvalid`. `team.setPath` (`{ path }`) liest die Datei zur Probe, speichert den Pfad und lädt neu. Ist schon eine `team.json` geladen, braucht `team.setPath` das Modul `settings`.
 
 ## Ereignisse
 
@@ -50,8 +70,9 @@ Steht ein Konto nicht auf der Zugriffsliste (`access`), lässt `Bridge.Guard` nu
 | `job` | Zustand eines Jobs mit allen Schritten, höchstens etwa acht Mal pro Sekunde |
 | `px.status` | px-Status, wenn er sich ändert (geprüft alle 4 s) |
 | `update` | Update-Status (geprüft, bereit, Fehler) |
-| `app.info` | nach Änderungen an Sprache, Team-Konfiguration oder erweiterten Modulen |
+| `app.info` | nach Änderungen an Sprache, Team-Konfiguration, Schlüssel oder erweiterten Modulen |
 | `settings.detected` | die Proxy-Erkennung beim Start ist fertig |
+| `window.seeThrough` | `{ opacity }`: Ember ist inaktiv und soll durchscheinen (`null`: wieder deckend), siehe [Einstellungen](/Ember/handbuch/einstellungen/#im-hintergrund) |
 
 ## Jobs
 

@@ -5,7 +5,7 @@ description: Energieprofile für das Schema „Ausbalanciert“, mit Werkseinste
 
 ![Energie-Seite mit Ist, Ziel und Standard](../../../assets/screens/power-de-light.png)
 
-Energie ist wie KI ein erweitertes Modul. Den Tab sieht nur, wer in der Team-Konfiguration als Admin steht (`admins`, siehe [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#admins)). <kbd>Strg</kbd> + <kbd>E</kbd> blendet beide Tabs ein und aus.
+Energie ist wie KI ein erweitertes Modul. Den Tab sieht nur, wer eine Rolle mit dem Modul `power` hat (siehe [Berechtigungen](/Ember/handbuch/berechtigungen/)). <kbd>Strg</kbd> + <kbd>E</kbd> blendet ihn aus und wieder ein.
 
 ## Warum nur „Ausbalanciert“
 

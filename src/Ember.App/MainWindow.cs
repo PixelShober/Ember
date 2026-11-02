@@ -42,7 +42,18 @@ public sealed class MainWindow : Window, IHostShell
         Content = _web;
         WindowPlacement.Restore(this);
 
-        SourceInitialized += (_, _) => SetTitleBar(_dark);
+        SourceInitialized += (_, _) =>
+        {
+            SetTitleBar(_dark);
+            InitSeeThrough();
+        };
+        Activated += (_, _) => CheckSeeThrough();
+        Deactivated += (_, _) => CheckSeeThrough();
+        _wmTimer.Tick += (_, _) =>
+        {
+            UpdateSeeThrough();
+            if (++_wmTicks >= 12) _wmTimer.Stop();
+        };
         Loaded += async (_, _) => await InitializeWebViewAsync();
 
         Host.Bridge.Outgoing += json => Dispatcher.InvokeAsync(() =>
@@ -268,9 +279,18 @@ public sealed class MainWindow : Window, IHostShell
         SetTitleBar(dark);
     });
 
-    /// <summary>Page background of the current design, so resizing never flashes a different colour.</summary>
+    /// <summary>
+    /// Page background of the current design, so resizing never flashes a different colour. While Ember
+    /// is see-through, both are transparent so the desktop shows behind the page.
+    /// </summary>
     void ApplyFrameColors()
     {
+        if (_seeThrough != null)
+        {
+            Background = Brushes.Transparent;
+            _web.DefaultBackgroundColor = System.Drawing.Color.Transparent;
+            return;
+        }
         var glut = Host.Settings.Design == "glut";
         var c = (_dark, glut) switch
         {
@@ -291,8 +311,117 @@ public sealed class MainWindow : Window, IHostShell
         DwmSetWindowAttribute(handle, 20 /* DWMWA_USE_IMMERSIVE_DARK_MODE */, ref on, sizeof(int));
     }
 
+    // ------------------------------------------------------------------ see-through in the background
+
+    /// <summary>Opacity of the page while Ember is see-through; null = opaque.</summary>
+    double? _seeThrough;
+    readonly DispatcherTimer _wmTimer = new() { Interval = TimeSpan.FromMilliseconds(120) };
+    int _wmTicks;
+
+    /// <summary>
+    /// Lets the window's alpha channel through to the desktop: DWM "blur behind" with an empty region
+    /// (since Windows 8 it no longer blurs, it only honours the alpha). WPF and WebView2 stay opaque
+    /// until Ember is inactive and see-through.
+    /// </summary>
+    void InitSeeThrough()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        var source = HwndSource.FromHwnd(handle);
+        if (source == null) return;
+        source.CompositionTarget.BackgroundColor = Colors.Transparent;
+        source.AddHook(WndProc);
+        var region = CreateRectRgn(0, 0, -1, -1);
+        var blur = new DwmBlurBehind { Flags = 0x1 | 0x2 /* ENABLE | BLURREGION */, Enable = true, BlurRegion = region };
+        DwmEnableBlurBehindWindow(handle, ref blur);
+        DeleteObject(region);
+    }
+
+    /// <summary>GlazeWM sets the window's alpha after the focus moved: look again a few times.</summary>
+    void CheckSeeThrough()
+    {
+        UpdateSeeThrough();
+        _wmTicks = 0;
+        _wmTimer.Stop();
+        _wmTimer.Start();
+    }
+
+    IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_STYLECHANGED = 0x007D, GWL_EXSTYLE = -20;
+        if (msg == WM_STYLECHANGED && wParam.ToInt32() == GWL_EXSTYLE) Dispatcher.InvokeAsync(CheckSeeThrough);
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Inactive, Ember lets the desktop shine through like the other windows. GlazeWM (as WinMarchy
+    /// sets it up) makes inactive windows transparent through the window's layered alpha, which the
+    /// WebView2 content ignores; Ember reads that alpha and draws the page with the same opacity.
+    /// </summary>
+    void UpdateSeeThrough()
+    {
+        if (_closing) return;
+        double? target = IsActive ? null : Host.Settings.BackgroundTransparency switch
+        {
+            "off" => null,
+            "always" => WindowsTransparencyOn() ? 0.9 : null,
+            _ => WindowManagerOpacity(),
+        };
+        if (target == _seeThrough) return;
+        _seeThrough = target;
+        ApplyFrameColors();
+        Host.Bridge.Emit("window.seeThrough", new { opacity = target });
+    }
+
+    /// <summary>The alpha a window manager put on this window (WS_EX_LAYERED + LWA_ALPHA), or null.</summary>
+    double? WindowManagerOpacity()
+    {
+        const int GWL_EXSTYLE = -20, WS_EX_LAYERED = 0x80000, LWA_ALPHA = 0x2;
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero || (GetWindowLongPtr(handle, GWL_EXSTYLE).ToInt64() & WS_EX_LAYERED) == 0) return null;
+        if (!GetLayeredWindowAttributes(handle, out _, out var alpha, out var flags) || (flags & LWA_ALPHA) == 0 || alpha >= 250) return null;
+        return Math.Round(Math.Max(alpha, (byte)64) / 255.0, 2);
+    }
+
+    /// <summary>Windows → Personalisation → Colours → "Transparency effects".</summary>
+    static bool WindowsTransparencyOn()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            return key?.GetValue("EnableTransparency") is not int v || v != 0;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct DwmBlurBehind
+    {
+        public int Flags;
+        [MarshalAs(UnmanagedType.Bool)] public bool Enable;
+        public IntPtr BlurRegion;
+        [MarshalAs(UnmanagedType.Bool)] public bool TransitionOnMaximized;
+    }
+
     [DllImport("dwmapi.dll")]
     static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    [DllImport("dwmapi.dll")]
+    static extern int DwmEnableBlurBehindWindow(IntPtr hwnd, ref DwmBlurBehind blurBehind);
+
+    [DllImport("gdi32.dll")]
+    static extern IntPtr CreateRectRgn(int left, int top, int right, int bottom);
+
+    [DllImport("gdi32.dll")]
+    static extern bool DeleteObject(IntPtr handle);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+
+    [DllImport("user32.dll")]
+    static extern bool GetLayeredWindowAttributes(IntPtr hwnd, out uint key, out byte alpha, out uint flags);
 }
 
 /// <summary>Remembers window size and position in C:\Ember\Config\window.json.</summary>

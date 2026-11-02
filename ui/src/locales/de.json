@@ -828,7 +828,18 @@
     "unsaved": "Ungespeicherte Änderungen",
     "appearance": {
       "title": "Darstellung",
-      "description": "Farbschema und Design wechselst du auch unten in der Seitenleiste. Efeu ist am Tag salbeigrün und nachts waldgrün, Glut hat einen warmen, rötlichen Grund. An beiden rankt Efeu."
+      "description": "Farbschema und Design wechselst du auch unten in der Seitenleiste. Efeu ist am Tag salbeigrün und nachts waldgrün, Glut hat einen warmen, rötlichen Grund. An beiden rankt Efeu.",
+      "transparency": "Im Hintergrund",
+      "transparencyModes": {
+        "auto": "Wie der Fenstermanager (WinMarchy, GlazeWM)",
+        "always": "Immer leicht durchscheinend",
+        "off": "Nie durchscheinend"
+      },
+      "transparencyHints": {
+        "auto": "Macht GlazeWM inaktive Fenster durchscheinend, macht Ember dasselbe, mit derselben Deckkraft.",
+        "always": "Ist Ember nicht im Vordergrund, scheint der Desktop durch (90 % Deckkraft). Nur mit eingeschalteten Transparenzeffekten in Windows.",
+        "off": "Ember bleibt immer deckend."
+      }
     }
   },
   "log": {

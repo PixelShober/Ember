@@ -828,7 +828,18 @@
     "unsaved": "Unsaved changes",
     "appearance": {
       "title": "Appearance",
-      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy is sage by day and forest green at night, Ember has a warm reddish ground. Ivy climbs both."
+      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy is sage by day and forest green at night, Ember has a warm reddish ground. Ivy climbs both.",
+      "transparency": "In the background",
+      "transparencyModes": {
+        "auto": "Like the window manager (WinMarchy, GlazeWM)",
+        "always": "Always slightly see-through",
+        "off": "Never see-through"
+      },
+      "transparencyHints": {
+        "auto": "When GlazeWM makes inactive windows see-through, Ember does the same, with the same opacity.",
+        "always": "When Ember is not in front, the desktop shines through (90 % opacity). Only with transparency effects on in Windows.",
+        "off": "Ember always stays opaque."
+      }
     }
   },
   "log": {

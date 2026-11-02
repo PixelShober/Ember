@@ -13,7 +13,12 @@ public class ConfigTests
         Assert.Equal(2, team.Proxy!.InternalDomains!.Count);
         Assert.Equal("servicecenter@firma.example", team.ServiceCenter!.Email);
         Assert.Contains(team.Software!, s => s.Name == "Alfaview" && s.SccmName == "alfaview*");
-        Assert.Single(team.Admins!.Groups!);
+        Assert.Null(team.Admins);
+        Assert.Equal(new[] { "Admins", "Entwicklung", "Test" }, team.Access!.Roles!.Select(r => r.Name));
+        Assert.False(Permissions.UsesLegacyFormat(team));
+        var tester = Permissions.Compute(team, new TeamStatus("x", "settings", DateTime.Now, false, null, 1, null), null,
+                                         @"FIRMA\erika.musterfrau", Array.Empty<string>(), dev: false);
+        Assert.Equal(new[] { "playwright", "proxy" }, tester.Modules.OrderBy(m => m));
     }
 
     [Fact]

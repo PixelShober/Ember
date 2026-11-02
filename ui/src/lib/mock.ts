@@ -22,7 +22,7 @@ export function createMockBridge(): Bridge {
     usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null,
     installDir: 'C:\\Ember\\px', localZip: '', autostart: true,
     configureEnvVars: true, configureGit: true, configureNpm: true, configurePip: true, configureNuGet: true,
-    language: lang === 'auto' ? 'auto' : lang, hideAdvanced: false, teamConfigPath: '\\\\fs01\\entwicklung\\ember\\team.json', autoUpdate: true,
+    language: lang === 'auto' ? 'auto' : lang, hideAdvanced: false, backgroundTransparency: 'auto', teamConfigPath: '\\\\fs01\\entwicklung\\ember\\team.json', autoUpdate: true,
     modelsDir: '', llamaVariant: 'auto', llamaCurrent: 'b6890-cuda', llamaPort: 8080, llamaArgs: '-ngl 99 -c 8192',
     models: [],
   };

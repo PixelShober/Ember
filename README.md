@@ -25,22 +25,23 @@ Ein neuer Dienstrechner kostet einen halben Tag, bis git, npm, NuGet und pip dur
 | Software | Kacheln für alles, was das Softwarecenter anbietet, und für die Entwicklerwerkzeuge (Node.js LTS mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7, Bruno): über das Softwarecenter, wenn die IT ein Paket hat, sonst direkt vom Hersteller mit geprüfter Prüfsumme und Signatur. Ohne Freigabe geht eine vorbereitete Mail ans Service-Center. |
 | Playwright | Browser passend zur Playwright-Version eines Projekts, durch px und mit den Firmenzertifikaten. Scheitert der Download, testet das Projekt mit dem installierten Edge, Ember legt die Konfiguration an. Playwright zu einem Projekt hinzufügen oder ein neues Projekt aus der Ember-Vorlage anlegen. |
 | Service-Center | Mail-Entwurf in Outlook mit Diagnosebericht als Anhang. Abschicken tust du selbst. |
-| Energie (Admins) | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. |
+| Energie | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. |
 | System | Gruppenrichtlinien einsehen und auffrischen, PowerShell-Ausführungsrichtlinie, lange Pfade für git und Windows. |
-| KI (Admins) | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp in der passenden Variante (CUDA, Vulkan, CPU) installieren, GGUF-Modelle laden, `llama-server` starten. |
-| Berechtigungen (Admins) | Wer Ember nutzen darf und wer Admin ist, Benutzer und AD-Gruppen. Ember prüft die Namen im Verzeichnis und schreibt die Listen in die `team.json`. Wer nicht freigeschaltet ist, kann per Mail Zugriff anfragen. |
+| KI | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp in der passenden Variante (CUDA, Vulkan, CPU) installieren, GGUF-Modelle laden, `llama-server` starten. |
+| Berechtigungen | Rollen legen fest, wer welche Module sieht, für Benutzer und AD-Gruppen. Ember prüft die Namen im Verzeichnis und schreibt die Rollen in die `team.json`. Wer in keiner Rolle steht, kann per Mail Zugriff anfragen. |
 
-KI, Energie und Berechtigungen sind erweiterte Module: Sie erscheinen nur für Admins aus der Team-Konfiguration, <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus.
+Jeder Tab ist ein Modul. Wer welches sieht, steht in den Rollen der `team.json`, ohne Rolle sieht man nichts. Gibt es noch keine `team.json`, schaltet ein Schlüssel Ember frei: für den Proxy, für Proxy und Playwright oder für alles. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein.
 
-Gemeinsame Einstellungen fürs Team (interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, wer Ember nutzen darf, wer Admin ist) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
+Gemeinsame Einstellungen fürs Team (interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, Rollen) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
 
-Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“) und kommt in zwei Designs, Efeu und Glut, jeweils hell und dunkel. Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
+Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“) und kommt in zwei Designs, Efeu und Glut, jeweils hell und dunkel. Unter GlazeWM (etwa mit WinMarchy) scheint Ember im Hintergrund durch wie die anderen Fenster. Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
 
 ## Installation
 
 1. [`Ember.exe` aus dem neuesten Release](https://github.com/PixelShober/Ember/releases/latest) herunterladen und starten. .NET bringt die Exe mit, Adminrechte braucht es nicht.
 2. Ember kopiert sich nach `C:\Ember\App`, legt einen Startmenü-Eintrag an und startet von dort.
-3. Unter Einstellungen den Pfad zur `team.json` eintragen, unter Proxy px installieren.
+3. Beim ersten Start den Pfad zur `team.json` eintragen oder einen Schlüssel eingeben. Liegt `Ember.exe` auf dem Netzlaufwerk neben der `team.json`, findet Ember sie selbst.
+4. Unter Proxy px installieren.
 
 Danach aktualisiert sich Ember selbst. Neue Oberflächen kommen ohne Neustart, eine neue Exe braucht einen kurzen.
 

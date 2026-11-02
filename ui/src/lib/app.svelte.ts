@@ -102,6 +102,13 @@ export async function init(): Promise<void> {
   bridge.on('job', (job: JobSnapshot) => (app.jobs[job.id] = job));
   bridge.on('px.status', (s: PxStatus) => (app.px = s));
   bridge.on('update', (s: UpdateStatus) => (app.update = s));
+  // Inactive and see-through (like the other windows under GlazeWM/WinMarchy): Ember.exe made the
+  // window transparent behind the page, the page now lets the desktop through.
+  bridge.on('window.seeThrough', (w: { opacity: number | null }) => {
+    const root = document.documentElement;
+    root.classList.toggle('see-through', w.opacity != null);
+    if (w.opacity != null) root.style.setProperty('--see-through', String(w.opacity));
+  });
   bridge.on('app.info', (info: AppInfo) => {
     // Just got access (key, team.json changed): start over, so everything loads that the lock screen skipped.
     if (app.info && !app.info.access && info.access) location.reload();

@@ -193,6 +193,8 @@ export interface UserSettings {
   configureNuGet: boolean;
   language: string;
   hideAdvanced: boolean;
+  /** Inactive window: "auto" as the window manager asks (GlazeWM/WinMarchy), "always" 90 %, "off". */
+  backgroundTransparency: 'auto' | 'always' | 'off';
   teamConfigPath: string;
   autoUpdate: boolean;
   modelsDir: string;

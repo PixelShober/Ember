@@ -13,7 +13,8 @@ Kurz: Ember speichert keine Passwörter, schickt keine Telemetrie und sendet kei
 - die Liste installierter Programme und die Angebote des Softwarecenters
 - Energieeinstellungen, Netzwerkadapter-Eigenschaften und Gruppenrichtlinien-Ergebnisse
 - die Team-Konfiguration auf dem Netzlaufwerk
-- die Namen deiner Windows- und AD-Gruppen (für Zugriff und Admin-Rechte)
+- die Namen deiner Windows- und AD-Gruppen (für die Rollen)
+- den Pfad zur `team.json` aus der Gruppenrichtlinie, falls eure IT einen setzt
 
 ## Was Ember ins Netz schickt
 
@@ -35,8 +36,11 @@ Alles steht unter [Installation](/Ember/handbuch/installation/#wo-ember-seine-da
 - Werte im erlaubten Energieschema, Adapter-Einstellungen für Wake-on-LAN, Schnellstart
 - die PowerShell-Ausführungsrichtlinie für dein Konto
 - Dateien in `C:\Ember`
-- die Abschnitte `access` und `admins` der `team.json`, wenn du als Admin im Tab Berechtigungen speicherst (vorher eine Kopie nach `C:\Ember\Config\team-backups`)
+- den Abschnitt `access` der `team.json`, wenn du im Tab Berechtigungen speicherst (vorher eine Kopie nach `C:\Ember\Config\team-backups`)
+- `C:\Ember\App\ember-team.txt` mit dem Pfad zur `team.json`, wenn du Ember vom Netzlaufwerk startest
+- deinen Schlüssel in `settings.json`, wenn du Ember damit freischaltest
 - in Playwright-Projekten: `package.json`, `playwright.config`, Beispieltest und `.gitignore`, wenn du Playwright hinzufügst, Edge einrichtest oder ein neues Projekt anlegst
 - den Benutzer-PATH (Node.js, Git, Python) und die Variable `NODE_EXTRA_CA_CERTS`, wenn du die Node.js-Zertifikate einrichtest
+- `C:\Ember\Tools\bruno` und den Startmenü-Eintrag „Bruno“, wenn du Bruno installierst
 
 Aktionen mit Adminrechten startet Ember einzeln, und Windows fragt jedes Mal nach. Ember selbst läuft immer mit Benutzerrechten.

@@ -1,21 +1,23 @@
 ---
 title: Team-Konfiguration
-description: Eine team.json auf dem Netzlaufwerk für interne Domains, Software, Mailvorlagen, Energieprofile, Zugriff und Admins.
+description: Eine team.json auf dem Netzlaufwerk für interne Domains, Software, Mailvorlagen, Energieprofile und Rollen.
 ---
 
-Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile, wer Ember nutzen darf und wer Admin ist.
+Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile und die Rollen, also wer welche Module sieht.
 
-Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember schreibt nur an einer Stelle hinein: Im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/) ändern Admins mit Schreibrechten die Abschnitte `access` und `admins`. Alles andere bleibt Handarbeit.
+Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember schreibt nur an einer Stelle hinein: Im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/) ändert, wer Schreibrechte hat, den Abschnitt `access`. Alles andere bleibt Handarbeit.
 
 ## So findet Ember die Datei
 
-In dieser Reihenfolge:
+In dieser Reihenfolge, der erste Treffer gilt:
 
-1. der Pfad unter **Einstellungen → Team-Konfiguration**,
-2. eine Datei `ember-team.txt` neben `Ember.exe` (oder in `C:\Ember\App`), in der der Pfad steht,
-3. die Umgebungsvariable `EMBER_TEAM_CONFIG`.
+1. der Pfad unter **Einstellungen → Team-Konfiguration** (oder den jemand beim ersten Start eingetragen hat),
+2. eine Gruppenrichtlinie: der Zeichenfolgenwert `TeamConfig` unter `HKEY_CURRENT_USER\Software\Policies\Ember` oder `HKEY_LOCAL_MACHINE\Software\Policies\Ember`,
+3. eine Datei `ember-team.txt` neben `Ember.exe` oder in `C:\Ember\App`, in der der Pfad steht,
+4. eine `team.json` direkt neben `Ember.exe`,
+5. die Umgebungsvariable `EMBER_TEAM_CONFIG`.
 
-Zum Verteilen eignet sich Weg 2 am besten. Leg `Ember.exe` und `ember-team.txt` zusammen ab, und wer Ember von dort startet, ist sofort verbunden. Ember kopiert die Datei bei der Selbstinstallation mit.
+Am einfachsten verteilt ihr Ember über das Netzlaufwerk: `Ember.exe` neben die `team.json` legen. Wer Ember von dort startet, ist sofort verbunden. Ember kopiert sich nach `C:\Ember\App` und merkt sich dabei in `C:\Ember\App\ember-team.txt`, wo die `team.json` liegt. Ab dann startet es aus dem Startmenü und findet die Datei trotzdem. Wer Ember von GitHub lädt, trägt den Pfad beim ersten Start ein oder schaltet Ember mit einem [Schlüssel](/Ember/handbuch/berechtigungen/#ohne-teamjson-die-schlüssel) frei.
 
 Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere Datei auf dem Laufwerk. Die letzte erfolgreich gelesene Fassung speichert es in `C:\Ember\Config\team.cache.json`. Ohne VPN arbeitet Ember mit dieser Kopie weiter und zeigt in den Einstellungen, von wann sie ist. Hängt das Laufwerk, wartet Ember höchstens zehn Sekunden.
 
@@ -32,8 +34,13 @@ Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere 
     { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE" },
     { "name": "Alfaview", "sccmName": "alfaview*", "category": "Kommunikation" }
   ],
-  "admins": { "users": ["FIRMA\\max.mustermann"], "groups": ["FIRMA\\Entwicklung-Admins"] },
-  "access": { "groups": ["FIRMA\\Entwicklung"], "contact": "ember-admins@firma.example" }
+  "access": {
+    "contact": "ember-admins@firma.example",
+    "roles": [
+      { "name": "Admins", "modules": ["*"], "users": ["FIRMA\\max.mustermann"] },
+      { "name": "Test", "modules": ["proxy", "playwright"], "groups": ["FIRMA\\Test"] }
+    ]
+  }
 }
 ```
 
@@ -86,21 +93,20 @@ Die Kacheln zeigen ohnehin alles, was das Softwarecenter anbietet. Ein Eintrag h
 
 `sub` und `setting` sind Aliase wie bei `powercfg` oder GUIDs. `ac` gilt am Netzteil, `dc` im Akkubetrieb, ein fehlender Wert bleibt unverändert. Zeiten stehen in Sekunden.
 
-### admins
-
-Wer hier steht, ist Admin: sieht die erweiterten Module KI, Energie und Berechtigungen und darf Ember immer nutzen. `users` und `groups` listen Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung-Admins` oder `Entwicklung-Admins`). Ohne Einträge gibt es keine Admins. Admins blenden die Tabs mit <kbd>Strg</kbd> + <kbd>E</kbd> ein und aus. Ember prüft das auch auf der Host-Seite, eine Sicherheitsgrenze ist es aber nicht, siehe [KI-Modul](/Ember/handbuch/ki/).
-
 ### access
 
-Wer Ember überhaupt nutzen darf. Wer nicht auf der Liste steht, sieht nur einen Sperrbildschirm mit „Zugriff anfragen“.
+Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und ihre Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller dieser Rollen. Wer in keiner ist, sieht nur einen Sperrbildschirm mit „Zugriff anfragen“. Ohne Rollen sieht also niemand etwas.
 
 | Feld | Bedeutung |
 |---|---|
-| `users`, `groups` | Konten und AD-Gruppen wie bei `admins`. Admins dürfen immer, sie müssen hier nicht stehen. |
-| `enabled` | `false`: Die Liste bleibt stehen, gilt aber nicht. Standard: an, sobald es einen Eintrag gibt. |
+| `roles[].name` | Name der Rolle, zum Beispiel „Admins“ oder „Test“ |
+| `roles[].modules` | `proxy`, `git`, `software`, `playwright`, `system`, `power` (Energie), `ai` (KI), `access` (Berechtigungen), `settings` (Einstellungen), `log`. `"*"` steht für alle, auch für Module, die später dazukommen. |
+| `roles[].users`, `roles[].groups` | Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung` oder `Entwicklung`) |
 | `contact` | Mailadresse für Zugriffsanfragen. Standard: das Service-Center. |
 
-Ohne `access` darf jeder Ember nutzen, der die `team.json` lesen kann. Gepflegt wird die Liste am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
+Die Startseite gibt es, sobald jemand mindestens ein Modul hat. Sie zeigt nur Karten zu den eigenen Modulen. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. Gepflegt werden die Rollen am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
+
+Ältere Dateien mit `admins` und einer Zugriffsliste (`access.users`, `access.groups`) funktionieren weiter. Aus `admins` macht Ember die Rolle „Admins“ mit allen Modulen. Die alte Zugriffsliste wird zur Rolle „Ember“ mit allem außer Energie, KI und Berechtigungen. Speichert jemand im Tab Berechtigungen, schreibt Ember das neue Format.
 
 ### devTools
 

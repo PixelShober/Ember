@@ -198,6 +198,13 @@
       <h2>{t('settings.appearance.title')}</h2>
       <p class="muted">{t('settings.appearance.description')}</p>
       <AppearanceSwitch variant="card" />
+      <label class="field transparency">
+        <span class="small muted">{t('settings.appearance.transparency')}</span>
+        <select bind:value={s.backgroundTransparency}>
+          {#each ['auto', 'always', 'off'] as const as mode (mode)}<option value={mode}>{t(`settings.appearance.transparencyModes.${mode}`)}</option>{/each}
+        </select>
+        <span class="small muted">{t(`settings.appearance.transparencyHints.${s.backgroundTransparency}`)}</span>
+      </label>
     </section>
 
     <!-- language -->
@@ -269,6 +276,8 @@
   .label { font-weight: 500; margin-right: 6px; }
   .small-field { max-width: 220px; }
   .lang { margin-right: 14px; }
+  .transparency { max-width: 520px; margin-top: 6px; }
+  .transparency select { max-width: 360px; }
   .error { color: var(--error); }
   .savebar {
     position: sticky; bottom: 0; margin-top: 16px; display: flex; align-items: center; gap: 10px;

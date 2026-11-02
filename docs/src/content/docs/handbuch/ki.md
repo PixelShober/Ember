@@ -5,7 +5,7 @@ description: Diesen Rechner für Wake-on-LAN freischalten, llama.cpp und Modelle
 
 ![KI-Seite](../../../assets/screens/ai-de-light.png)
 
-KI ist ein erweitertes Modul, genau wie Energie. Beide Tabs sieht nur, wer in der Team-Konfiguration als Admin steht (`admins`). Ohne Admin-Liste sieht sie niemand. <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie ein und aus, Ember merkt sich das.
+KI ist ein erweitertes Modul, genau wie Energie. Den Tab sieht nur, wer eine Rolle mit dem Modul `ai` hat (siehe [Berechtigungen](/Ember/handbuch/berechtigungen/)). <kbd>Strg</kbd> + <kbd>E</kbd> blendet ihn aus und wieder ein, Ember merkt sich das.
 
 Die Freigabe ordnet nur die Oberfläche. Ember ist Open Source und läuft mit deinen Rechten, eine Sicherheitsgrenze ist das also nicht.
 

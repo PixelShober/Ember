@@ -27,12 +27,12 @@ Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“
 |---|---|
 | Team-Konfiguration | Pfad zur `team.json`, Stand und Quelle, „Neu laden“ |
 | Firmenproxy | PAC-Datei oder fester Proxy, PAC-Adresse (leer = aus Windows), Firmenproxy als `host:port`, interne Domains, px-Port, „Automatisch erkennen“ |
-| Darstellung | Design „Efeu“ oder „Glut“, hell, dunkel oder wie Windows. Dieselben Schalter stehen unten in der Seitenleiste. |
+| Darstellung | Design „Efeu“ oder „Glut“, hell oder dunkel, und ob Ember im Hintergrund durchscheint. Farbschema und Design gibt es auch unten in der Seitenleiste. |
 | px | Installationsordner, lokales px-Zip statt Download, Autostart |
 | Werkzeuge | welche Werkzeuge die px-Installation umstellt |
 | Sprache | Deutsch oder English, vorausgewählt ist die Windows-Sprache |
 | Updates | automatisch suchen, „Jetzt prüfen“, Stand und Quelle |
-| Erweiterte Module | ob du als Admin eingetragen bist; KI, Energie und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> ein und aus |
+| Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist; Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein |
 | Ordner | öffnet Logs, Einstellungen, px, px-Konfiguration und Berichte im Explorer |
 
 Die Erkennung läuft bei jedem Start von selbst. „Automatisch erkennen“ macht dasselbe auf Knopfdruck und trägt das Ergebnis als eigenen Wert ein. Gespeichert wird auch das erst nach deiner Bestätigung.
@@ -41,6 +41,18 @@ Wählst du die Sprache, die auch Windows hat, folgt Ember weiter der Windows-Ein
 
 ## Darstellung
 
-Ember hat zwei Designs. **Efeu** ist am Tag hell und salbeigrün, nachts waldgrün mit dunkelgrüner Seitenleiste. An der Seitenleiste rankt Efeu hoch, die Akzente sind glutrot. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel, „System“ folgt der Windows-Einstellung, auch während Ember läuft.
+Ember hat zwei Designs. **Efeu** ist am Tag hell und salbeigrün, nachts waldgrün mit dunkelgrüner Seitenleiste. An der Seitenleiste rankt Efeu hoch, die Akzente sind glutrot. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel. Beim allerersten Start übernimmt Ember, was Windows gerade nutzt, danach bleibt deine Wahl.
 
 Beim Umschalten wächst das neue Aussehen als Kreis aus dem gedrückten Schalter. Wer unter Windows „Animationseffekte“ abgeschaltet hat, bekommt den Wechsel ohne Animation. Die Wahl merkt sich Ember in `settings.json`, auch die Titelleiste des Fensters passt sich an.
+
+### Im Hintergrund
+
+Fenstermanager wie GlazeWM, den WinMarchy einrichtet, lassen Fenster durchscheinen, solange sie nicht im Vordergrund sind. Sie tun das über die Deckkraft des ganzen Fensters. Den Inhalt von Ember zeichnet aber WebView2, und WebView2 übergeht diese Deckkraft. Deshalb blieb Ember bisher deckend. Jetzt liest Ember die Deckkraft selbst aus und zeichnet die Seite genauso durchscheinend:
+
+| Einstellung | Verhalten |
+|---|---|
+| Wie der Fenstermanager | Standard. Macht GlazeWM inaktive Fenster durchscheinend, macht Ember dasselbe, mit derselben Deckkraft. Ohne Fenstermanager bleibt Ember deckend. |
+| Immer leicht durchscheinend | Ist Ember nicht im Vordergrund, scheint der Desktop mit 90 % Deckkraft durch. Nur, wenn in Windows die Transparenzeffekte an sind. |
+| Nie durchscheinend | Ember bleibt immer deckend. |
+
+Sobald Ember wieder im Vordergrund ist, ist es sofort deckend.

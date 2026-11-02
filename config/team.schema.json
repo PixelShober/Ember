@@ -105,24 +105,44 @@
         }
       }
     },
-    "admins": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Wer Admin ist: sieht die erweiterten Module KI, Energie und Berechtigungen und darf Ember immer nutzen. Ohne Einträge gibt es keine Admins. Admins pflegen diese Liste im Tab „Berechtigungen“.",
-      "properties": {
-        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
-      }
-    },
     "access": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Wer Ember überhaupt nutzen darf. Ohne Einträge (oder mit enabled: false) darf jeder. Admins dürfen immer. Admins pflegen die Liste im Tab „Berechtigungen“.",
+      "description": "Wer welche Module sieht. Ohne Rollen sieht niemand etwas, Ember zeigt dann nur den Sperrbildschirm. Gepflegt im Tab „Berechtigungen“.",
       "properties": {
-        "enabled": { "type": "boolean", "description": "false: Liste bleibt stehen, gilt aber nicht. Standard: an, sobald es einen Eintrag gibt." },
+        "roles": {
+          "type": "array",
+          "description": "Rollen. Wer in mehreren Rollen ist, sieht die Module aller dieser Rollen.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "modules"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "modules": {
+                "type": "array",
+                "description": "Module der Rolle; \"*\" steht für alle, auch für Module, die später dazukommen. Die Startseite gibt es, sobald es ein Modul gibt.",
+                "items": { "enum": ["*", "proxy", "git", "software", "playwright", "system", "power", "ai", "access", "settings", "log"] }
+              },
+              "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+              "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+            }
+          }
+        },
+        "contact": { "type": "string", "format": "email", "description": "Wohin Zugriffsanfragen gehen. Standard: die Mailadresse des Service-Centers." },
+        "enabled": { "type": "boolean", "deprecated": true, "description": "Altes Format vor den Rollen. Ember liest es noch, beim Speichern im Tab „Berechtigungen“ fällt es weg." },
+        "users": { "type": "array", "deprecated": true, "items": { "$ref": "#/$defs/account" }, "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen." },
+        "groups": { "type": "array", "deprecated": true, "items": { "$ref": "#/$defs/account" }, "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen." }
+      }
+    },
+    "admins": {
+      "type": "object",
+      "additionalProperties": false,
+      "deprecated": true,
+      "description": "Altes Format vor den Rollen: Ember macht daraus eine Rolle „Admins“ mit allen Modulen. Beim Speichern im Tab „Berechtigungen“ fällt der Abschnitt weg.",
+      "properties": {
         "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-        "contact": { "type": "string", "format": "email", "description": "Wohin Zugriffsanfragen gehen. Standard: die Mailadresse des Service-Centers." }
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
       }
     },
     "devTools": {

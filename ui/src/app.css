@@ -106,6 +106,12 @@ html, body {
 
 #app { height: 100%; }
 
+/* Inactive under GlazeWM/WinMarchy (or "always" in the settings): the whole page at the window
+   manager's opacity, over a transparent window, so the desktop shines through like elsewhere. */
+#app { transition: opacity 0.15s ease; }
+html.see-through, html.see-through body { background: transparent; }
+html.see-through #app { background: var(--bg); opacity: var(--see-through, 0.9); }
+
 h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.25; }
 h1 { font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
 h2 { font-size: 17px; font-weight: 600; }

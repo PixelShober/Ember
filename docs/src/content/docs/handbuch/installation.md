@@ -23,11 +23,20 @@ Der feste Ort hat einen Grund: Verknüpfungen, Autostart und eventuelle Firewall
 Dann läuft Ember einfach vom aktuellen Ort weiter und schreibt einen Hinweis ins Log. Mit `Ember.exe --portable` erzwingst du das, falls du die Kopie nicht willst.
 :::
 
-## Die Team-Konfiguration verbinden
+## Der erste Start
 
-Hat dein Team eine `team.json` auf dem Netzlaufwerk, trag beim ersten Start unter **Einstellungen → Team-Konfiguration** ihren Pfad ein, etwa `\\server\entwicklung\ember\team.json`. Ember holt dort Proxy, Softwareliste und Service-Center-Adresse.
+Was du siehst, bestimmt die `team.json` deines Teams: Ihre [Rollen](/Ember/handbuch/berechtigungen/) legen fest, wer welche Tabs bekommt. Findet Ember sie von selbst, geht es gleich los. Das klappt, wenn
 
-Wer Ember im Team verteilt, legt neben die Exe eine Datei `ember-team.txt` mit diesem Pfad. Ember liest sie beim Start und kopiert sie bei der Selbstinstallation mit. Details stehen unter [Team-Konfiguration](/Ember/handbuch/team-konfiguration/).
+- du Ember vom Netzlaufwerk startest und die `team.json` daneben liegt (oder eine `ember-team.txt` mit ihrem Pfad),
+- eure IT den Pfad per Gruppenrichtlinie verteilt,
+- oder die Umgebungsvariable `EMBER_TEAM_CONFIG` gesetzt ist.
+
+Sonst erscheint **Ember einrichten** mit zwei Wegen:
+
+- **Schlüssel**: Den bekommst du von deinem Team. Je nach Schlüssel siehst du Proxy, Proxy und Playwright oder alles. Er gilt, bis eine `team.json` eingetragen ist.
+- **Team-Konfiguration**: den Pfad zur `team.json` eintragen, etwa `\\server\entwicklung\ember\team.json`, oder über „Durchsuchen“ auswählen.
+
+Mit einem Schlüssel kannst du die `team.json` später nachtragen, über die Karte „Team-Konfiguration“ auf der Startseite. Details stehen unter [Berechtigungen](/Ember/handbuch/berechtigungen/#ohne-teamjson-die-schlüssel) und [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#so-findet-ember-die-datei).
 
 ## WebView2
 
