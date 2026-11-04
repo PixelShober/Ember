@@ -78,11 +78,21 @@
       <span class="badge {wol.fastStartupOff ? 'ok' : 'warn'}">{t('wol.fastStartup')}</span>
       {wol.fastStartupOff ? t('wol.fastStartupOff') : t('wol.fastStartupOn')}
     </p>
-    <div class="note"><Icon name="info" /><p class="small">{t('wol.biosHint')}</p></div>
+    <div class="note bios">
+      <Icon name="info" />
+      <div>
+        <p class="small"><strong>{t('wol.bios.title')}</strong> · {t('wol.bios.intro')}</p>
+        <ul class="small">
+          {#each ['wol', 'dock', 'mac', 'deepSleep'] as item (item)}<li>{t(`wol.bios.items.${item}`)}</li>{/each}
+        </ul>
+      </div>
+    </div>
   {/if}
 </section>
 
 <style>
+  .bios ul { margin: 4px 0 0; padding-left: 18px; }
+  .bios li + li { margin-top: 2px; }
   .desc { margin-bottom: 8px; max-width: 820px; }
   .adapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; margin: 12px 0; }
   .adapter { border: 1px solid var(--border); border-radius: var(--radius-small); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }

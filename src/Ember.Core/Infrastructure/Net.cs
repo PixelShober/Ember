@@ -12,7 +12,8 @@ namespace Ember.Core;
 /// <param name="Sha256">SHA-256 per asset file name, where GitHub publishes it (asset "digest").</param>
 public sealed record ReleaseInfo(string Tag, IReadOnlyList<string> AssetUrls, IReadOnlyDictionary<string, string>? Sha256 = null);
 
-public sealed record ProxyDetectionResult(string? PacUrl, string? SystemProxy, IReadOnlyList<string> PacProxies);
+/// <param name="PacDirect">Hosts, domains and networks the PAC file sends DIRECT: the internal ones, without proxy.</param>
+public sealed record ProxyDetectionResult(string? PacUrl, string? SystemProxy, IReadOnlyList<string> PacProxies, IReadOnlyList<string>? PacDirect = null);
 
 /// <summary>HTTP, proxy detection and GitHub queries.</summary>
 public static class Net
@@ -103,6 +104,7 @@ public static class Net
         var pac = ReadPacFromRegistry();
         var system = ReadSystemProxyFromRegistry();
         var entries = new List<string>();
+        var direct = new List<string>();
 
         if (pac != null)
         {
@@ -112,13 +114,65 @@ public static class Net
                 using var http = CreateClient(new WebProxy(), TimeSpan.FromSeconds(15));
                 var text = await http.GetStringAsync(pac, ct);
                 entries = PacProxies(text);
+                direct = PacDirect(text);
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 Log.Warn(L.T("net.pacFailed", ("detail", Describe(ex))));
             }
         }
-        return new ProxyDetectionResult(pac, system, entries);
+        return new ProxyDetectionResult(pac, system, entries, direct);
+    }
+
+    /// <summary>
+    /// The internal destinations of a PAC file: what its conditions send "DIRECT". Reads
+    /// dnsDomainIs, shExpMatch, localHostOrDomainIs, host == "…" and isInNet (as CIDR), also when
+    /// the names sit in an array the condition loops over. isPlainHostName needs no entry.
+    /// </summary>
+    internal static List<string> PacDirect(string pacText)
+    {
+        var text = Regex.Replace(pacText, @"/\*.*?\*/|//[^\n]*", "", RegexOptions.Singleline);
+        var arrays = Regex.Matches(text, @"\b(?:var|let|const)\s+(\w+)\s*=\s*(?:new\s+Array\s*\()?\[?([^;\]\)]*)")
+                          .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value, StringComparer.Ordinal);
+        var found = new List<string>();
+        // if ( <balanced condition> ) { return "DIRECT"
+        var direct = new Regex(@"if\s*\((?<c>(?:[^()]|\((?<d>)|\)(?<-d>))*(?(d)(?!)))\)\s*\{?\s*return\s*[""']DIRECT[""']");
+        foreach (Match m in direct.Matches(text))
+        {
+            var cond = m.Groups["c"].Value;
+            foreach (Match a in Regex.Matches(cond, @"\b(\w+)\s*\["))
+                if (arrays.TryGetValue(a.Groups[1].Value, out var items)) cond += " " + string.Join(" ", Regex.Matches(items, @"[""']([^""']+)[""']").Select(i => $"shExpMatch(host, \"{i.Groups[1].Value}\")"));
+            foreach (Match d in Regex.Matches(cond, @"(?:dnsDomainIs|localHostOrDomainIs)\s*\(\s*\w+\s*,\s*[""']([^""']+)[""']"))
+                found.Add(d.Groups[1].Value);
+            foreach (Match d in Regex.Matches(cond, @"shExpMatch\s*\(\s*\w+\s*,\s*[""']([^""']+)[""']"))
+                found.Add(d.Groups[1].Value);
+            foreach (Match d in Regex.Matches(cond, @"\bhost\s*===?\s*[""']([^""']+)[""']"))
+                found.Add(d.Groups[1].Value);
+            foreach (Match d in Regex.Matches(cond, @"isInNet\s*\([^,]+,\s*[""']([\d.]+)[""']\s*,\s*[""']([\d.]+)[""']"))
+                if (MaskBits(d.Groups[2].Value) is { } bits) found.Add($"{d.Groups[1].Value}/{bits}");
+        }
+        return found.Select(CleanPacEntry).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).Take(100).ToList();
+    }
+
+    /// <summary>"*.city.net.ffm" / ".city.net.ffm" / "http://*.intra.de/*" → the domain; patterns with wildcards inside → null.</summary>
+    static string? CleanPacEntry(string entry)
+    {
+        var e = entry.Trim().ToLowerInvariant();
+        if (Regex.IsMatch(e, @"^[\d.]+/\d+$")) return e;
+        e = Regex.Replace(e, @"^[a-z*]+://", "");
+        e = e.Split('/')[0];
+        e = Regex.Replace(e, @":\*?\d*$", "");
+        e = e.TrimStart('*').TrimStart('.');
+        if (e.Length == 0 || e.Contains('*') || e.Contains('?') || !e.Contains('.')) return null;
+        return Regex.IsMatch(e, @"^[a-z0-9.\-]+$") ? e : null;
+    }
+
+    static int? MaskBits(string mask)
+    {
+        if (!IPAddress.TryParse(mask, out var ip)) return null;
+        var bits = 0;
+        foreach (var b in ip.GetAddressBytes()) bits += System.Numerics.BitOperations.PopCount(b);
+        return bits;
     }
 
     internal static List<string> PacProxies(string pacText) =>
@@ -147,17 +201,7 @@ public static class Net
             {
                 EnsureOk(response);
                 using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-                var tag = doc.RootElement.GetProperty("tag_name").GetString() ?? "?";
-                var items = doc.RootElement.GetProperty("assets").EnumerateArray().ToList();
-                var urls = items.Select(a => a.GetProperty("browser_download_url").GetString())
-                                .OfType<string>()
-                                .ToList();
-                var sha = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var a in items)
-                    if (a.TryGetProperty("digest", out var d) && d.GetString() is { } digest &&
-                        digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) && a.GetProperty("name").GetString() is { } name)
-                        sha[name] = digest["sha256:".Length..].ToLowerInvariant();
-                return new ReleaseInfo(tag, urls, sha);
+                return ParseRelease(doc.RootElement);
             }
         }
 
@@ -169,13 +213,70 @@ public static class Net
         var tag2 = path[(path.LastIndexOf('/') + 1)..];
         if (tag2.Length == 0 || tag2 == "latest")
             throw new EmberException("releaseTagUnknown", ("repo", repo));
+        return new ReleaseInfo(tag2, await WebAssetsAsync(http, repo, tag2, ct));
+    }
 
-        var html = await http.GetStringAsync(web + "/releases/expanded_assets/" + tag2, ct);
-        var assets = Regex.Matches(html, "href=\"(/" + Regex.Escape(repo) + "/releases/download/[^\"]+)\"")
-                          .Select(m => "https://github.com" + WebUtility.HtmlDecode(m.Groups[1].Value))
-                          .Distinct()
-                          .ToList();
-        return new ReleaseInfo(tag2, assets);
+    /// <summary>
+    /// The newest release, pre-releases included, that <paramref name="accept"/> takes, looking at the
+    /// <paramref name="count"/> newest. llama.cpp, for one, publishes its Windows builds only as pre-releases.
+    /// </summary>
+    public static async Task<ReleaseInfo?> FindReleaseAsync(HttpClient http, string repo, Func<ReleaseInfo, bool> accept, int count, CancellationToken ct)
+    {
+        using (var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repo}/releases?per_page={count}"))
+        {
+            request.Headers.Accept.ParseAdd("application/vnd.github+json");
+            using var response = await http.SendAsync(request, ct);
+            if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests)
+            {
+                Log.Warn(L.T("net.githubRateLimit"));
+            }
+            else
+            {
+                EnsureOk(response);
+                using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+                return doc.RootElement.EnumerateArray()
+                          .Where(r => !(r.TryGetProperty("draft", out var d) && d.ValueKind == JsonValueKind.True))
+                          .Select(ParseRelease)
+                          .FirstOrDefault(accept);
+            }
+        }
+
+        // Fallback: the tags on the release page, their assets one after the other
+        var html = await http.GetStringAsync($"https://github.com/{repo}/releases", ct);
+        var tags = Regex.Matches(html, "href=\"/" + Regex.Escape(repo) + "/releases/tag/([^\"]+)\"")
+                        .Select(m => WebUtility.HtmlDecode(m.Groups[1].Value))
+                        .Distinct()
+                        .Take(count);
+        foreach (var tag in tags)
+        {
+            var release = new ReleaseInfo(tag, await WebAssetsAsync(http, repo, tag, ct));
+            if (accept(release)) return release;
+        }
+        return null;
+    }
+
+    static ReleaseInfo ParseRelease(JsonElement release)
+    {
+        var tag = release.GetProperty("tag_name").GetString() ?? "?";
+        var items = release.GetProperty("assets").EnumerateArray().ToList();
+        var urls = items.Select(a => a.GetProperty("browser_download_url").GetString())
+                        .OfType<string>()
+                        .ToList();
+        var sha = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var a in items)
+            if (a.TryGetProperty("digest", out var d) && d.GetString() is { } digest &&
+                digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) && a.GetProperty("name").GetString() is { } name)
+                sha[name] = digest["sha256:".Length..].ToLowerInvariant();
+        return new ReleaseInfo(tag, urls, sha);
+    }
+
+    static async Task<List<string>> WebAssetsAsync(HttpClient http, string repo, string tag, CancellationToken ct)
+    {
+        var html = await http.GetStringAsync($"https://github.com/{repo}/releases/expanded_assets/{tag}", ct);
+        return Regex.Matches(html, "href=\"(/" + Regex.Escape(repo) + "/releases/download/[^\"]+)\"")
+                    .Select(m => "https://github.com" + WebUtility.HtmlDecode(m.Groups[1].Value))
+                    .Distinct()
+                    .ToList();
     }
 
     public static void EnsureOk(HttpResponseMessage response)

@@ -63,30 +63,97 @@ public class ModuleTests
     }
 
     [Fact]
-    public void Llama_picks_highest_cuda_build_the_driver_supports()
+    public void Llama_takes_the_newest_cuda_build_within_the_drivers_major_version()
     {
         var assets = new[]
         {
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/llama-b6890-bin-win-cpu-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/llama-b6890-bin-win-cuda-12.4-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/llama-b6890-bin-win-cuda-13.1-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/llama-b6890-bin-win-vulkan-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/cudart-llama-bin-win-cuda-12.4-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/cudart-llama-bin-win-cuda-13.1-x64.zip",
-            "https://github.com/ggml-org/llama.cpp/releases/download/b6890/llama-b6890-bin-macos-arm64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cpu-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cuda-12.4-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cuda-13.4-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cuda-13.4-arm64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-vulkan-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/cudart-llama-bin-win-cuda-12.4-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/cudart-llama-bin-win-cuda-13.4-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-macos-arm64.zip",
         };
-        var (zip, cudart) = LlamaCpp.PickAssets(assets, "cuda", "13.0");
+        // Driver with CUDA 13.2: the 13.4 build runs (minor version compatibility), with its runtime.
+        var (zip, cudart) = LlamaCpp.TryPickAssets(assets, "cuda", "13.2")!.Value;
+        Assert.EndsWith("cuda-13.4-x64.zip", zip);
+        Assert.EndsWith("cudart-llama-bin-win-cuda-13.4-x64.zip", cudart);
+
+        // Older driver (CUDA 12.x): the 12.4 build.
+        (zip, cudart) = LlamaCpp.TryPickAssets(assets, "cuda", "12.8")!.Value;
         Assert.EndsWith("cuda-12.4-x64.zip", zip);
         Assert.EndsWith("cudart-llama-bin-win-cuda-12.4-x64.zip", cudart);
 
-        (zip, cudart) = LlamaCpp.PickAssets(assets, "cuda", "13.2");
-        Assert.EndsWith("cuda-13.1-x64.zip", zip);
-
-        (zip, cudart) = LlamaCpp.PickAssets(assets, "vulkan", null);
+        (zip, cudart) = LlamaCpp.TryPickAssets(assets, "vulkan", null)!.Value;
         Assert.EndsWith("vulkan-x64.zip", zip);
         Assert.Null(cudart);
+        Assert.EndsWith("cpu-x64.zip", LlamaCpp.TryPickAssets(assets, "cpu", null)!.Value.Zip);
 
-        Assert.EndsWith("cpu-x64.zip", LlamaCpp.PickAssets(assets, "cpu", null).Zip);
+        // A release without Windows builds (like llama.cpp's "latest" v0.9.0) is skipped, not mistaken for Vulkan.
+        Assert.Null(LlamaCpp.TryPickAssets(new[] { "https://github.com/ggml-org/llama.cpp/releases/download/v0.9.0/nightly-tag.txt" }, "cuda", "13.2"));
+    }
+
+    [Fact]
+    public void Llama_server_starts_as_in_the_setup_guide()
+    {
+        var models = Models.List(new UserSettings { ModelsDir = @"C:\models" }, new TeamConfig());
+        var qwen = models.Single(m => m.Id == "qwen3.8-27b");
+        Assert.EndsWith("Qwen3.8-27B-UD-Q4_K_XL.gguf", qwen.Path);
+
+        var args = LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("standard"), 8080, "");
+        string Next(string flag) => args[args.IndexOf(flag) + 1];
+        Assert.Equal("qwen3.8-27b", Next("--alias"));
+        Assert.Equal("99", Next("-ngl"));
+        Assert.Equal("98304", Next("-c"));
+        Assert.Equal("q8_0", Next("-ctk"));
+        Assert.Equal("draft-mtp", Next("--spec-type"));
+        Assert.Equal("{\"reasoning_effort\":\"medium\"}", Next("--chat-template-kwargs"));
+        Assert.Contains("--jinja", args);
+
+        var max = LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("max"), 8080, "--threads 8");
+        Assert.Equal("262144", max[max.IndexOf("-c") + 1]);
+        Assert.DoesNotContain("--spec-type", max);   // no MTP at 256K
+        Assert.Equal("8", max[^1]);
+        // The old default would cut the context to 8K, so it is ignored.
+        Assert.DoesNotContain("8192", LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("lang"), 8080, "-ngl 99 -c 8192"));
+        Assert.Equal("62/62", LlamaCpp.Offloaded("load_tensors: offloaded 62/62 layers to GPU"));
+    }
+
+    [Fact]
+    public void Local_models_are_used_where_they_are()
+    {
+        var dir = Directory.CreateTempSubdirectory("ember-models-").FullName;
+        try
+        {
+            var file = Path.Combine(dir, "Mein-Modell-Q4.gguf");
+            File.WriteAllText(file, "GGUF");
+            var s = new UserSettings();
+            Models.AddLocal(s, file);
+            var local = Models.List(s, new TeamConfig()).Single(m => m.Local);
+            Assert.Equal(file, local.Path);
+            Assert.True(local.Downloaded && local.Mine);
+            Assert.Equal("mein-modell-q4", local.Alias);
+            Assert.Equal("modelNotGguf", Assert.Throws<EmberException>(() => Models.AddLocal(s, Path.Combine(dir, "x.bin"))).Code);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Pi_gets_the_llama_provider_and_keeps_the_others()
+    {
+        var json = "{\n  \"providers\": {\n    \"openai\": { \"apiKey\": \"x\" }\n  }\n}\n";
+        var result = PiAgent.Apply(json, "qwen3.8-27b", 98304, 8080);
+        var root = System.Text.Json.Nodes.JsonNode.Parse(result)!.AsObject();
+        Assert.Equal("x", (string?)root["providers"]!["openai"]!["apiKey"]);
+        Assert.True(PiAgent.IsConfigured(root, "qwen3.8-27b", 98304, 8080));
+        Assert.False(PiAgent.IsConfigured(root, "qwen3.8-27b", 163840, 8080));   // other profile: context must match
+        Assert.Equal("http://127.0.0.1:8080/v1", (string?)root["providers"]!["llama-cpp"]!["baseUrl"]);
+        Assert.True(PiAgent.IsConfigured(System.Text.Json.Nodes.JsonNode.Parse(PiAgent.Apply(null, "a", 1, 9000))!.AsObject(), "a", 1, 9000));
     }
 
     [Fact]
@@ -145,6 +212,34 @@ public class ModuleTests
         Assert.Equal("proxy:80", Net.ParseProxyServer("http://proxy:80"));
         Assert.Equal(new[] { "p1.firma.example:8080", "p2.firma.example:3128" },
                      Net.PacProxies("return 'PROXY p1.firma.example:8080; PROXY p2.firma.example:3128; PROXY p1.firma.example:8080';"));
+    }
+
+    [Fact]
+    public void Pac_direct_rules_become_internal_domains()
+    {
+        const string pac = """
+            // Firmen-PAC
+            var intern = new Array("*.city.net.ffm", "*.stadt-frankfurt.de");
+            function FindProxyForURL(url, host) {
+              if (isPlainHostName(host) || dnsDomainIs(host, ".intranet.example") || host == "wiki.firma.example")
+                return "DIRECT";
+              for (var i = 0; i < intern.length; i++) {
+                if (shExpMatch(host, intern[i])) { return "DIRECT"; }
+              }
+              if (isInNet(dnsResolve(host), "10.0.0.0", "255.0.0.0")) return "DIRECT";
+              /* if (dnsDomainIs(host, ".alt.example")) return "DIRECT"; */
+              if (shExpMatch(url, "http://*.extern.example/*")) return "PROXY proxy.example:8080";
+              if (shExpMatch(host, "*intra*")) return "DIRECT";
+              return "PROXY proxy.example:8080; DIRECT";
+            }
+            """;
+        Assert.Equal(new[] { "intranet.example", "wiki.firma.example", "city.net.ffm", "stadt-frankfurt.de", "10.0.0.0/8" },
+                     Net.PacDirect(pac));
+        // Without own value or team.json the PAC entries are the internal domains.
+        var eff = EffectiveSettings.Build(new UserSettings(), new TeamConfig(),
+                                          new ProxyDetectionResult("http://pac/proxy.pac", null, new[] { "proxy.example:8080" }, Net.PacDirect(pac)));
+        Assert.Contains("city.net.ffm", eff.NoProxyList);
+        Assert.Contains("10.0.0.0/8", eff.InternalDomainList);
     }
 
     [Theory]

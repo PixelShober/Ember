@@ -17,6 +17,14 @@
   }
   onMount(load);
 
+  // After an installation, uninstallation or start/stop of px the tools have changed: read them again.
+  let lastPxJob = app.jobs['px']?.state;
+  $effect(() => {
+    const state = app.jobs['px']?.state;
+    if (state !== lastPxJob && (state === 'done' || state === 'failed')) void load();
+    lastPxJob = state;
+  });
+
   const px = $derived(app.px);
   // Tools only point to px once it is installed and answers; otherwise they would lose the network.
   const pxReady = $derived(!!px?.installed && !!px?.portOpen);
@@ -87,6 +95,7 @@
       <span class="spacer"></span>
       <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
     </div>
+    <div class="note kerberos"><Icon name="info" /><p class="small">{t('proxy.diag.kerberosNote')}</p></div>
 
     {#if rows}
       <table class="table">
@@ -114,11 +123,11 @@
     {:else}
       <p class="muted">{t('common.loading')}</p>
     {/if}
-    <div class="note"><Icon name="info" /><p class="small">{t('proxy.diag.kerberosNote')}</p></div>
   </section>
 </div>
 
 <style>
+  .kerberos { margin-bottom: 12px; }
   .actions { margin-bottom: 8px; }
   .right { text-align: right; }
   .note { margin-top: 14px; }

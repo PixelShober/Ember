@@ -8,8 +8,16 @@ public sealed class ModelEntry
     public string Name { get; set; } = "";
     /// <summary>Direct download URL, e.g. https://huggingface.co/…/resolve/main/model.gguf</summary>
     public string Url { get; set; } = "";
+    /// <summary>A GGUF file that is already there (local disk or share); then nothing is downloaded.</summary>
+    public string? Path { get; set; }
     public string? Sha256 { get; set; }
     public string? Note { get; set; }
+    /// <summary>Name the server announces (--alias) and Pi asks for; default: the id.</summary>
+    public string? Alias { get; set; }
+    /// <summary>The model has a multi-token-prediction head (--spec-type draft-mtp makes it faster).</summary>
+    public bool? Mtp { get; set; }
+    /// <summary>Extra llama-server arguments the model wants, one per item (sampling, chat template).</summary>
+    public List<string>? Args { get; set; }
 }
 
 /// <summary>
@@ -28,11 +36,12 @@ public sealed class UserSettings
 
     // --- px (local) -----------------------------------------------------------------
     public string InstallDir { get; set; } = Paths.DefaultPxDir;
-    public string LocalZip { get; set; } = "";
     public bool Autostart { get; set; } = true;
 
     // --- Developer tools to point at px ----------------------------------------------
     public bool ConfigureEnvVars { get; set; } = true;
+    /// <summary>px in the PowerShell profiles (irm/iwr in Windows PowerShell 5.1 and PowerShell 7).</summary>
+    public bool ConfigurePowerShell { get; set; } = true;
     public bool ConfigureGit { get; set; } = true;
     public bool ConfigureNpm { get; set; } = true;
     public bool ConfigurePip { get; set; } = true;
@@ -46,11 +55,6 @@ public sealed class UserSettings
     public string? ColorScheme { get; set; }
     /// <summary>"efeu" or "glut".</summary>
     public string Design { get; set; } = "efeu";
-    /// <summary>
-    /// Inactive window: "auto" lets the desktop shine through as much as the window manager asks for
-    /// (GlazeWM/WinMarchy), "always" 90 % opaque, "off" never.
-    /// </summary>
-    public string BackgroundTransparency { get; set; } = "auto";
 
     /// <summary>Ctrl+E hid the advanced tabs (KI, Energie, Berechtigungen); who has them comes from the roles.</summary>
     public bool HideAdvanced { get; set; }
@@ -70,7 +74,10 @@ public sealed class UserSettings
     public string LlamaVariant { get; set; } = "auto";
     public string LlamaCurrent { get; set; } = "";
     public int LlamaPort { get; set; } = 8080;
-    public string LlamaArgs { get; set; } = "-ngl 99 -c 8192";
+    /// <summary>Context profile for llama-server: "standard" (96K), "lang" (160K) or "max" (256K).</summary>
+    public string LlamaProfile { get; set; } = "standard";
+    /// <summary>Additional arguments after the profile's (empty: none).</summary>
+    public string LlamaArgs { get; set; } = "";
     public List<ModelEntry> Models { get; set; } = new();
 
     public static UserSettings Load()

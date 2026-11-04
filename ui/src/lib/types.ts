@@ -167,6 +167,8 @@ export interface GitProxyInfo {
   noProxyEnv: boolean;
   canSet: boolean;
   canRemove: boolean;
+  /** http.sslBackend: "schannel" = Windows certificate store. */
+  sslBackend: string | null;
 }
 
 export interface ModelEntry {
@@ -184,23 +186,22 @@ export interface UserSettings {
   internalDomains: string | null;
   port: number | null;
   installDir: string;
-  localZip: string;
   autostart: boolean;
   configureEnvVars: boolean;
+  configurePowerShell: boolean;
   configureGit: boolean;
   configureNpm: boolean;
   configurePip: boolean;
   configureNuGet: boolean;
   language: string;
   hideAdvanced: boolean;
-  /** Inactive window: "auto" as the window manager asks (GlazeWM/WinMarchy), "always" 90 %, "off". */
-  backgroundTransparency: 'auto' | 'always' | 'off';
   teamConfigPath: string;
   autoUpdate: boolean;
   modelsDir: string;
   llamaVariant: string;
   llamaCurrent: string;
   llamaPort: number;
+  llamaProfile: LlamaProfile['id'];
   llamaArgs: string;
   models: ModelEntry[];
 }
@@ -217,7 +218,7 @@ export interface SettingsView {
   user: UserSettings;
   team: TeamProxyValues;
   /** What Windows reported at start (PAC address, first proxy from the PAC file or the system proxy). */
-  detected: { usePac: boolean | null; pacUrl: string | null; upstreamProxy: string | null };
+  detected: { usePac: boolean | null; pacUrl: string | null; upstreamProxy: string | null; internalDomains: string | null };
   effective: {
     usePac: boolean;
     pacUrl: string;
@@ -235,6 +236,8 @@ export interface ProxyDetection {
   pacUrl: string | null;
   systemProxy: string | null;
   pacProxies: string[];
+  /** Hosts and domains the PAC file sends DIRECT (internal, without proxy). */
+  pacDirect: string[];
 }
 
 export interface GitIdentityInfo {
@@ -454,6 +457,12 @@ export interface LlamaStatus {
   serverRunning: boolean;
   port: number;
   serverModel: string | null;
+  serverAlias: string | null;
+  serverProfile: string | null;
+  serverContext: number | null;
+  /** "62/62": layers on the GPU, from the server log. */
+  offloaded: string | null;
+  lastError: string | null;
 }
 
 export interface ModelState {
@@ -464,6 +473,27 @@ export interface ModelState {
   downloaded: boolean;
   size: number | null;
   path: string;
+  /** A file that was already there: never downloaded or deleted by Ember. */
+  local: boolean;
+  /** Added on this PC (can be removed from the list). */
+  mine: boolean;
+  alias: string;
+  mtp: boolean;
+}
+
+export interface LlamaProfile {
+  id: 'standard' | 'lang' | 'max';
+  context: number;
+  kvCache: string;
+  mtp: boolean;
+}
+
+export interface PiState {
+  installed: boolean;
+  nodeFound: boolean;
+  configured: boolean;
+  configFile: string;
+  command: string;
 }
 
 export interface AiStatus {
@@ -471,5 +501,8 @@ export interface AiStatus {
   llama: LlamaStatus;
   models: ModelState[];
   modelsDir: string;
+  profiles: LlamaProfile[];
+  profile: LlamaProfile['id'];
+  pi: PiState;
 }
 

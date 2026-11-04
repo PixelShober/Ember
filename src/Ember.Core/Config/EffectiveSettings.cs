@@ -18,9 +18,9 @@ public sealed record EffectiveSettings
     public int Port { get; init; } = DefaultPort;
 
     public string InstallDir { get; init; } = Paths.DefaultPxDir;
-    public string LocalZip { get; init; } = "";
     public bool Autostart { get; init; } = true;
     public bool ConfigureEnvVars { get; init; } = true;
+    public bool ConfigurePowerShell { get; init; } = true;
     public bool ConfigureGit { get; init; } = true;
     public bool ConfigureNpm { get; init; } = true;
     public bool ConfigurePip { get; init; } = true;
@@ -41,12 +41,12 @@ public sealed record EffectiveSettings
             UsePac = u.UsePac ?? d.UsePac ?? true,
             PacUrl = u.PacUrl ?? d.PacUrl ?? "",
             UpstreamProxy = u.UpstreamProxy ?? d.Upstream ?? "",
-            InternalDomainList = u.InternalDomains != null ? SplitDomains(u.InternalDomains) : (IReadOnlyList<string>?)t?.InternalDomains ?? Array.Empty<string>(),
+            InternalDomainList = u.InternalDomains != null ? SplitDomains(u.InternalDomains) : (IReadOnlyList<string>?)t?.InternalDomains ?? d.Domains ?? Array.Empty<string>(),
             Port = u.Port ?? t?.Port ?? DefaultPort,
             InstallDir = string.IsNullOrWhiteSpace(u.InstallDir) ? Paths.DefaultPxDir : u.InstallDir,
-            LocalZip = u.LocalZip,
             Autostart = u.Autostart,
             ConfigureEnvVars = u.ConfigureEnvVars,
+            ConfigurePowerShell = u.ConfigurePowerShell,
             ConfigureGit = u.ConfigureGit,
             ConfigureNpm = u.ConfigureNpm,
             ConfigurePip = u.ConfigurePip,
@@ -56,15 +56,16 @@ public sealed record EffectiveSettings
 
     /// <summary>
     /// What Windows reported at start, as proxy values: the PAC address, the first proxy from the
-    /// PAC file (or the system proxy), and whether PAC is the way.
+    /// PAC file (or the system proxy), whether PAC is the way, and what the PAC file sends DIRECT.
     /// </summary>
-    public sealed record Detected(bool? UsePac, string? PacUrl, string? Upstream)
+    public sealed record Detected(bool? UsePac, string? PacUrl, string? Upstream, IReadOnlyList<string>? Domains = null)
     {
         public static Detected From(ProxyDetectionResult? r) =>
             r == null
                 ? new Detected(null, null, null)
                 : new Detected(r.PacUrl != null ? true : r.SystemProxy != null ? false : null,
-                               r.PacUrl, r.PacProxies.FirstOrDefault() ?? r.SystemProxy);
+                               r.PacUrl, r.PacProxies.FirstOrDefault() ?? r.SystemProxy,
+                               r.PacDirect is { Count: > 0 } direct ? direct : null);
     }
 
     public static IReadOnlyList<string> SplitDomains(string text) =>
@@ -83,7 +84,6 @@ public sealed record EffectiveSettings
         if (string.IsNullOrWhiteSpace(InstallDir)) return L.T("errors.installDirMissing");
         try { Path.GetFullPath(InstallDir); }
         catch { return L.T("errors.installDirInvalid"); }
-        if (LocalZip.Length > 0 && !File.Exists(LocalZip)) return L.T("errors.localZipMissing", ("path", LocalZip));
         return null;
     }
 }

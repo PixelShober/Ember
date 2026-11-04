@@ -39,6 +39,8 @@ Die Tabelle zeigt pro Werkzeug den aktuellen Proxy und einen Status:
 - **nicht gesetzt**: das Werkzeug geht ohne Proxy raus, was im Firmennetz meist scheitert.
 - **Firmenvorgabe**: die Windows-Einstellung (PAC-Datei). Die bleibt, wie sie ist, denn px liest genau sie.
 
+Nach jeder Installation, Deinstallation oder Reparatur von px liest Ember die Tabelle von selbst neu.
+
 „Auf px setzen“ geht nur, solange px installiert ist und läuft. Sonst ist der Knopf ausgegraut, denn ein Werkzeug, das auf ein fehlendes px zeigt, kommt gar nicht mehr ins Netz. Dasselbe gilt für den Knopf auf der Git-Seite.
 
 Folgende Werkzeuge kennt Ember:
@@ -46,23 +48,36 @@ Folgende Werkzeuge kennt Ember:
 | Werkzeug | Wo Ember liest und schreibt |
 |---|---|
 | Umgebungsvariablen | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` für dein Benutzerkonto |
-| git | `git config --global http.proxy`, dazu `http.<url>.proxy` leer für jede interne Domain |
+| PowerShell (irm, iwr) | ein Block in `Dokumente\WindowsPowerShell\profile.ps1` und `Dokumente\PowerShell\profile.ps1`, siehe unten |
+| git | `git config --global http.proxy`, dazu für jede interne Domain `http.<url>.proxy` leer und `http.<url>.allowNTLMAuth true` |
 | npm | `npm config` (`proxy`, `https-proxy`, `noproxy`) |
 | Node.js-Zertifikate | `NODE_EXTRA_CA_CERTS` für dein Benutzerkonto, zeigt auf `C:\Ember\Certs\windows-ca.pem` |
 | NuGet / .NET | `http_proxy` und `no_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
 | pip | `proxy` in `%APPDATA%\pip\pip.ini` |
 | VS Code | `"http.proxy"` und `"http.noProxy"` in `settings.json`, Kommentare bleiben erhalten |
 
+### PowerShell
+
+Windows PowerShell 5.1 schickt `Invoke-WebRequest`, `Invoke-RestMethod` (`irm`) und `WebClient` an den Proxy aus der PAC-Datei, meldet sich dort aber nicht an. Die Umgebungsvariablen beachtet es nicht. Installer wie
+
+```powershell
+powershell -c "irm https://pi.dev/install.ps1 | iex"
+```
+
+scheitern deshalb, in PowerShell genauso wie aus `cmd` heraus. „Auf px setzen“ trägt in das Profil von Windows PowerShell und PowerShell 7 einen Block ein, der genau diese Aufrufe über px schickt. Interne Domains und `localhost` gehen direkt. Was sonst im Profil steht, bleibt, wie es ist. Neue PowerShell-Fenster nutzen den Eintrag.
+
+Windows PowerShell lädt Profile nur mit der Ausführungsrichtlinie RemoteSigned. Steht sie auf „Restricted“ (der Windows-Standard), sagt die Diagnose das dazu. Umstellen kannst du sie unter [System](/Ember/handbuch/system/).
+
 ## Interne Server ohne Proxy
 
-Interne Server sind über den Firmenproxy oft nicht erreichbar, oder der Umweg kostet nur Zeit. Die internen Domains aus den Einstellungen oder der Team-Konfiguration (`proxy.internalDomains`) bekommt deshalb jedes Werkzeug als Ausnahme, und zwar in dem Format, das es versteht:
+Interne Server sind über den Firmenproxy oft nicht erreichbar, oder der Umweg kostet nur Zeit. Die internen Domains bekommt deshalb jedes Werkzeug als Ausnahme, und zwar in dem Format, das es versteht. Sie kommen aus den Einstellungen, sonst aus der Team-Konfiguration (`proxy.internalDomains`), sonst aus der PAC-Datei: Ember liest, welche Ziele sie mit `DIRECT` am Proxy vorbeischickt (`dnsDomainIs`, `shExpMatch`, `isInNet` und Co.).
 
 | Wo | Was Ember einträgt (Beispiel `firma.local`) |
 |---|---|
 | px | `noproxy = firma.local,*.firma.local`: px verbindet direkt statt über den Firmenproxy |
 | `NO_PROXY` | `localhost,127.0.0.1,::1,firma.local`, gilt für git, npm, pip, Python, Node.js und viele CLIs |
 | npm | `noproxy` wie `NO_PROXY` |
-| git | `http.https://firma.local.proxy` und `http.https://*.firma.local.proxy` leer, dasselbe für `http://`, siehe [Git](/Ember/handbuch/git/#proxy-und-interne-server) |
+| git | `http.https://firma.local.proxy` und `http.https://*.firma.local.proxy` leer, dasselbe für `http://`, dazu `allowNTLMAuth`, siehe [Git](/Ember/handbuch/git/#proxy-und-interne-server) |
 | NuGet | `no_proxy` wie `NO_PROXY` |
 | VS Code | `"http.noProxy": ["localhost", "127.0.0.1", "::1", "firma.local"]` |
 | pip | `pip.ini` kennt keine Ausnahmen, pip nimmt `NO_PROXY` |

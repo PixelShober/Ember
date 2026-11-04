@@ -549,12 +549,20 @@ public sealed class EmberHost : IDisposable
         // ------------------------------------------------------------------ AI
         b.Register("ai.status", async ct =>
         {
+            var models = Models.List(Settings, Team.Config);
+            var profile = LlamaCpp.Profile(Settings.LlamaProfile);
+            var llama = await LlamaCpp.StatusAsync(Settings, ct);
+            // Pi follows the running server, otherwise the model that would start.
+            var alias = llama.ServerAlias ?? models.FirstOrDefault(m => m.Downloaded)?.Alias ?? Models.Qwen.Alias!;
             return new
             {
                 gpus = await Gpu.NvidiaAsync(ct),
-                llama = await LlamaCpp.StatusAsync(Settings, ct),
-                models = Models.List(Settings, Team.Config),
+                llama,
+                models,
                 modelsDir = Models.Dir(Settings),
+                profiles = LlamaCpp.Profiles,
+                profile = profile.Id,
+                pi = PiAgent.State(alias, llama.ServerContext ?? profile.Context, Settings.LlamaPort),
             };
         });
         b.Register("ai.llama.install", () =>
@@ -574,22 +582,56 @@ public sealed class EmberHost : IDisposable
         b.Register("ai.server.start", (args, _) =>
         {
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("model")) ?? throw new EmberException("modelUnknown");
-            LlamaCpp.StartServer(Settings, model.Path);
+            if (args.OptStr("profile") is { } profile && LlamaCpp.Profiles.Any(p => p.Id == profile) && profile != Settings.LlamaProfile)
+            {
+                Settings.LlamaProfile = profile;
+                Settings.Save();
+            }
+            LlamaCpp.StartServer(Settings, model);
             return Task.FromResult<object?>(null);
         });
         b.Register("ai.server.stop", () => { LlamaCpp.StopServer(); return null; });
         b.Register("ai.models.download", (args, _) =>
         {
             var id = args.Req("id");
-            var model = Models.All(Settings, Team.Config).FirstOrDefault(m => m.Id == id) ?? throw new EmberException("modelUnknown");
+            var model = Models.All(Settings, Team.Config).Select(x => x.Entry).FirstOrDefault(m => m.Id == id) ?? throw new EmberException("modelUnknown");
+            if (!string.IsNullOrWhiteSpace(model.Path)) throw new EmberException("modelLocal", ("path", model.Path));
             return Task.FromResult<object?>(Jobs.Start("model:" + id, "model", L.T("ai.models.jobs.download", ("name", model.Name.Length > 0 ? model.Name : id)),
                 Models.DownloadSteps(model, Paths.Ensure(Models.Dir(Settings)), Effective)).Snapshot());
         });
+        // A GGUF that is already on this PC (or a share): chosen in a file dialog, nothing is downloaded.
+        b.Register("ai.models.addLocal", async (args, _) =>
+        {
+            var file = args.OptStr("path") ?? await Shell.PickFileAsync(L.T("ai.models.pickLocal"), "GGUF (*.gguf)|*.gguf");
+            if (file == null) return null;
+            var entry = Models.AddLocal(Settings, file);
+            Settings.Save();
+            return entry.Id;
+        });
+        // Downloaded models: the file goes. Local ones (picked on this PC): only the entry, never the file.
         b.Register("ai.models.delete", (args, _) =>
         {
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("id")) ?? throw new EmberException("modelUnknown");
-            if (File.Exists(model.Path)) File.Delete(model.Path);
+            if (model.Local)
+            {
+                if (!model.Mine) throw new EmberException("modelFromTeam");
+                Settings.Models.RemoveAll(m => m.Id.Equals(model.Id, StringComparison.OrdinalIgnoreCase));
+                Settings.Save();
+            }
+            else if (File.Exists(model.Path))
+            {
+                File.Delete(model.Path);
+            }
             return Task.FromResult<object?>(null);
+        });
+        b.Register("ai.pi.install", () => Jobs.Start("pi", "pi", L.T("ai.pi.jobs.install"), PiAgent.InstallSteps(Effective, Team.Config)).Snapshot());
+        b.Register("ai.pi.configure", async ct =>
+        {
+            var llama = await LlamaCpp.StatusAsync(Settings, ct);
+            var models = Models.List(Settings, Team.Config);
+            var alias = llama.ServerAlias ?? models.FirstOrDefault(m => m.Downloaded)?.Alias ?? Models.Qwen.Alias!;
+            var context = llama.ServerContext ?? LlamaCpp.Profile(Settings.LlamaProfile).Context;
+            return PiAgent.Configure(alias, context, Settings.LlamaPort);
         });
 
         // ------------------------------------------------------------------ updates
@@ -637,6 +679,7 @@ public sealed class EmberHost : IDisposable
                 usePac = EffectiveSettings.Detected.From(_detected).UsePac,
                 pacUrl = EffectiveSettings.Detected.From(_detected).PacUrl,
                 upstreamProxy = EffectiveSettings.Detected.From(_detected).Upstream,
+                internalDomains = EffectiveSettings.Detected.From(_detected).Domains is { } found ? string.Join(", ", found) : null,
             },
             effective = new
             {

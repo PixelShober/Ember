@@ -127,7 +127,22 @@ Gibt es ein passendes Paket im Softwarecenter, nimmt Ember immer das.
 
 ### models
 
-`models` ergänzt die Modellliste im KI-Tab (`url`, optional `id`, `name`, `sha256`, `note`).
+`models` ergänzt die Modellliste im KI-Tab. Eingebaut ist Qwen3.8-27B (UD-Q4_K_XL), ein Eintrag mit derselben `id` (`qwen3.8-27b`) ersetzt es.
+
+| Feld | Bedeutung |
+|---|---|
+| `url` | direkte Download-Adresse der GGUF-Datei |
+| `path` | statt `url`: eine GGUF-Datei, die schon liegt, etwa auf einem Netzlaufwerk. Ember lädt nichts herunter und löscht nichts. |
+| `id`, `name`, `note`, `sha256` | Kennung, Anzeigename, kurze Notiz, Prüfsumme für den Download |
+| `alias` | Name für `--alias` und für Pi, Standard: der Dateiname |
+| `mtp` | `true`, wenn das Modell einen MTP-Kopf hat |
+| `args` | llama-server-Argumente des Modells, eines pro Eintrag, etwa `["--temp", "1.0", "--top-k", "20"]` |
+
+```json
+"models": [
+  { "id": "devstral", "name": "Devstral Small", "path": "\\\\server\\ki\\Devstral-Small-Q4_K_M.gguf" }
+]
+```
 
 ### update.mirror
 

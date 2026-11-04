@@ -26,6 +26,11 @@
     email = info?.email ?? info?.suggestedEmail ?? '';
   });
 
+  // git already has exactly the suggestion: nothing to offer, only the green note.
+  const adopted = $derived(
+    !!info?.suggestedName && !!info.suggestedEmail && info.name === info.suggestedName &&
+      (info.email ?? '').toLowerCase() === info.suggestedEmail.toLowerCase(),
+  );
   const valid = $derived(name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()));
   const changed = $derived(info != null && (name.trim() !== (info.name ?? '') || email.trim() !== (info.email ?? '')));
 
@@ -51,15 +56,19 @@
     <button class="btn small" onclick={() => navigate('software')}>{t('nav.software')}</button></div>
 {:else if info}
   <h2 class="section-title first">{t('git.identity')}</h2>
-  <div class="grid two">
+  <div class="grid" class:two={!adopted}>
     <section class="card stack tight">
-      <h2>{t('git.current')}</h2>
+      <div class="row between">
+        <h2>{t('git.current')}</h2>
+        {#if adopted}<span class="badge ok"><Icon name="check" size={12} />{t('git.adopted')}</span>{/if}
+      </div>
       <dl>
         <dt>{t('git.name')}</dt><dd>{info.name ?? t('git.notSet')}</dd>
         <dt>{t('git.email')}</dt><dd>{info.email ?? t('git.notSet')}</dd>
       </dl>
     </section>
 
+    {#if !adopted}
     <section class="card stack tight">
       <div class="row between">
         <h2>{t('git.suggested')}</h2>
@@ -71,6 +80,7 @@
       </dl>
       <div><button class="btn small" onclick={useSuggestion} disabled={!info.suggestedName}>{t('git.useSuggestion')}</button></div>
     </section>
+    {/if}
   </div>
 
   <section class="card stack form">
@@ -99,6 +109,15 @@
             <span class="small muted">{t('git.proxy.noDomains')}</span>
           {/if}
         </dd>
+        {#if proxy.domains.length}
+          <dt>{t('git.proxy.signIn')}</dt><dd class="small">{t('git.proxy.signInValue')}</dd>
+        {/if}
+        <dt>{t('git.proxy.tls')}</dt>
+        <dd class="small">
+          {#if proxy.sslBackend === 'schannel'}{t('git.proxy.schannel')}
+          {:else if proxy.sslBackend}<span class="warn-text">{t('git.proxy.otherBackend', { backend: proxy.sslBackend })}</span>
+          {:else}<span class="muted">{t('git.proxy.noBackend')}</span>{/if}
+        </dd>
       </dl>
       {#if proxy.state === 'px' && proxy.missingExceptions.length === 0 && proxy.noProxyEnv}
         <p class="small ok-text"><Icon name="check" size={14} /> {t('git.proxy.ok')}</p>
@@ -122,6 +141,7 @@
 
 <style>
   .two { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .grid:not(.two) { grid-template-columns: minmax(0, 560px); }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
   dt { color: var(--text-muted); }
   dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
@@ -131,6 +151,7 @@
   .proxy { margin-top: 16px; }
   .grow { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 3px; }
   .ok-text { display: flex; align-items: center; gap: 6px; color: var(--ok); }
+  .warn-text { color: var(--warn); }
   dd { margin: 0; font-weight: 500; }
   .form { margin-top: 16px; max-width: 560px; }
 </style>

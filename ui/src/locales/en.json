@@ -86,7 +86,6 @@
     "portRange": "The port must be between 1 and 65535.",
     "installDirMissing": "Please enter an installation folder for px.",
     "installDirInvalid": "The installation folder is not a valid path.",
-    "localZipMissing": "The local px zip was not found: {path}",
     "settingsInvalid": "Check the settings: {detail}",
     "commandFailed": "{command} failed: {detail}",
     "elevatedNoResult": "The action with admin rights returned no result.",
@@ -96,7 +95,7 @@
     "gitIdentityInvalid": "Please enter a name and a valid email address.",
     "jobRunning": "\"{title}\" is already running.",
     "jobUnknown": "This action no longer exists.",
-    "llamaNoAsset": "The current llama.cpp release has no Windows build \"{variant}\".",
+    "llamaNoAsset": "The latest llama.cpp releases have no Windows variant “{variant}”.",
     "llamaNoServer": "llama-server.exe is missing from the downloaded archive.",
     "llamaNotInstalled": "llama.cpp is not installed yet.",
     "mailNoRecipient": "The team configuration has no service center address (serviceCenter.email).",
@@ -177,7 +176,12 @@
     "keyInvalid": "Ember does not know this key. Check the spelling; dashes and spaces do not matter.",
     "accessRoleNameMissing": "Every role needs a name.",
     "accessRoleDuplicate": "The role “{name}” exists twice.",
-    "accessModuleUnknown": "Ember does not know the module “{module}” in the role “{role}”."
+    "accessModuleUnknown": "Ember does not know the module “{module}” in the role “{role}”.",
+    "llamaNoCuda": "The build sees no NVIDIA card (no CUDA0). Usually the driver is older than 580. Update the driver and install again. Message: {detail}",
+    "modelNotGguf": "This is not a GGUF file: {path}",
+    "modelLocal": "“{path}” is already on this PC, there is nothing to download.",
+    "modelFromTeam": "This model comes from the team configuration and cannot be removed here.",
+    "piConfigInvalid": "The Pi configuration {path} is not valid JSON: {detail}"
   },
   "jobs": {
     "started": "started",
@@ -247,7 +251,7 @@
   },
   "proxy": {
     "title": "Proxy",
-    "subtitle": "px signs in at the company proxy with Kerberos using your Windows login. Your tools only talk to {url}, no passwords needed anywhere.",
+    "subtitle": "px signs in to the company proxy with Kerberos and your Windows login. Your tools only talk to {url}.",
     "px": {
       "title": "px proxy",
       "install": "Install / update",
@@ -281,6 +285,7 @@
     "tools": {
       "windows": "Windows (PAC/system proxy)",
       "env": "Environment variables",
+      "powershell": "PowerShell (irm, iwr)",
       "git": "git",
       "npm": "npm",
       "nuget": "NuGet / .NET",
@@ -301,9 +306,11 @@
       "vscode": "Ember only changes \"http.proxy\" and \"http.noProxy\" in settings.json; comments and other entries stay.",
       "nodeCerts": "Node.js, npm, npx and Playwright do not use the Windows certificate store. If the company proxy inspects TLS, downloads fail with “unable to get local issuer certificate”. “Set up” exports the trusted certificates from Windows to C:\\Ember\\Certs and sets NODE_EXTRA_CA_CERTS.",
       "env": "NO_PROXY holds the internal domains, so git, npm, pip, Python and Node.js reach internal servers directly instead of going through px.",
-      "git": "For each internal domain Ember also sets http.<url>.proxy to empty, so git reaches internal servers directly, even when px is not running. Deeper subdomains are covered by NO_PROXY.",
-      "gitExceptionsMissing": "These internal addresses have no exception yet: {list}. \"Point to px\" adds them.",
-      "pip": "pip.ini has no exception list. pip reaches internal servers directly through NO_PROXY (environment variables row)."
+      "git": "For every internal domain Ember also sets http.<url>.proxy to empty and allowNTLMAuth to true. git then reaches internal servers directly and signs in with Windows, even while px is not running. NO_PROXY covers deeper subdomains.",
+      "gitExceptionsMissing": "These internal addresses still lack the exception or the Windows sign-in: {list}. “Point to px” adds them.",
+      "pip": "pip.ini has no exception list. pip reaches internal servers directly through NO_PROXY (environment variables row).",
+      "powershell": "Otherwise Windows PowerShell sends irm, iwr and WebClient to the proxy from the PAC file without signing in there, so installers like “irm … | iex” fail. Ember puts px into the profile of Windows PowerShell and PowerShell 7 ({files}); internal domains go directly.",
+      "powershellPolicy": "The execution policy “{policy}” keeps Windows PowerShell from loading the profile: set it to RemoteSigned under System."
     },
     "none": "none",
     "toolMissing": "not installed",
@@ -329,7 +336,11 @@
         "info": "–"
       }
     },
-    "noProxyFor": "no proxy for: {list}"
+    "noProxyFor": "no proxy for: {list}",
+    "powershell": {
+      "partial": "only in one of the two profiles",
+      "set": "px set in the PowerShell profile: {files}. New PowerShell windows use it."
+    }
   },
   "px": {
     "title": "px",
@@ -360,13 +371,14 @@
       "removeNuget": "Remove NuGet proxy",
       "removePip": "Remove pip proxy",
       "removeVscode": "Remove VS Code proxy",
-      "deleteFiles": "Delete px files"
+      "deleteFiles": "Delete px files",
+      "powershell": "Point PowerShell to px",
+      "removePowerShell": "Remove px from the PowerShell profile"
     },
     "pacFile": "PAC file: {value}",
     "noneFound": "none found",
     "tcpOk": "TCP connection to {proxy}: OK",
     "routeSummary": "Download via {download} · px uses {px}",
-    "localZipUsed": "Using the local zip",
     "noShaFile": "No .sha256 file in the release",
     "wasNotRunning": "px was not running",
     "stoppedCount": "{count} process(es) stopped",
@@ -390,12 +402,13 @@
     "current": "Currently in git",
     "suggested": "Suggestion",
     "sources": {
-      "ad": "from Active Directory (attribute \"mail\")",
+      "ad": "from Active Directory",
       "upn": "from your Windows sign-in name (UPN)"
     },
     "name": "Name",
     "email": "Email",
     "useSuggestion": "Use suggestion",
+    "adopted": "Suggestion already in use",
     "save": "Save in git",
     "confirm": "Set git config --global user.name \"{name}\" and user.email \"{email}\"?",
     "notSet": "not set",
@@ -405,16 +418,22 @@
     "identity": "Identity",
     "proxy": {
       "title": "Proxy for git",
-      "subtitle": "External repositories (GitHub, npm registries, …) go through px. For internal servers Ember sets exceptions, because they are often not reachable through the company proxy at all.",
+      "subtitle": "External repositories (GitHub, npm registries, …) go through px. git reaches internal servers directly and with your Windows sign-in, since they are often not reachable through the company proxy.",
       "httpProxy": "http.proxy",
       "direct": "Without proxy",
       "noDomains": "No internal domains entered yet, so git reaches internal servers through the proxy too.",
       "editDomains": "Edit internal domains",
       "set": "Point to px",
-      "missing": "Exceptions still missing for: {list}",
+      "missing": "These internal addresses still lack the exception or the Windows sign-in: {list}",
       "envMissing": "NO_PROXY in the environment variables does not list the internal domains yet. Without it, servers on deeper subdomains (e.g. gitlab.dev.firma.local) still go through the proxy.",
       "envFix": "Go to the proxy page",
-      "ok": "git goes out through px and straight to the internal servers."
+      "ok": "git goes out through px and straight to the internal servers.",
+      "signIn": "Sign-in",
+      "signInValue": "Windows sign-in (allowNTLMAuth) for the internal domains",
+      "tls": "Certificates",
+      "schannel": "Windows certificate store (schannel)",
+      "otherBackend": "{backend}, not the Windows certificate store. Internal certificates and the company proxy may fail.",
+      "noBackend": "not set. “Point to px” switches to the Windows certificate store (schannel), then sslVerify = false is not needed."
     }
   },
   "software": {
@@ -553,8 +572,8 @@
     "never": "never",
     "profiles": {
       "ai-performance": {
-        "name": "AI performance (plugged in)",
-        "description": "Full CPU power for local models and builds while plugged in: aggressive boost, energy performance preference 0 for all core classes, 5–100 % clock. Battery settings stay unchanged."
+        "name": "High performance (plugged in)",
+        "description": "High-performance profile while plugged in: aggressive boost, energy performance preference 0 for all core classes, 5–100 % clock. Battery settings stay as they are."
       },
       "sleep-ac": {
         "name": "No sleep when plugged in",
@@ -610,9 +629,18 @@
     "reset": "Reset to defaults",
     "confirmApply": "Set the Wake-on-LAN settings? Windows asks for admin rights, and the network connection drops briefly.",
     "confirmReset": "Reset the adapter settings to the driver defaults and turn fast startup back on?",
-    "biosHint": "Ember cannot check the BIOS. On Dell: turn on \"Wake on LAN\", \"Wake on Dell USB-C Dock\" and possibly \"MAC Address Pass-Through\", and turn off \"Deep Sleep Control\".",
     "local": {
       "changed": "Wake-on-LAN: {count} setting(s) changed"
+    },
+    "bios": {
+      "title": "BIOS changes",
+      "intro": "Ember cannot check the BIOS. On Dell:",
+      "items": {
+        "wol": "turn on “Wake on LAN”",
+        "dock": "turn on “Wake on Dell USB-C Dock”",
+        "mac": "turn on “MAC Address Pass-Through” if you wake through the dock",
+        "deepSleep": "turn off “Deep Sleep Control”"
+      }
     }
   },
   "system": {
@@ -670,7 +698,7 @@
   },
   "ai": {
     "title": "AI",
-    "subtitle": "Enable Wake-on-LAN for this machine, manage llama.cpp and models, run llama-server.",
+    "subtitle": "Enable this PC for wake-on-LAN, install llama.cpp with CUDA, download a model or pick one on your PC, start llama-server and connect Pi.",
     "gpu": {
       "title": "Graphics card",
       "none": "No NVIDIA graphics card found (nvidia-smi missing).",
@@ -701,15 +729,18 @@
       },
       "steps": {
         "detect": "Detect graphics card",
-        "release": "Find the current release",
+        "release": "Find the newest release with a Windows build",
         "download": "Download",
         "extract": "Extract",
+        "devices": "Check the graphics card in the build (--list-devices)",
         "cleanup": "Clean up old versions"
-      }
+      },
+      "cpuOnly": "no GPU in the build, CPU only",
+      "cudaHint": "CUDA builds need an NVIDIA driver 580 or newer (CUDA 13). Ember fetches the program and the CUDA runtime and puts both in one folder."
     },
     "models": {
       "title": "Models",
-      "empty": "No models entered yet. Add a GGUF download address, e.g. from Hugging Face.",
+      "empty": "No models yet. Download the recommended model or pick a GGUF file on your PC.",
       "downloaded": "downloaded · {size}",
       "notDownloaded": "not downloaded",
       "download": "Download",
@@ -725,19 +756,62 @@
       "steps": {
         "download": "Download model (resumes after interruptions)",
         "verify": "Verify checksum"
-      }
+      },
+      "local": "on this PC · {size}",
+      "localMissing": "File missing: {path}",
+      "addLocal": "Pick a file on this PC",
+      "pickLocal": "Choose a GGUF model",
+      "addedLocal": "Model added: {name}",
+      "removeLocal": "Remove from the list",
+      "confirmRemoveLocal": "Remove “{name}” from the list? The file stays where it is.",
+      "orUrl": "or by download address"
     },
     "server": {
       "title": "llama-server",
       "model": "Model",
       "port": "Port",
-      "args": "Extra arguments",
+      "args": "More arguments (optional)",
       "start": "Start server",
       "stop": "Stop server",
       "running": "running on http://127.0.0.1:{port} with {model}",
       "stopped": "llama-server stopped",
-      "started": "llama-server started: {model} on port {port}",
-      "openUi": "Open web UI"
+      "started": "llama-server started: {model} on port {port}, profile {profile} ({context} tokens of context)",
+      "openUi": "Open web UI",
+      "profile": "Context",
+      "profiles": {
+        "standard": "standard – 96K context, KV q8_0, MTP on",
+        "lang": "long – 160K context, KV q4_0, MTP on",
+        "max": "max – 256K context, KV q4_0, MTP off"
+      },
+      "profileHint": "The weights stay fully in VRAM in every profile (-ngl 99). Start with “standard”, take “long” for more context.",
+      "check": "Check",
+      "offloaded": "{layers} layers on the GPU",
+      "offloadedPartial": "Only {layers} layers on the GPU. The rest runs on the CPU, which costs a lot of speed. Pick a smaller profile or move other programs off the NVIDIA card.",
+      "offloadedPending": "Loading the model …",
+      "vramFree": "{free} MB VRAM free",
+      "vramLow": "Only {free} MB VRAM left. At least 0.5 to 1 GB should stay free, otherwise lower the context.",
+      "lastError": "Last error: {line}"
+    },
+    "pi": {
+      "title": "Pi (coding agent)",
+      "subtitle": "Pi talks to llama-server through the OpenAI-compatible API. MCP comes with the pi-mcp-adapter extension, which also reads the .mcp.json in your repo.",
+      "installed": "installed",
+      "notInstalled": "not installed",
+      "install": "Install Pi",
+      "configure": "Connect to llama-server",
+      "configuredBadge": "connected",
+      "notConfigured": "Pi does not know the llama-server yet or has a different context.",
+      "configured": "Pi connected: {path}, model {model}, context {context}",
+      "configuredToast": "Pi is connected ({path}).",
+      "start": "Start it in the project folder with:",
+      "noNode": "Pi needs Node.js with npm. Install it under Software.",
+      "jobs": {
+        "install": "Install Pi"
+      },
+      "steps": {
+        "install": "npm install -g @earendil-works/pi-coding-agent",
+        "mcp": "MCP extension (pi-mcp-adapter)"
+      }
     }
   },
   "settings": {
@@ -771,17 +845,19 @@
       "upstream": "Company proxy (host:port)",
       "upstreamHint": "Also used for downloads as long as px is not running yet. Empty = Windows system proxy.",
       "domains": "Internal domains (no proxy)",
-      "domainsHint": "Comma separated, e.g. company.local, intranet.company.com",
+      "domainsHint": "Comma separated, e.g. company.local, intranet.company.com. Without an own value or team.json, Ember takes what the PAC file reaches without proxy.",
       "port": "px port",
       "detect": "Detect automatically",
       "detected": "Found: {items}. Save to apply.",
       "notDetected": "No proxy settings found. Please enter them manually.",
-      "autoHint": "Ember detects the company proxy from Windows at every start (PAC address, proxy from the PAC file, system proxy). Only enter something if the detection is wrong."
+      "autoHint": "Ember detects the company proxy from Windows at every start (PAC address, proxy from the PAC file, system proxy). Only enter something if the detection is wrong.",
+      "fromPac": "from PAC file",
+      "upstreamPac": "px takes the company proxy from the PAC file. A fixed proxy only applies when you choose “Fixed proxy” above.",
+      "domainsFound": "{count} internal destinations from the PAC file"
     },
     "px": {
       "title": "px",
       "installDir": "Installation folder",
-      "localZip": "Local px zip instead of download (optional)",
       "autostart": "Start px at Windows login"
     },
     "tools": {
@@ -790,7 +866,8 @@
       "git": "git",
       "npm": "npm",
       "nuget": "NuGet / .NET",
-      "pip": "pip"
+      "pip": "pip",
+      "powershell": "PowerShell profile (irm, iwr)"
     },
     "language": {
       "title": "Language",
@@ -828,18 +905,7 @@
     "unsaved": "Unsaved changes",
     "appearance": {
       "title": "Appearance",
-      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy is sage by day and forest green at night, Ember has a warm reddish ground. Ivy climbs both.",
-      "transparency": "In the background",
-      "transparencyModes": {
-        "auto": "Like the window manager (WinMarchy, GlazeWM)",
-        "always": "Always slightly see-through",
-        "off": "Never see-through"
-      },
-      "transparencyHints": {
-        "auto": "When GlazeWM makes inactive windows see-through, Ember does the same, with the same opacity.",
-        "always": "When Ember is not in front, the desktop shines through (90 % opacity). Only with transparency effects on in Windows.",
-        "off": "Ember always stays opaque."
-      }
+      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy is sage by day and forest green at night, Ember has a warm reddish ground. Ivy climbs both."
     }
   },
   "log": {
@@ -905,7 +971,7 @@
   },
   "devtools": {
     "title": "Developer tools",
-    "subtitle": "The basics for development. If your IT offers a tool in Software Center, Ember installs it from there. Otherwise it comes straight from the vendor through px, with checked checksum and signature.",
+    "subtitle": "Install software through px, with verified checksum and signature.",
     "nodejs": {
       "description": "JavaScript runtime with npm. Ember puts it under C:\\Ember\\Tools\\node for your account, no admin rights needed."
     },

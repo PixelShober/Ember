@@ -1,6 +1,6 @@
 ---
 title: KI-Modul
-description: Diesen Rechner für Wake-on-LAN freischalten, llama.cpp und Modelle verwalten, llama-server starten.
+description: Diesen Rechner für Wake-on-LAN freischalten, llama.cpp mit CUDA installieren, Modelle laden oder vom PC nehmen, llama-server starten und Pi anbinden.
 ---
 
 ![KI-Seite](../../../assets/screens/ai-de-light.png)
@@ -29,8 +29,13 @@ Dazu kommt der Windows-Schnellstart. Er muss aus sein, sonst fährt Windows nich
 
 Die MAC-Adresse jedes Adapters lässt sich kopieren, für das Werkzeug, mit dem du den Rechner später weckst. Bei einem Dock mit MAC-Pass-Through ist das die Adresse, die Windows beim Dock-Adapter anzeigt.
 
-:::caution[Das BIOS kann Ember nicht prüfen]
-Bei Dell-Geräten müssen im BIOS „Wake on LAN“ und „Wake on Dell USB-C Dock“ eingeschaltet sein, je nach Gerät auch „MAC Address Pass-Through“. „Deep Sleep Control“ muss aus sein.
+:::caution[BIOS-Änderungen]
+Das BIOS prüft Ember nicht. Bei Dell:
+
+- „Wake on LAN“ einschalten
+- „Wake on Dell USB-C Dock“ einschalten
+- „MAC Address Pass-Through“ einschalten, wenn du über das Dock weckst
+- „Deep Sleep Control“ ausschalten
 :::
 
 ## Grafikkarte
@@ -39,18 +44,51 @@ Ember zeigt, was `nvidia-smi` meldet: Modell, Treiber, CUDA-Version, Speicher, L
 
 ## llama.cpp
 
-„Neueste Version installieren“ holt das aktuelle Release von [ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp) und wählt die passende Windows-Variante:
+„Neueste Version installieren“ holt das neueste Release von [ggml-org/llama.cpp](https://github.com/ggml-org/llama.cpp), das einen Windows-Build hat. Das „neueste“ Release von llama.cpp ist oft eines ohne Programmdateien, die Builds (`b12110` und so weiter) erscheinen als Vorabversionen. Ember sucht deshalb in den letzten 15 Releases. Die Variante:
 
-- CUDA, wenn eine NVIDIA-Karte da ist. Ember nimmt die höchste CUDA-Version, die dein Treiber unterstützt, und lädt die passenden CUDA-Laufzeitbibliotheken mit.
-- Vulkan für andere Grafikkarten.
-- CPU, wenn es keine taugliche GPU gibt.
+- **CUDA**, wenn eine NVIDIA-Karte da ist. Ember nimmt den neuesten CUDA-Build innerhalb der Hauptversion, die dein Treiber kann: Ein Treiber mit CUDA 13.2 bekommt den 13.4-Build, ein Treiber mit CUDA 12.x den 12.4-Build. CUDA-13-Builds brauchen einen NVIDIA-Treiber ab Version 580.
+- **Vulkan** für andere Grafikkarten.
+- **CPU**, wenn es keine taugliche GPU gibt.
+
+Bei CUDA lädt Ember zwei Zips, das Programm (`llama-bXXXXX-bin-win-cuda-13.x-x64.zip`) und die CUDA-Laufzeit (`cudart-llama-bin-win-cuda-13.x-x64.zip`). Beide prüft es gegen die SHA-256 von GitHub und entpackt sie in denselben Ordner. Danach läuft `llama-server --list-devices`: Bei CUDA muss dort `CUDA0` mit deiner Karte stehen, sonst bricht die Installation mit einem Hinweis zum Treiber ab.
 
 Du kannst die Variante auch fest einstellen. Jede Version landet in einem eigenen Ordner unter `C:\Ember\llama.cpp`. Die zwei neuesten bleiben liegen, zwischen ihnen schaltest du mit „Verwenden“ um.
 
 ## Modelle
 
-Modelle sind GGUF-Dateien mit einer direkten Download-Adresse, meist von Hugging Face (`…/resolve/main/datei.gguf`). Die Liste kommt aus der Team-Konfiguration und aus deinen eigenen Einträgen, gespeichert wird unter `C:\Ember\Models`. Downloads laufen über px und setzen nach einem Abbruch dort fort, wo sie aufgehört haben. Bei 20 GB macht das einen Unterschied. Steht eine SHA256-Prüfsumme dabei, prüft Ember sie nach dem Download.
+Eingebaut ist das Modell aus der Anleitung für 24 GB VRAM: **Qwen3.8-27B** als `Qwen3.8-27B-UD-Q4_K_XL.gguf` von Unsloth (etwa 17,6 GB). Es bringt Tool-Call-Parser für MCP mit und einen MTP-Kopf, der das Generieren beschleunigt.
+
+Ein Modell kommt auf zwei Wegen in die Liste:
+
+- **Download**: eine direkte Adresse, meist von Hugging Face (`…/resolve/main/datei.gguf`). Ember lädt nach `C:\Ember\Models`, über px, und setzt nach einem Abbruch fort. Steht eine SHA-256 dabei, prüft Ember sie.
+- **Datei auf dem PC**: „Datei auf dem PC wählen“ nimmt eine GGUF-Datei, die schon irgendwo liegt, auch auf einem Netzlaufwerk. Ember lädt nichts herunter und löscht die Datei nie. Das Kreuz nimmt sie nur aus der Liste.
+
+Die Team-Konfiguration kann Modelle vorgeben, mit Download-Adresse oder mit Pfad (siehe [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#models)).
 
 ## llama-server
 
-Wähle ein heruntergeladenes Modell, einen Port und bei Bedarf weitere Argumente (Standard: `-ngl 99 -c 8192`). Der Server lauscht nur auf `127.0.0.1`. „Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Beim Beenden von Ember stoppt der Server mit.
+Du wählst Modell, Kontext-Profil und Port, der Rest folgt der Anleitung:
+
+| Profil | Kontext | KV-Cache | MTP |
+|---|---|---|---|
+| standard | 96K (98.304 Token) | q8_0 | an |
+| lang | 160K (163.840 Token) | q4_0 | an |
+| max | 256K (262.144 Token) | q4_0 | aus |
+
+Jedes Profil startet mit `-ngl 99` (alle Schichten auf die GPU), `-fa on`, `--jinja` und `--parallel 1`, dazu den KV-Cache des Profils (`-ctk`, `-ctv`). Was das Modell selbst braucht, hängt Ember an. Bei Qwen3.8 sind das die Sampling-Werte (`--temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0`), `reasoning_effort` medium und, wo das Profil es erlaubt, MTP (`--spec-type draft-mtp --spec-draft-n-max 2`). Unter „Weitere Argumente“ kommt dazu, was du sonst noch willst. Es steht am Ende und gewinnt deshalb.
+
+Der Server lauscht nur auf `127.0.0.1`. Sobald das Modell geladen ist, zeigt Ember die Prüfung aus der Anleitung:
+
+- **Schichten auf der GPU**: Im Log steht „offloaded X/Y layers to GPU“. Sind es nicht alle, rechnet ein Teil auf der CPU, das kostet viel Tempo.
+- **Freier VRAM**: Mindestens 0,5 bis 1 GB sollten frei bleiben. Sonst ein kleineres Profil nehmen.
+
+„Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Beim Beenden von Ember stoppt der Server mit.
+
+## Pi
+
+[Pi](https://www.npmjs.com/package/@earendil-works/pi-coding-agent) ist ein Coding-Agent, der den llama-server über die OpenAI-kompatible API anspricht.
+
+- **Pi installieren** führt `npm install -g @earendil-works/pi-coding-agent` aus und danach `pi install npm:pi-mcp-adapter`, beides über px und mit den Firmenzertifikaten. Dafür braucht es Node.js, das du unter Software installierst.
+- **Mit llama-server verbinden** trägt in `%USERPROFILE%\.pi\agent\models.json` den Provider `llama-cpp` ein: `http://127.0.0.1:<Port>/v1`, das Modell mit seinem Alias und `contextWindow` passend zum Profil. Andere Provider in der Datei bleiben, die alte Fassung liegt daneben als `models.json.bak`. Wechselst du das Profil, verbindest du noch einmal, damit Pi weiß, wann es den Verlauf zusammenfassen muss.
+
+Gestartet wird im Projektordner mit `pi --provider llama-cpp --model qwen3.8-27b`. Die MCP-Server liest Pi aus der `.mcp.json` des Repos und aus `%USERPROFILE%\.pi\agent\mcp.json`. Schalte nur die ein, die du gerade brauchst, jede Tool-Beschreibung kostet Kontext.

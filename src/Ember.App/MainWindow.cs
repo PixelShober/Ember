@@ -353,19 +353,15 @@ public sealed class MainWindow : Window, IHostShell
     }
 
     /// <summary>
-    /// Inactive, Ember lets the desktop shine through like the other windows. GlazeWM (as WinMarchy
+    /// Inactive, Ember lets the desktop shine through like the other windows, always as much as the
+    /// window manager asks for. GlazeWM (as WinMarchy
     /// sets it up) makes inactive windows transparent through the window's layered alpha, which the
     /// WebView2 content ignores; Ember reads that alpha and draws the page with the same opacity.
     /// </summary>
     void UpdateSeeThrough()
     {
         if (_closing) return;
-        double? target = IsActive ? null : Host.Settings.BackgroundTransparency switch
-        {
-            "off" => null,
-            "always" => WindowsTransparencyOn() ? 0.9 : null,
-            _ => WindowManagerOpacity(),
-        };
+        double? target = IsActive ? null : WindowManagerOpacity();
         if (target == _seeThrough) return;
         _seeThrough = target;
         ApplyFrameColors();
@@ -380,20 +376,6 @@ public sealed class MainWindow : Window, IHostShell
         if (handle == IntPtr.Zero || (GetWindowLongPtr(handle, GWL_EXSTYLE).ToInt64() & WS_EX_LAYERED) == 0) return null;
         if (!GetLayeredWindowAttributes(handle, out _, out var alpha, out var flags) || (flags & LWA_ALPHA) == 0 || alpha >= 250) return null;
         return Math.Round(Math.Max(alpha, (byte)64) / 255.0, 2);
-    }
-
-    /// <summary>Windows → Personalisation → Colours → "Transparency effects".</summary>
-    static bool WindowsTransparencyOn()
-    {
-        try
-        {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            return key?.GetValue("EnableTransparency") is not int v || v != 0;
-        }
-        catch
-        {
-            return true;
-        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

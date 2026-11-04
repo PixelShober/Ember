@@ -31,16 +31,12 @@ public static class PxPipelines
 
     static string Disabled => L.T("jobs.disabledInSettings");
 
-    static string? UsesLocalZip(PxContext c) =>
-        string.IsNullOrWhiteSpace(c.Settings.LocalZip) ? null : L.T("px.localZipUsed");
-
     public static List<SetupStep> Install(PxContext c) => new()
     {
         Step("px.steps.detectProxy", (s, ct) => DetectProxy(c, s, ct)),
-        Step("px.steps.resolveRelease", (s, ct) => ResolveRelease(c, s, ct), () => UsesLocalZip(c)),
-        Step("px.steps.download", (s, ct) => Download(c, s, ct), () => UsesLocalZip(c)),
-        Step("px.steps.verifyHash", (s, ct) => VerifyHash(c, s, ct),
-             () => UsesLocalZip(c) ?? (c.ShaUrl == null ? L.T("px.noShaFile") : null)),
+        Step("px.steps.resolveRelease", (s, ct) => ResolveRelease(c, s, ct)),
+        Step("px.steps.download", (s, ct) => Download(c, s, ct)),
+        Step("px.steps.verifyHash", (s, ct) => VerifyHash(c, s, ct), () => c.ShaUrl == null ? L.T("px.noShaFile") : null),
         Step("px.steps.stop", (s, ct) => StopPx(c, s, ct)),
         Step("px.steps.extract", (s, ct) => Extract(c, s, ct)),
         Step("px.steps.writeConfig", (s, ct) => WriteConfig(c, s, ct)),
@@ -48,6 +44,7 @@ public static class PxPipelines
         Step("px.steps.start", (s, ct) => StartPx(c, s, ct)),
         Step("px.steps.test", (s, ct) => TestConnection(c, s, ct)),
         Step("px.steps.envVars", (s, ct) => Tool("env", c, s, ct), () => c.Settings.ConfigureEnvVars ? null : Disabled),
+        Step("px.steps.powershell", (s, ct) => Tool("powershell", c, s, ct), () => c.Settings.ConfigurePowerShell ? null : Disabled),
         Step("px.steps.git", (s, ct) => Tool("git", c, s, ct),
              () => !c.Settings.ConfigureGit ? Disabled : Tools.Git == null ? L.T("proxy.toolNotFound", ("tool", "git")) : null),
         Step("px.steps.npm", (s, ct) => Tool("npm", c, s, ct),
@@ -62,6 +59,7 @@ public static class PxPipelines
         Step("px.steps.removeAutostart", (s, ct) => RemoveAutostart(c, s, ct),
              () => PxControl.FindExe(c.Settings.InstallDir, "px.exe") == null ? L.T("px.notFound") : null),
         Step("px.steps.removeEnvVars", (s, ct) => Untool("env", c, s, ct)),
+        Step("px.steps.removePowerShell", (s, ct) => Untool("powershell", c, s, ct)),
         Step("px.steps.removeGit", (s, ct) => Untool("git", c, s, ct), () => Tools.Git == null ? L.T("proxy.toolNotFound", ("tool", "git")) : null),
         Step("px.steps.removeNpm", (s, ct) => Untool("npm", c, s, ct), () => Tools.Npm == null ? L.T("proxy.toolNotFound", ("tool", "npm")) : null),
         Step("px.steps.removeNuget", (s, ct) => Untool("nuget", c, s, ct)),
@@ -150,7 +148,7 @@ public static class PxPipelines
 
     static async Task Extract(PxContext c, SetupStep step, CancellationToken ct)
     {
-        var zip = c.ZipPath ?? c.Settings.LocalZip;
+        var zip = c.ZipPath;
         if (string.IsNullOrWhiteSpace(zip) || !File.Exists(zip)) throw new EmberException("pxZipMissing", ("path", zip));
 
         var dir = Path.GetFullPath(c.Settings.InstallDir);

@@ -23,11 +23,11 @@ Jede Profilkarte zeigt pro Einstellung drei Werte, getrennt für Netzbetrieb und
 
 | Profil | Was es tut |
 |---|---|
-| KI-Leistung (Netzbetrieb) | Boost-Modus „Hoch (aggressiv)“, Energieeffizienz-Präferenz 0, minimaler Prozessorzustand 5 %, maximaler 100 %. Nur am Netzteil, der Akku bleibt unverändert. |
+| Hohe Leistung (Netzbetrieb) | Boost-Modus „Hoch (aggressiv)“, Energieeffizienz-Präferenz 0, minimaler Prozessorzustand 5 %, maximaler 100 %. Nur am Netzteil, der Akku bleibt unverändert. |
 | Kein Standby am Netzteil | Kein Standby, kein Ruhezustand, Bildschirm aus nach 15 Minuten |
 | Deckel & Netzschalter | Zuklappen am Netzteil: nichts tun. Netzschalter: herunterfahren. |
 
-Bei KI-Leistung setzt Ember die Werte für alle Effizienzklassen des Prozessors. Auf Hybrid-CPUs mit P- und E-Kernen gibt es dieselbe Einstellung bis zu dreimal (`PERFEPP`, `PERFEPP1`, `PERFEPP2`). Wer nur die erste ändert, lässt die anderen Kerne auf dem alten Wert. Gibt es eine Variante auf dem Rechner nicht, überspringt Ember sie.
+Bei Hoher Leistung setzt Ember die Werte für alle Effizienzklassen des Prozessors. Auf Hybrid-CPUs mit P- und E-Kernen gibt es dieselbe Einstellung bis zu dreimal (`PERFEPP`, `PERFEPP1`, `PERFEPP2`). Wer nur die erste ändert, lässt die anderen Kerne auf dem alten Wert. Gibt es eine Variante auf dem Rechner nicht, überspringt Ember sie.
 
 „Anwenden“ sichert vorher die aktuellen Werte. „Auf Standard zurücksetzen“ stellt die Werkseinstellung her, „Vorherigen Stand wiederherstellen“ den Stand vor der ersten Änderung.
 

@@ -175,16 +175,21 @@
     },
     "models": {
       "type": "array",
+      "description": "Modelle im KI-Tab, zusätzlich zum eingebauten Qwen3.8-27B. Entweder mit Download-Adresse (url) oder mit Pfad zu einer GGUF-Datei, die schon da ist (path).",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["url"],
+        "anyOf": [{ "required": ["url"] }, { "required": ["path"] }],
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
-          "url": { "type": "string", "format": "uri" },
+          "url": { "type": "string", "format": "uri", "description": "Direkte Download-Adresse, z. B. https://huggingface.co/…/resolve/main/modell.gguf" },
+          "path": { "type": "string", "description": "GGUF-Datei auf dem PC oder einem Netzlaufwerk; Ember lädt dann nichts herunter. Umgebungsvariablen wie %USERPROFILE% gehen." },
           "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
-          "note": { "type": "string" }
+          "note": { "type": "string" },
+          "alias": { "type": "string", "description": "Name, unter dem llama-server das Modell anbietet (--alias) und Pi es anspricht. Standard: der Dateiname." },
+          "mtp": { "type": "boolean", "description": "Das Modell hat einen MTP-Kopf; die Profile standard und lang starten dann mit --spec-type draft-mtp." },
+          "args": { "type": "array", "items": { "type": "string" }, "description": "Weitere llama-server-Argumente, die das Modell braucht, eines pro Eintrag, z. B. [\"--temp\", \"1.0\"]." }
         }
       }
     },

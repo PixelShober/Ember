@@ -37,17 +37,24 @@ public static class NoProxy
                          .ToList();
 
     /// <summary>The URLs from "git config --get-regexp ^http\..+\.proxy$" whose proxy is switched off ("").</summary>
-    public static HashSet<string> ParseGitExceptions(string output)
+    public static HashSet<string> ParseGitExceptions(string output) => ParseGitUrlSettings(output, "proxy", v => v.Length == 0);
+
+    /// <summary>
+    /// The URLs from "git config --get-regexp ^http\..+\.&lt;variable&gt;$" whose value <paramref name="accept"/>
+    /// takes. git prints the variable in lower case, the URL as written.
+    /// </summary>
+    public static HashSet<string> ParseGitUrlSettings(string output, string variable, Func<string, bool> accept)
     {
         var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var suffix = "." + variable;
         foreach (var raw in output.Split('\n'))
         {
             var line = raw.Trim();
             var space = line.IndexOf(' ');
             var key = space < 0 ? line : line[..space];
             var value = space < 0 ? "" : line[(space + 1)..].Trim();
-            if (value.Length > 0 || !key.StartsWith("http.", StringComparison.OrdinalIgnoreCase) || !key.EndsWith(".proxy", StringComparison.OrdinalIgnoreCase)) continue;
-            var url = key["http.".Length..^".proxy".Length];
+            if (!accept(value) || !key.StartsWith("http.", StringComparison.OrdinalIgnoreCase) || !key.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) continue;
+            var url = key["http.".Length..^suffix.Length];
             if (url.Length > 0) urls.Add(url.TrimEnd('/'));
         }
         return urls;

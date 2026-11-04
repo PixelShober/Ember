@@ -15,9 +15,11 @@ Den Firmenproxy erkennt Ember bei jedem Start selbst: die PAC-Adresse aus Window
 2. sonst das, was Ember beim Start erkannt hat,
 3. sonst Embers Standard.
 
-Interne Domains und px-Port kann die Team-Konfiguration vorgeben. Hier gilt: dein eigener Wert, sonst der aus der `team.json`, sonst der Standard.
+Interne Domains und px-Port kann die Team-Konfiguration vorgeben. Hier gilt: dein eigener Wert, sonst der aus der `team.json`, sonst der Standard. Bei den internen Domains kommt vor dem Standard noch die PAC-Datei: Ember nimmt die Ziele, die sie ohne Proxy (`DIRECT`) erreicht.
 
-Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“, „aus Team-Konfiguration“, „automatisch erkannt“ oder „Ember-Standard“. Bei eigenen Werten stellt der Knopf daneben den Team- oder den erkannten Wert wieder her.
+Arbeitet Ember mit der PAC-Datei, ist das Feld für den festen Firmenproxy ausgegraut. px nimmt den Proxy dann aus der PAC-Datei. Umgekehrt ist bei „Fester Proxy“ das Feld für die PAC-Adresse aus.
+
+Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“, „aus Team-Konfiguration“, „automatisch erkannt“, „aus PAC-Datei“ oder „Ember-Standard“. Bei eigenen Werten stellt der Knopf daneben den Team- oder den erkannten Wert wieder her.
 
 Ändert die IT den Proxy, braucht es also nichts weiter: Beim nächsten Start erkennt Ember den neuen. Wer einen eigenen Wert hat, behält ihn.
 
@@ -27,9 +29,9 @@ Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“
 |---|---|
 | Team-Konfiguration | Pfad zur `team.json`, Stand und Quelle, „Neu laden“ |
 | Firmenproxy | PAC-Datei oder fester Proxy, PAC-Adresse (leer = aus Windows), Firmenproxy als `host:port`, interne Domains, px-Port, „Automatisch erkennen“ |
-| Darstellung | Design „Efeu“ oder „Glut“, hell oder dunkel, und ob Ember im Hintergrund durchscheint. Farbschema und Design gibt es auch unten in der Seitenleiste. |
-| px | Installationsordner, lokales px-Zip statt Download, Autostart |
-| Werkzeuge | welche Werkzeuge die px-Installation umstellt |
+| Darstellung | Design „Efeu“ oder „Glut“, hell oder dunkel. Dieselben Schalter stehen unten in der Seitenleiste. |
+| px | Installationsordner, Autostart |
+| Werkzeuge | welche Werkzeuge die px-Installation umstellt (Umgebungsvariablen, PowerShell, git, npm, NuGet, pip) |
 | Sprache | Deutsch oder English, vorausgewählt ist die Windows-Sprache |
 | Updates | automatisch suchen, „Jetzt prüfen“, Stand und Quelle |
 | Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist; Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein |
@@ -47,12 +49,4 @@ Beim Umschalten wächst das neue Aussehen als Kreis aus dem gedrückten Schalter
 
 ### Im Hintergrund
 
-Fenstermanager wie GlazeWM, den WinMarchy einrichtet, lassen Fenster durchscheinen, solange sie nicht im Vordergrund sind. Sie tun das über die Deckkraft des ganzen Fensters. Den Inhalt von Ember zeichnet aber WebView2, und WebView2 übergeht diese Deckkraft. Deshalb blieb Ember bisher deckend. Jetzt liest Ember die Deckkraft selbst aus und zeichnet die Seite genauso durchscheinend:
-
-| Einstellung | Verhalten |
-|---|---|
-| Wie der Fenstermanager | Standard. Macht GlazeWM inaktive Fenster durchscheinend, macht Ember dasselbe, mit derselben Deckkraft. Ohne Fenstermanager bleibt Ember deckend. |
-| Immer leicht durchscheinend | Ist Ember nicht im Vordergrund, scheint der Desktop mit 90 % Deckkraft durch. Nur, wenn in Windows die Transparenzeffekte an sind. |
-| Nie durchscheinend | Ember bleibt immer deckend. |
-
-Sobald Ember wieder im Vordergrund ist, ist es sofort deckend.
+Fenstermanager wie GlazeWM, den WinMarchy einrichtet, lassen Fenster durchscheinen, solange sie nicht im Vordergrund sind. Sie tun das über die Deckkraft des ganzen Fensters. Den Inhalt von Ember zeichnet aber WebView2, und WebView2 übergeht diese Deckkraft. Ember liest sie deshalb selbst aus und zeichnet die Seite mit derselben Deckkraft. Einstellen musst du dafür nichts. Ohne Fenstermanager bleibt Ember deckend, und im Vordergrund ist es sofort wieder deckend.

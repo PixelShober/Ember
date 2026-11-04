@@ -28,7 +28,7 @@
     usePac: team?.usePac ?? detected?.usePac ?? null,
     pacUrl: team?.pacUrl ?? detected?.pacUrl ?? null,
     upstreamProxy: team?.upstreamProxy ?? detected?.upstreamProxy ?? null,
-    internalDomains: team?.internalDomains ?? null,
+    internalDomains: team?.internalDomains ?? detected?.internalDomains ?? null,
   });
 
   // Effective value shown in a field: own value, else team/detected value, else default.
@@ -65,17 +65,13 @@
     if (r.pacUrl) { s.pacUrl = r.pacUrl; found.push('PAC'); }
     const proxy = r.pacProxies[0] ?? r.systemProxy;
     if (proxy) { s.upstreamProxy = proxy; found.push(proxy); }
+    if (r.pacDirect.length && !s.internalDomains && !team?.internalDomains) found.push(t('settings.proxy.domainsFound', { count: r.pacDirect.length }));
     toast(found.length ? 'ok' : 'info', found.length ? t('settings.proxy.detected', { items: found.join(', ') }) : t('settings.proxy.notDetected'));
   }
 
   async function pickFolder() {
     const r = await api<string | null>('app.pickFolder', { title: t('settings.px.installDir'), initial: s?.installDir });
     if (r && s) s.installDir = r;
-  }
-
-  async function pickZip() {
-    const r = await api<string | null>('app.pickFile', { title: t('settings.px.localZip'), filter: 'px (*.zip)|*.zip' });
-    if (r && s) s.localZip = r;
   }
 
   async function checkUpdates() {
@@ -94,7 +90,7 @@
   function chooseLanguage(l: 'de' | 'en') {
     if (s) s.language = l === windowsLanguage ? 'auto' : l;
   }
-  const toolKeys = [['configureEnvVars', 'envVars'], ['configureGit', 'git'], ['configureNpm', 'npm'], ['configureNuGet', 'nuget'], ['configurePip', 'pip']] as const;
+  const toolKeys = [['configureEnvVars', 'envVars'], ['configurePowerShell', 'powershell'], ['configureGit', 'git'], ['configureNpm', 'npm'], ['configureNuGet', 'nuget'], ['configurePip', 'pip']] as const;
 </script>
 
 <header class="page-head">
@@ -148,16 +144,16 @@
       <label class="field">
         <span class="row">{t('settings.proxy.pacUrl')} <SourceBadge user={s.pacUrl} team={team?.pacUrl} detected={detected?.pacUrl} onreset={() => (s!.pacUrl = null)} /></span>
         <input value={s.pacUrl ?? base.pacUrl ?? ''} oninput={(e) => setTeamManaged('pacUrl', e.currentTarget.value)} spellcheck="false" class="mono"
-          placeholder={t('settings.proxy.pacAuto', { value: view.effective.detectedPac ?? '–' })} />
+          placeholder={t('settings.proxy.pacAuto', { value: view.effective.detectedPac ?? '–' })} disabled={!usePac} />
       </label>
       <label class="field">
         <span class="row">{t('settings.proxy.upstream')} <SourceBadge user={s.upstreamProxy} team={team?.upstreamProxy} detected={detected?.upstreamProxy} onreset={() => (s!.upstreamProxy = null)} /></span>
-        <input value={s.upstreamProxy ?? base.upstreamProxy ?? ''} oninput={(e) => setTeamManaged('upstreamProxy', e.currentTarget.value)} spellcheck="false" class="mono" placeholder="proxy.firma.de:8080" />
-        <span class="hint">{t('settings.proxy.upstreamHint')}</span>
+        <input value={s.upstreamProxy ?? base.upstreamProxy ?? ''} oninput={(e) => setTeamManaged('upstreamProxy', e.currentTarget.value)} spellcheck="false" class="mono" placeholder="proxy.firma.de:8080" disabled={usePac} />
+        <span class="hint">{usePac ? t('settings.proxy.upstreamPac') : t('settings.proxy.upstreamHint')}</span>
       </label>
       <label class="field">
-        <span class="row">{t('settings.proxy.domains')} <SourceBadge user={s.internalDomains} team={team?.internalDomains} onreset={() => (s!.internalDomains = null)} /></span>
-        <input value={s.internalDomains ?? team?.internalDomains ?? ''} oninput={(e) => setTeamManaged('internalDomains', e.currentTarget.value)} spellcheck="false" />
+        <span class="row">{t('settings.proxy.domains')} <SourceBadge user={s.internalDomains} team={team?.internalDomains} detected={detected?.internalDomains} detectedLabel={t('settings.proxy.fromPac')} onreset={() => (s!.internalDomains = null)} /></span>
+        <input value={s.internalDomains ?? base.internalDomains ?? ''} oninput={(e) => setTeamManaged('internalDomains', e.currentTarget.value)} spellcheck="false" />
         <span class="hint">{t('settings.proxy.domainsHint')}</span>
       </label>
       <label class="field small-field">
@@ -173,14 +169,6 @@
       <label class="field">
         <span>{t('settings.px.installDir')}</span>
         <div class="row nowrap-row"><input bind:value={s.installDir} spellcheck="false" class="mono" /><button class="btn" onclick={pickFolder}>{t('common.browse')}</button></div>
-      </label>
-      <label class="field">
-        <span>{t('settings.px.localZip')}</span>
-        <div class="row nowrap-row">
-          <input bind:value={s.localZip} spellcheck="false" class="mono" />
-          <button class="btn" onclick={pickZip}>{t('common.browse')}</button>
-          {#if s.localZip}<button class="btn ghost" onclick={() => (s!.localZip = '')}><Icon name="x" size={14} /></button>{/if}
-        </div>
       </label>
       <label class="check"><input type="checkbox" bind:checked={s.autostart} />{t('settings.px.autostart')}</label>
     </section>
@@ -198,13 +186,6 @@
       <h2>{t('settings.appearance.title')}</h2>
       <p class="muted">{t('settings.appearance.description')}</p>
       <AppearanceSwitch variant="card" />
-      <label class="field transparency">
-        <span class="small muted">{t('settings.appearance.transparency')}</span>
-        <select bind:value={s.backgroundTransparency}>
-          {#each ['auto', 'always', 'off'] as const as mode (mode)}<option value={mode}>{t(`settings.appearance.transparencyModes.${mode}`)}</option>{/each}
-        </select>
-        <span class="small muted">{t(`settings.appearance.transparencyHints.${s.backgroundTransparency}`)}</span>
-      </label>
     </section>
 
     <!-- language -->
@@ -276,8 +257,6 @@
   .label { font-weight: 500; margin-right: 6px; }
   .small-field { max-width: 220px; }
   .lang { margin-right: 14px; }
-  .transparency { max-width: 520px; margin-top: 6px; }
-  .transparency select { max-width: 360px; }
   .error { color: var(--error); }
   .savebar {
     position: sticky; bottom: 0; margin-top: 16px; display: flex; align-items: center; gap: 10px;

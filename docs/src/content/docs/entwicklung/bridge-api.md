@@ -35,7 +35,7 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 | Energie | `power.state`, `power.apply`, `power.defaults`, `power.restore` |
 | Wake-on-LAN (lokal) | `wol.local`, `wol.apply`, `wol.reset` |
 | System | `system.list`, `system.check`, `system.checks`, `system.action`, `system.adminCommands` |
-| KI | `ai.status`, `ai.llama.install`, `ai.llama.select`, `ai.server.start`, `ai.server.stop`, `ai.models.download`, `ai.models.delete` |
+| KI | `ai.status`, `ai.llama.install`, `ai.llama.select`, `ai.server.start` (`{ model, profile }`), `ai.server.stop`, `ai.models.download`, `ai.models.addLocal`, `ai.models.delete`, `ai.pi.install`, `ai.pi.configure` |
 | Updates | `update.status`, `update.check`, `update.applyUi`, `update.applyExe` |
 | Log | `log.recent`, `log.clear`, `log.save` |
 

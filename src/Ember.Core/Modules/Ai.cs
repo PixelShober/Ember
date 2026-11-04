@@ -54,15 +54,34 @@ public static class Gpu
 
 public sealed record LlamaInstall(string Tag, string Variant, string Path, bool Current);
 
+/// <param name="Offloaded">"62/62": layers on the GPU, from the server's log ("offloaded 62/62 layers to GPU").</param>
 public sealed record LlamaStatus(IReadOnlyList<LlamaInstall> Installed, string? Current, string RecommendedVariant,
-                                 bool ServerRunning, int Port, string? ServerModel);
+                                 bool ServerRunning, int Port, string? ServerModel, string? ServerAlias, string? ServerProfile,
+                                 int? ServerContext, string? Offloaded, string? LastError);
+
+/// <summary>Context size and KV cache for llama-server; the weights stay fully in VRAM in every profile.</summary>
+public sealed record LlamaProfile(string Id, int Context, string KvCache, bool Mtp);
 
 /// <summary>llama.cpp from github.com/ggml-org/llama.cpp: pick the right Windows build, install and update it.</summary>
 public static class LlamaCpp
 {
     const string Repo = "ggml-org/llama.cpp";
     static Process? _server;
-    static string? _serverModel;
+    static string? _serverModel, _serverAlias, _serverProfile, _offloaded, _lastError;
+    static int? _serverContext;
+
+    /// <summary>
+    /// For a 27B model on 24 GB: "standard" 96K with q8_0 KV cache, "lang" 160K with q4_0, "max" 256K
+    /// with q4_0 and without MTP. Values from the setup guide for the RTX PRO 5000 (24 GB).
+    /// </summary>
+    public static readonly IReadOnlyList<LlamaProfile> Profiles = new[]
+    {
+        new LlamaProfile("standard", 98304, "q8_0", true),
+        new LlamaProfile("lang", 163840, "q4_0", true),
+        new LlamaProfile("max", 262144, "q4_0", false),
+    };
+
+    public static LlamaProfile Profile(string? id) => Profiles.FirstOrDefault(p => p.Id == id) ?? Profiles[0];
 
     public static IReadOnlyList<LlamaInstall> Installed(UserSettings s)
     {
@@ -90,15 +109,20 @@ public static class LlamaCpp
             ? "vulkan" : "cpu";
     }
 
-    public static async Task<LlamaStatus> StatusAsync(UserSettings s, CancellationToken ct) =>
-        new(Installed(s), string.IsNullOrEmpty(s.LlamaCurrent) ? null : s.LlamaCurrent, await RecommendVariantAsync(s, ct),
-            _server is { HasExited: false }, s.LlamaPort, _server is { HasExited: false } ? _serverModel : null);
+    public static async Task<LlamaStatus> StatusAsync(UserSettings s, CancellationToken ct)
+    {
+        bool running = _server is { HasExited: false };
+        return new(Installed(s), string.IsNullOrEmpty(s.LlamaCurrent) ? null : s.LlamaCurrent, await RecommendVariantAsync(s, ct),
+                   running, s.LlamaPort, running ? _serverModel : null, running ? _serverAlias : null, running ? _serverProfile : null,
+                   running ? _serverContext : null, running ? _offloaded : null, _lastError);
+    }
 
     /// <summary>
-    /// Chooses the release asset: CUDA build with the highest CUDA version the driver supports,
-    /// otherwise Vulkan or CPU. Returns (main zip, optional cudart zip).
+    /// Chooses the release assets: the CUDA build with the newest CUDA version within the major
+    /// version the driver supports (CUDA 13.4 runs on a 13.2 driver), plus its cudart zip;
+    /// otherwise Vulkan or CPU. Returns null when the release has no Windows build of that kind.
     /// </summary>
-    internal static (string Zip, string? Cudart) PickAssets(IReadOnlyList<string> assets, string variant, string? driverCuda)
+    internal static (string Zip, string? Cudart)? TryPickAssets(IReadOnlyList<string> assets, string variant, string? driverCuda)
     {
         var names = assets.Select(a => (Url: a, Name: Net.FileName(a))).ToList();
         IEnumerable<(string Url, string Name)> Candidates(string pattern) =>
@@ -106,25 +130,19 @@ public static class LlamaCpp
 
         if (variant == "cuda")
         {
-            var driver = Version.TryParse(driverCuda ?? "", out var dv) ? dv : new Version(99, 0);
+            int driverMajor = Version.TryParse(driverCuda ?? "", out var dv) ? dv.Major : int.MaxValue;
             var cuda = Candidates(@"^llama-.*-bin-win-cuda-?([\d.]+)-x64\.zip$")
                 .Select(n => (n.Url, n.Name, Ver: Version.TryParse(Regex.Match(n.Name, @"cuda-?([\d.]+)-x64").Groups[1].Value, out var v) ? v : new Version(0, 0)))
-                .Where(n => n.Ver <= driver)
+                .Where(n => n.Ver.Major <= driverMajor)
                 .OrderByDescending(n => n.Ver)
                 .FirstOrDefault();
-            if (cuda.Url != null)
-            {
-                var cudart = names.FirstOrDefault(n => n.Name.StartsWith("cudart", StringComparison.OrdinalIgnoreCase) &&
-                                                       n.Name.Contains($"cuda-{cuda.Ver}", StringComparison.OrdinalIgnoreCase) &&
-                                                       n.Name.Contains("x64", StringComparison.OrdinalIgnoreCase)).Url;
-                return (cuda.Url, cudart);
-            }
-            variant = "vulkan";
+            if (cuda.Url == null) return null;
+            var cudart = names.FirstOrDefault(n => n.Name.StartsWith("cudart", StringComparison.OrdinalIgnoreCase) &&
+                                                   n.Name.Contains($"cuda-{cuda.Ver}-x64", StringComparison.OrdinalIgnoreCase)).Url;
+            return (cuda.Url, cudart);
         }
-        var pick = Candidates(variant == "vulkan" ? @"^llama-.*-bin-win-vulkan-x64\.zip$" : @"^llama-.*-bin-win-(cpu|avx2)-x64\.zip$").FirstOrDefault().Url
-                   ?? Candidates(@"^llama-.*-bin-win-cpu-x64\.zip$").FirstOrDefault().Url
-                   ?? throw new EmberException("llamaNoAsset", ("variant", variant));
-        return (pick, null);
+        var pick = Candidates(variant == "vulkan" ? @"^llama-.*-bin-win-vulkan-x64\.zip$" : @"^llama-.*-bin-win-(cpu|avx2)-x64\.zip$").FirstOrDefault().Url;
+        return pick == null ? null : (pick, null);
     }
 
     public static List<SetupStep> InstallSteps(UserSettings settings, EffectiveSettings eff, Action<string> setCurrent)
@@ -150,8 +168,10 @@ public static class LlamaCpp
                 step.SetProgress(null);
                 var (client, route) = await Net.SmartClientAsync(eff, TimeSpan.FromMinutes(30));
                 http = client;
-                release = await Net.GetLatestReleaseAsync(http, Repo, ct);
-                assets = PickAssets(release.AssetUrls, variant, cuda);
+                // The "latest" release of llama.cpp can be one without binaries; the builds (b12110 …) are pre-releases.
+                release = await Net.FindReleaseAsync(http, Repo, r => TryPickAssets(r.AssetUrls, variant, cuda) != null, 15, ct)
+                          ?? throw new EmberException("llamaNoAsset", ("variant", variant));
+                assets = TryPickAssets(release.AssetUrls, variant, cuda)!.Value;
                 targetDir = Path.Combine(Paths.LlamaDir, $"{release.Tag}-{variant}");
                 step.Report($"{release.Tag}: {Net.FileName(assets.Zip)}{(assets.Cudart != null ? " + " + Net.FileName(assets.Cudart) : "")} ({route})");
             }),
@@ -165,6 +185,16 @@ public static class LlamaCpp
                         step.Report($"{Net.FileName(url)}: " + (total > 0 ? L.T("jobs.downloadProgress", ("done", Net.Mb(done)), ("total", Net.Mb(total.Value))) : Net.Mb(done)), log: false);
                         step.SetProgress(total > 0 ? 100.0 * done / total.Value : null);
                     }, ct, resume: true);
+                    // GitHub publishes a SHA-256 per file; a broken or swapped download stops here.
+                    if (release!.Sha256?.GetValueOrDefault(Net.FileName(url)) is { } expected)
+                    {
+                        var actual = await Net.Sha256Async(target, ct);
+                        if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+                        {
+                            File.Delete(target);
+                            throw new EmberException("shaMismatch", ("expected", expected), ("actual", actual));
+                        }
+                    }
                     files.Add(target);
                 }
                 step.Report(string.Join(", ", files.Select(Path.GetFileName)));
@@ -173,6 +203,7 @@ public static class LlamaCpp
             {
                 step.SetProgress(null);
                 int count = 0;
+                // Program and CUDA runtime go into the same folder, next to llama-server.exe.
                 foreach (var f in files) count += await Task.Run(() => Zip.ExtractSafe(f, targetDir, ct), ct);
                 // Some releases put everything into a sub folder; flatten so llama-server.exe is at the top.
                 var server = Directory.EnumerateFiles(targetDir, "llama-server.exe", SearchOption.AllDirectories).FirstOrDefault()
@@ -183,6 +214,17 @@ public static class LlamaCpp
                 setCurrent(Path.GetFileName(targetDir));
                 foreach (var f in files) { try { File.Delete(f); } catch { } }
                 step.Report(L.T("jobs.extracted", ("count", count), ("path", targetDir)));
+            }),
+            new(L.T("ai.llama.steps.devices"), async (step, ct) =>
+            {
+                // Like "llama-server --list-devices" in the guide: CUDA0 must show the NVIDIA card.
+                var r = await ProcessRunner.RunAsync(Path.Combine(targetDir, "llama-server.exe"), new[] { "--list-devices" }, ct, 60, logOutput: false);
+                var devices = Regex.Matches(r.Output, @"^\s*((CUDA|Vulkan)\d+):\s*(.+)$", RegexOptions.Multiline)
+                                   .Select(m => $"{m.Groups[1].Value}: {m.Groups[3].Value.Trim()}")
+                                   .ToList();
+                if (variant == "cuda" && !devices.Any(d => d.StartsWith("CUDA", StringComparison.Ordinal)))
+                    throw new EmberException("llamaNoCuda", ("detail", r.Output.Trim().Split('\n').LastOrDefault() ?? ""));
+                step.Report(devices.Count > 0 ? string.Join(" · ", devices) : L.T("ai.llama.cpuOnly"));
             }),
             new(L.T("ai.llama.steps.cleanup"), (step, ct) =>
             {
@@ -199,12 +241,38 @@ public static class LlamaCpp
         };
     }
 
-    public static void StartServer(UserSettings s, string modelPath)
+    /// <summary>
+    /// The llama-server command line as in the setup guide: everything on the GPU (-ngl 99), flash
+    /// attention, the profile's context and KV cache, Jinja chat template, one stream; then what the
+    /// model wants (sampling, chat-template kwargs), MTP when profile and model support it, then the
+    /// user's extra arguments (they win, llama.cpp takes the last value).
+    /// </summary>
+    internal static List<string> ServerArgs(ModelState model, LlamaProfile profile, int port, string extra)
+    {
+        var args = new List<string>
+        {
+            "-m", model.Path,
+            "--host", "127.0.0.1", "--port", port.ToString(CultureInfo.InvariantCulture),
+            "--alias", model.Alias,
+            "-ngl", "99", "-fa", "on",
+            "-c", profile.Context.ToString(CultureInfo.InvariantCulture),
+            "-ctk", profile.KvCache, "-ctv", profile.KvCache,
+            "--jinja", "--parallel", "1",
+        };
+        args.AddRange(model.Args);
+        if (profile.Mtp && model.Mtp) args.AddRange(new[] { "--spec-type", "draft-mtp", "--spec-draft-n-max", "2" });
+        // The old default before the profiles; it would cut the context back to 8K.
+        if (extra.Trim() != "-ngl 99 -c 8192") args.AddRange(SplitArgs(extra));
+        return args;
+    }
+
+    public static void StartServer(UserSettings s, ModelState model)
     {
         StopServer();
         var current = Installed(s).FirstOrDefault(i => i.Current) ?? Installed(s).FirstOrDefault()
                       ?? throw new EmberException("llamaNotInstalled");
-        if (!File.Exists(modelPath)) throw new EmberException("modelMissing", ("path", modelPath));
+        if (!File.Exists(model.Path)) throw new EmberException("modelMissing", ("path", model.Path));
+        var profile = Profile(s.LlamaProfile);
         var psi = new ProcessStartInfo(Path.Combine(current.Path, "llama-server.exe"))
         {
             UseShellExecute = false,
@@ -213,24 +281,39 @@ public static class LlamaCpp
             RedirectStandardError = true,
             WorkingDirectory = current.Path,
         };
-        psi.ArgumentList.Add("-m");
-        psi.ArgumentList.Add(modelPath);
-        psi.ArgumentList.Add("--host");
-        psi.ArgumentList.Add("127.0.0.1");
-        psi.ArgumentList.Add("--port");
-        psi.ArgumentList.Add(s.LlamaPort.ToString(CultureInfo.InvariantCulture));
-        foreach (var a in SplitArgs(s.LlamaArgs)) psi.ArgumentList.Add(a);
+        foreach (var a in ServerArgs(model, profile, s.LlamaPort, s.LlamaArgs)) psi.ArgumentList.Add(a);
+        Log.Debug("> llama-server " + string.Join(' ', psi.ArgumentList), "llama");
 
+        _offloaded = null;
+        _lastError = null;
         var p = new Process { StartInfo = psi, EnableRaisingEvents = true };
-        p.OutputDataReceived += (_, e) => { if (e.Data != null) Log.Debug(e.Data, "llama"); };
-        p.ErrorDataReceived += (_, e) => { if (e.Data != null) Log.Debug(e.Data, "llama"); };
+        void OnLine(string? line)
+        {
+            if (line == null) return;
+            Log.Debug(line, "llama");
+            if (Offloaded(line) is { } layers) _offloaded = layers;
+            if (line.Contains("out of memory", StringComparison.OrdinalIgnoreCase) || line.Contains("failed to", StringComparison.OrdinalIgnoreCase))
+                _lastError = line.Trim();
+        }
+        p.OutputDataReceived += (_, e) => OnLine(e.Data);
+        p.ErrorDataReceived += (_, e) => OnLine(e.Data);
         p.Exited += (_, _) => Log.Info(L.T("ai.server.stopped"), "llama");
         p.Start();
         p.BeginOutputReadLine();
         p.BeginErrorReadLine();
         _server = p;
-        _serverModel = Path.GetFileName(modelPath);
-        Log.Info(L.T("ai.server.started", ("model", _serverModel), ("port", s.LlamaPort)), "llama");
+        _serverModel = model.Name;
+        _serverAlias = model.Alias;
+        _serverProfile = profile.Id;
+        _serverContext = profile.Context;
+        Log.Info(L.T("ai.server.started", ("model", model.Name), ("port", s.LlamaPort), ("profile", profile.Id), ("context", profile.Context)), "llama");
+    }
+
+    /// <summary>"load_tensors: offloaded 65/65 layers to GPU" → "65/65".</summary>
+    internal static string? Offloaded(string line)
+    {
+        var m = Regex.Match(line, @"offloaded (\d+)/(\d+) layers to GPU", RegexOptions.IgnoreCase);
+        return m.Success ? $"{m.Groups[1].Value}/{m.Groups[2].Value}" : null;
     }
 
     public static void StopServer()
@@ -252,27 +335,67 @@ public static class LlamaCpp
     }
 }
 
-public sealed record ModelState(string Id, string Name, string Url, string? Note, bool Downloaded, long? Size, string Path);
+/// <param name="Local">A file that was already there (Path in team.json or chosen on this PC): Ember neither downloads nor deletes it.</param>
+/// <param name="Mine">Added on this PC (can be removed from the list); team models cannot.</param>
+public sealed record ModelState(string Id, string Name, string Url, string? Note, bool Downloaded, long? Size, string Path,
+                                bool Local, bool Mine, string Alias, bool Mtp, IReadOnlyList<string> Args);
 
 public static class Models
 {
+    /// <summary>
+    /// The model from the setup guide: Qwen3.8-27B as Unsloth's UD-Q4_K_XL (~17.6 GB), with tool-call
+    /// parsers for MCP and an MTP head. Sampling as Qwen recommends, medium reasoning effort for agents.
+    /// </summary>
+    public static readonly ModelEntry Qwen = new()
+    {
+        Id = "qwen3.8-27b",
+        Name = "Qwen3.8-27B (UD-Q4_K_XL)",
+        Url = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf",
+        Note = "≈ 17,6 GB · 24 GB VRAM",
+        Alias = "qwen3.8-27b",
+        Mtp = true,
+        Args = new() { "--temp", "1.0", "--top-p", "0.95", "--top-k", "20", "--min-p", "0.0", "--chat-template-kwargs", "{\"reasoning_effort\":\"medium\"}" },
+    };
+
     public static string Dir(UserSettings s) => string.IsNullOrWhiteSpace(s.ModelsDir) ? Paths.DefaultModelsDir : s.ModelsDir;
 
-    public static List<ModelEntry> All(UserSettings s, TeamConfig team) =>
-        (team.Models ?? new List<ModelEntry>()).Concat(s.Models)
-            .Where(m => !string.IsNullOrWhiteSpace(m.Url))
-            .Select(m => { if (string.IsNullOrWhiteSpace(m.Id)) m.Id = Net.FileName(m.Url); return m; })
-            .DistinctBy(m => m.Id)
+    /// <summary>Team models first, then the ones added on this PC, then the built-in one (the same id wins in that order).</summary>
+    public static List<(ModelEntry Entry, bool Mine)> All(UserSettings s, TeamConfig team) =>
+        (team.Models ?? new List<ModelEntry>()).Select(m => (m, false))
+            .Concat(s.Models.Select(m => (m, true)))
+            .Append((Qwen, false))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Item1.Url) || !string.IsNullOrWhiteSpace(x.Item1.Path))
+            .Select(x =>
+            {
+                if (string.IsNullOrWhiteSpace(x.Item1.Id)) x.Item1.Id = Net.FileName(string.IsNullOrWhiteSpace(x.Item1.Path) ? x.Item1.Url : x.Item1.Path!);
+                return (Entry: x.Item1, Mine: x.Item2);
+            })
+            .DistinctBy(x => x.Entry.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
     public static List<ModelState> List(UserSettings s, TeamConfig team) =>
-        All(s, team).Select(m =>
+        All(s, team).Select(x =>
         {
-            var path = System.IO.Path.Combine(Dir(s), Net.FileName(m.Url));
+            var m = x.Entry;
+            bool local = !string.IsNullOrWhiteSpace(m.Path);
+            var path = local ? Environment.ExpandEnvironmentVariables(m.Path!.Trim().Trim('"')) : System.IO.Path.Combine(Dir(s), Net.FileName(m.Url));
             var exists = File.Exists(path);
-            return new ModelState(m.Id, string.IsNullOrWhiteSpace(m.Name) ? Net.FileName(m.Url) : m.Name, m.Url, m.Note, exists,
-                                  exists ? new FileInfo(path).Length : null, path);
+            var name = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : System.IO.Path.GetFileNameWithoutExtension(path);
+            var alias = !string.IsNullOrWhiteSpace(m.Alias) ? m.Alias! : System.IO.Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+            return new ModelState(m.Id, name, m.Url, m.Note, exists, exists ? new FileInfo(path).Length : null, path,
+                                  local, x.Mine, alias, m.Mtp ?? false, m.Args ?? new List<string>());
         }).ToList();
+
+    /// <summary>A GGUF file that is already on this PC or a share joins the list as it is.</summary>
+    public static ModelEntry AddLocal(UserSettings s, string file)
+    {
+        if (!file.EndsWith(".gguf", StringComparison.OrdinalIgnoreCase)) throw new EmberException("modelNotGguf", ("path", file));
+        if (!File.Exists(file)) throw new EmberException("modelMissing", ("path", file));
+        var entry = new ModelEntry { Id = System.IO.Path.GetFileName(file), Name = System.IO.Path.GetFileNameWithoutExtension(file), Path = file };
+        s.Models.RemoveAll(m => m.Id.Equals(entry.Id, StringComparison.OrdinalIgnoreCase));
+        s.Models.Add(entry);
+        return entry;
+    }
 
     public static List<SetupStep> DownloadSteps(ModelEntry model, string dir, EffectiveSettings eff)
     {

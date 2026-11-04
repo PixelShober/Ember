@@ -39,6 +39,9 @@ Alles steht unter [Installation](/Ember/handbuch/installation/#wo-ember-seine-da
 - den Abschnitt `access` der `team.json`, wenn du im Tab Berechtigungen speicherst (vorher eine Kopie nach `C:\Ember\Config\team-backups`)
 - `C:\Ember\App\ember-team.txt` mit dem Pfad zur `team.json`, wenn du Ember vom Netzlaufwerk startest
 - deinen Schlüssel in `settings.json`, wenn du Ember damit freischaltest
+- einen markierten Block in `Dokumente\WindowsPowerShell\profile.ps1` und `Dokumente\PowerShell\profile.ps1`, wenn du PowerShell auf px setzt
+- git `http.<url>.allowNTLMAuth` für die internen Domains und `http.sslBackend`, wenn es noch leer ist
+- `%USERPROFILE%\.pi\agent\models.json` (Provider `llama-cpp`), wenn du Pi mit dem llama-server verbindest
 - in Playwright-Projekten: `package.json`, `playwright.config`, Beispieltest und `.gitignore`, wenn du Playwright hinzufügst, Edge einrichtest oder ein neues Projekt anlegst
 - den Benutzer-PATH (Node.js, Git, Python) und die Variable `NODE_EXTRA_CA_CERTS`, wenn du die Node.js-Zertifikate einrichtest
 - `C:\Ember\Tools\bruno` und den Startmenü-Eintrag „Bruno“, wenn du Bruno installierst

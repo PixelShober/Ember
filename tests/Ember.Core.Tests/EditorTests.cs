@@ -138,6 +138,15 @@ public class NoProxyTests
         Assert.Contains("https://*.firma.local", urls);
         Assert.Contains("https://firma.local", urls);
     }
+
+    [Fact]
+    public void Git_windows_sign_in_is_read_per_url()
+    {
+        // As in a real config: allowNTLMAuth for an Azure DevOps Server, written once with and once without slash.
+        var output = "http.https://azuretesting.city.net.ffm/.allowntlmauth true\nhttp.https://*.city.net.ffm.allowntlmauth false\nhttp.http://city.net.ffm.allowntlmauth TRUE\n";
+        var urls = NoProxy.ParseGitUrlSettings(output, "allowntlmauth", v => v.Equals("true", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(new[] { "http://city.net.ffm", "https://azuretesting.city.net.ffm" }, urls.OrderBy(u => u));
+    }
 }
 
 public class JsoncArrayTests
@@ -157,5 +166,43 @@ public class JsoncArrayTests
         var removed = JsoncEditor.SetStringArray(replaced, "http.noProxy", null);
         Assert.Null(JsoncEditor.GetStringArray(removed, "http.noProxy"));
         Assert.Equal(text, removed);
+    }
+}
+
+public class PowerShellProfileTests
+{
+    [Fact]
+    public void Profile_block_points_web_requests_at_px_and_bypasses_internal_domains()
+    {
+        var block = PowerShellProfile.Block("http://127.0.0.1:3128", new[] { "*.city.net.ffm", "10.0.0.0/8", "localhost" });
+        Assert.Contains("New-Object System.Net.WebProxy('http://127.0.0.1:3128', $true,", block);
+        Assert.Contains(@"'(://|\.)city\.net\.ffm(:\d+)?$'", block);
+        Assert.DoesNotContain("10.0.0.0", block);   // CIDR cannot be a bypass regex
+        Assert.Contains("[System.Net.Http.HttpClient]::DefaultProxy", block);
+        Assert.True(block.All(c => c < 128));       // ASCII: the profile's encoding does not matter
+
+        // The .NET Framework matches the bypass regex against "scheme://host[:port]".
+        var regex = new System.Text.RegularExpressions.Regex(@"(://|\.)city\.net\.ffm(:\d+)?$");
+        Assert.Matches(regex, "https://azuretesting.city.net.ffm");
+        Assert.Matches(regex, "https://city.net.ffm:8443");
+        Assert.DoesNotMatch(regex, "https://notcity.net.ffm.example.com");
+    }
+
+    [Fact]
+    public void Profile_keeps_the_users_lines_and_replaces_only_embers_block()
+    {
+        var own = "Import-Module posh-git\r\n$env:EDITOR = 'code'\r\n";
+        var first = PowerShellProfile.Apply(own, PowerShellProfile.Block("http://127.0.0.1:3128", Array.Empty<string>()));
+        Assert.StartsWith(own, first);
+        Assert.Equal("http://127.0.0.1:3128", PowerShellProfile.UrlIn(first));
+
+        var second = PowerShellProfile.Apply(first, PowerShellProfile.Block("http://127.0.0.1:3129", Array.Empty<string>()));
+        Assert.Equal("http://127.0.0.1:3129", PowerShellProfile.UrlIn(second));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(second, "Ember: px >>>"));
+
+        var removed = PowerShellProfile.Remove(second);
+        Assert.Null(PowerShellProfile.UrlIn(removed));
+        Assert.Contains("Import-Module posh-git", removed);
+        Assert.Null(PowerShellProfile.UrlIn(own));
     }
 }

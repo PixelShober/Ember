@@ -16,10 +16,11 @@ public enum ProxyState
 public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint);
 
 /// <param name="Domains">Internal domains git reaches without proxy.</param>
-/// <param name="MissingExceptions">git URLs for them that are not switched off yet.</param>
+/// <param name="MissingExceptions">git URLs for them without "proxy = ''" or without "allowNTLMAuth = true" yet.</param>
 /// <param name="NoProxyEnv">NO_PROXY (user) lists all internal domains, which also covers deeper subdomains.</param>
+/// <param name="SslBackend">http.sslBackend: "schannel" uses the Windows certificate store (company and internal CAs).</param>
 public sealed record GitProxyInfo(string? HttpProxy, ProxyState State, IReadOnlyList<string> Domains, IReadOnlyList<string> MissingExceptions,
-                                  bool NoProxyEnv, bool CanSet, bool CanRemove);
+                                  bool NoProxyEnv, bool CanSet, bool CanRemove, string? SslBackend);
 
 /// <summary>
 /// Per tool: read the current proxy, point it to px, or remove it again.
@@ -27,7 +28,7 @@ public sealed record GitProxyInfo(string? HttpProxy, ProxyState State, IReadOnly
 /// </summary>
 public static class ProxyTools
 {
-    public static readonly string[] Ids = { "windows", "env", "git", "npm", "nodeCerts", "nuget", "pip", "vscode" };
+    public static readonly string[] Ids = { "windows", "env", "powershell", "git", "npm", "nodeCerts", "nuget", "pip", "vscode" };
 
     public static bool IsOurs(string? value, EffectiveSettings s)
     {
@@ -82,6 +83,15 @@ public static class ProxyTools
                 var value = $"HTTP_PROXY={http ?? "–"} · HTTPS_PROXY={https ?? "–"} · NO_PROXY={no ?? "–"}";
                 var state = StateOf(s, http, https);
                 return new ProxyRow(id, label, value, state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.env"));
+            }
+            case "powershell":
+            {
+                var url = PowerShellProfile.Current();
+                var state = url == null ? ProxyState.Unset : url.Length == 0 ? ProxyState.Other : StateOf(s, url);
+                var value = url is { Length: > 0 } ? $"DefaultWebProxy = {url}" : url == null ? "–" : L.T("proxy.powershell.partial");
+                var hint = L.T("proxy.hints.powershell", ("files", string.Join(" · ", PowerShellProfile.Files)));
+                if (PowerShellProfile.BlockingPolicy() is { } policy) hint += " " + L.T("proxy.hints.powershellPolicy", ("policy", policy));
+                return new ProxyRow(id, label, value, state, state != ProxyState.Px, url != null, hint);
             }
             case "git":
             {
@@ -151,18 +161,26 @@ public static class ProxyTools
         var domains = NoProxy.ForTools(s.InternalDomainList);
         var env = NoProxy.ForTools(EffectiveSettings.SplitDomains(Environment.GetEnvironmentVariable("NO_PROXY", EnvironmentVariableTarget.User) ?? ""));
         bool envOk = domains.All(d => env.Contains(d, StringComparer.OrdinalIgnoreCase));
+        var ssl = (await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get", "http.sslBackend" }, ct, logOutput: false)).LastLine;
         return new GitProxyInfo(string.IsNullOrWhiteSpace(value) ? null : value, state, domains, missing, envOk,
-                                state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px);
+                                state != ProxyState.Px || missing.Count > 0 || ssl.Length == 0, state == ProxyState.Px,
+                                ssl.Length == 0 ? null : ssl);
     }
 
-    /// <summary>The git URLs for the internal domains whose proxy is not switched off yet.</summary>
+    /// <summary>
+    /// The git URLs for the internal domains that still lack one of the two settings internal servers
+    /// need: "proxy = ''" (directly, not through px) and "allowNTLMAuth = true" (Windows sign-in with
+    /// NTLM/Negotiate, which Git for Windows no longer offers by default, e.g. for Azure DevOps Server).
+    /// </summary>
     static async Task<List<string>> GitMissingExceptionsAsync(string git, EffectiveSettings s, CancellationToken ct)
     {
         var wanted = NoProxy.GitUrls(s.InternalDomainList);
         if (wanted.Count == 0) return wanted;
-        var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get-regexp", @"^http\..+\.proxy$" }, ct, logOutput: false);
-        var present = NoProxy.ParseGitExceptions(r.StdOut);
-        return wanted.Where(u => !present.Contains(u)).ToList();
+        var proxies = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get-regexp", @"^http\..+\.proxy$" }, ct, logOutput: false);
+        var ntlm = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get-regexp", @"^http\..+\.allowntlmauth$" }, ct, logOutput: false);
+        var direct = NoProxy.ParseGitExceptions(proxies.StdOut);
+        var windows = NoProxy.ParseGitUrlSettings(ntlm.StdOut, "allowntlmauth", v => v.Equals("true", StringComparison.OrdinalIgnoreCase));
+        return wanted.Where(u => !direct.Contains(u) || !windows.Contains(u)).ToList();
     }
 
     static IReadOnlyList<string> VsCodeNoProxy(EffectiveSettings s) => s.NoProxyList.Split(',');
@@ -193,19 +211,34 @@ public static class ProxyTools
                 }, ct);
                 return $"HTTP(S)_PROXY={s.PxUrl} · NO_PROXY={s.NoProxyList}";
 
+            case "powershell":
+                return L.T("proxy.powershell.set", ("files", string.Join(" · ", PowerShellProfile.Set(s))));
+
             case "git":
             {
                 var git = Tools.Git ?? throw new EmberException("toolMissing", ("tool", "git"));
                 var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "http.proxy", s.PxUrl }, ct);
                 if (!r.Ok) throw new EmberException("commandFailed", ("command", "git config"), ("detail", r.Output));
-                // Internal servers without proxy, also when px is not running.
+                // Internal servers: directly (also when px is not running) and with the Windows sign-in.
                 foreach (var url in await GitMissingExceptionsAsync(git, s, ct))
                 {
-                    var e = await ProcessRunner.RunAsync(git, new[] { "config", "--global", $"http.{url}.proxy", "" }, ct);
-                    if (!e.Ok) throw new EmberException("commandFailed", ("command", $"git config http.{url}.proxy"), ("detail", e.Output));
+                    foreach (var (key, val) in new[] { ($"http.{url}.proxy", ""), ($"http.{url}.allowNTLMAuth", "true") })
+                    {
+                        var e = await ProcessRunner.RunAsync(git, new[] { "config", "--global", key, val }, ct);
+                        if (!e.Ok) throw new EmberException("commandFailed", ("command", "git config " + key), ("detail", e.Output));
+                    }
+                }
+                // Windows certificate store: TLS inspection by the company proxy and internal CAs work without sslVerify=false.
+                var parts = new List<string> { "http.proxy " + s.PxUrl };
+                if ((await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get", "http.sslBackend" }, ct, logOutput: false)).LastLine.Length == 0)
+                {
+                    var b = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "http.sslBackend", "schannel" }, ct);
+                    if (!b.Ok) throw new EmberException("commandFailed", ("command", "git config http.sslBackend"), ("detail", b.Output));
+                    parts.Add("http.sslBackend schannel");
                 }
                 var urls = NoProxy.GitUrls(s.InternalDomainList);
-                return "git config --global http.proxy " + s.PxUrl + (urls.Count > 0 ? " · " + L.T("proxy.noProxyFor", ("list", string.Join(", ", NoProxy.ForTools(s.InternalDomainList)))) : "");
+                if (urls.Count > 0) parts.Add(L.T("proxy.noProxyFor", ("list", string.Join(", ", NoProxy.ForTools(s.InternalDomainList)))) + " + allowNTLMAuth");
+                return "git config --global " + string.Join(" · ", parts);
             }
 
             case "npm":
@@ -276,6 +309,13 @@ public static class ProxyTools
                 }, ct);
                 foreach (var k in kept) Log.Warn(L.T("proxy.keptForeign", ("value", k)));
                 return removed.Count > 0 ? L.T("proxy.removed", ("items", string.Join(", ", removed))) : L.T("proxy.nothingToRemove");
+            }
+
+            case "powershell":
+            {
+                if (onlyIfOurs && PowerShellProfile.Current() is { Length: > 0 } url && !IsOurs(url, s)) return L.T("proxy.unchanged", ("value", url));
+                var count = PowerShellProfile.Unset();
+                return count == 0 ? L.T("proxy.nothingToRemove") : L.T("proxy.removed", ("items", "PowerShell-Profil"));
             }
 
             case "git":

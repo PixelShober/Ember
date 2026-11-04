@@ -257,9 +257,9 @@ public static class Playwright
         return env;
     }
 
-    /// <summary>Runs an npm/npx command through cmd.exe in the project folder; every line goes to the log (source "playwright").</summary>
-    static async Task<(int Code, List<string> Lines)> RunAsync(string commandLine, string dir, Dictionary<string, string> env,
-                                                                SetupStep step, CancellationToken ct, int timeoutSec)
+    /// <summary>Runs an npm/npx command through cmd.exe in the project folder; every line goes to the log (source "playwright", or <paramref name="source"/>).</summary>
+    internal static async Task<(int Code, List<string> Lines)> RunAsync(string commandLine, string dir, Dictionary<string, string> env,
+                                                                         SetupStep step, CancellationToken ct, int timeoutSec, string source = "playwright")
     {
         var psi = new ProcessStartInfo(ProcessRunner.SystemExe("cmd.exe"))
         {
@@ -282,7 +282,7 @@ public static class Playwright
         {
             if (string.IsNullOrWhiteSpace(line)) return;
             lock (lines) lines.Add(line);
-            Log.Info(line.Trim(), "playwright");
+            Log.Info(line.Trim(), source);
             var m = Regex.Match(line, @"(\d{1,3})% of ([\d.,]+\s*\w+)");
             if (m.Success)
             {

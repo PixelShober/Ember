@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, app, confirm, run, toast } from '../lib/app.svelte';
+  import { api, app, confirm, copyText, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { formatBytes } from '../lib/format';
-  import type { AiStatus, SettingsView, UserSettings } from '../lib/types';
+  import type { AiStatus, LlamaProfile, ModelState, SettingsView, UserSettings } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
@@ -12,6 +12,7 @@
   let status = $state<AiStatus | null>(null);
   let settings = $state<UserSettings | null>(null);
   let serverModel = $state('');
+  let profile = $state<LlamaProfile['id']>('standard');
   let newModel = $state({ url: '', name: '' });
 
   async function load() {
@@ -21,13 +22,17 @@
     ]);
     status = s ?? status;
     settings = v?.user ?? settings;
-    if (!serverModel) serverModel = status?.models.find((m) => m.downloaded)?.id ?? '';
+    if (status) profile = (status.llama.serverProfile as LlamaProfile['id'] | null) ?? status.profile;
+    if (!serverModel || !ready.some((m) => m.id === serverModel)) serverModel = ready[0]?.id ?? '';
   }
   onMount(load);
 
+  /** Models the server can start: downloaded, or a local file that exists. */
+  const ready = $derived(status?.models.filter((m) => m.downloaded) ?? []);
+
   // Reload the lists when a download or installation finishes.
   $effect(() => {
-    const finished = Object.values(app.jobs).filter((j) => ['llama', 'model'].includes(j.kind) && j.state === 'done').length;
+    const finished = Object.values(app.jobs).filter((j) => ['llama', 'model', 'pi'].includes(j.kind) && j.state === 'done').length;
     if (finished) void load();
   });
 
@@ -46,15 +51,44 @@
     await load();
   }
 
-  async function deleteModel(id: string, name: string) {
-    if (!(await confirm(name, t('ai.models.confirmDelete', { name }), t('common.delete'), true))) return;
-    await run(() => api('ai.models.delete', { id }));
+  async function addLocal() {
+    const id = await run(() => api<string | null>('ai.models.addLocal'));
+    if (!id) return;
+    await load();
+    serverModel = id;
+    toast('ok', t('ai.models.addedLocal', { name: status?.models.find((m) => m.id === id)?.name ?? id }));
+  }
+
+  async function deleteModel(m: ModelState) {
+    const text = m.local ? t('ai.models.confirmRemoveLocal', { name: m.name }) : t('ai.models.confirmDelete', { name: m.name });
+    if (!(await confirm(m.name, text, m.local ? t('ai.models.removeLocal') : t('common.delete'), !m.local))) return;
+    await run(() => api('ai.models.delete', { id: m.id }));
     await load();
   }
 
   async function startServer() {
-    if (await run(() => api('ai.server.start', { model: serverModel }))) await load();
-    else await load();
+    await run(() => api('ai.server.start', { model: serverModel, profile }));
+    await load();
+  }
+
+  // While the model loads, the log tells how many layers made it onto the GPU.
+  $effect(() => {
+    if (!status?.llama.serverRunning || status.llama.offloaded) return;
+    const timer = setInterval(load, 2000);
+    return () => clearInterval(timer);
+  });
+
+  const gpu = $derived(status?.gpus[0]);
+  const vramFree = $derived(gpu?.memoryTotalMb != null && gpu.memoryUsedMb != null ? gpu.memoryTotalMb - gpu.memoryUsedMb : null);
+  const partial = $derived.by(() => {
+    const m = status?.llama.offloaded?.match(/^(\d+)\/(\d+)$/);
+    return !!m && m[1] !== m[2];
+  });
+
+  async function configurePi() {
+    const file = await run(() => api<string>('ai.pi.configure'));
+    if (file) toast('ok', t('ai.pi.configuredToast', { path: file }));
+    await load();
   }
 </script>
 
@@ -103,6 +137,7 @@
       {/if}
       <button class="btn primary small" disabled={app.jobs['llama']?.state === 'running'} onclick={() => run(() => api('ai.llama.install'))}><Icon name="download" size={14} />{t('ai.llama.install')}</button>
     </div>
+    {#if status?.llama.recommendedVariant === 'cuda'}<p class="small muted hint">{t('ai.llama.cudaHint')}</p>{/if}
     {#if status?.llama.installed.length}
       <table class="table">
         <tbody>
@@ -128,7 +163,8 @@
   <section class="card">
     <div class="card-head"><Icon name="sparkle" /><h2>{t('ai.models.title')}</h2>
       <span class="spacer"></span>
-      <button class="btn ghost small" onclick={() => run(() => api('app.openFolder', { key: 'models' }))}><Icon name="folder" size={14} />{t('common.openFolder')}</button>
+      <button class="btn small" onclick={addLocal}><Icon name="folder" size={14} />{t('ai.models.addLocal')}</button>
+      <button class="btn ghost small" onclick={() => run(() => api('app.openFolder', { key: 'models' }))}><Icon name="external" size={14} />{t('common.openFolder')}</button>
     </div>
     {#if status}<p class="small muted">{t('ai.models.folder', { path: status.modelsDir })}</p>{/if}
     {#if status && status.models.length === 0}<div class="note"><Calcifer /><p>{t('ai.models.empty')}</p></div>{/if}
@@ -138,10 +174,16 @@
           <div class="grow">
             <strong>{m.name}</strong>
             {#if m.note}<span class="small muted"> · {m.note}</span>{/if}
-            <p class="small muted break">{m.downloaded ? t('ai.models.downloaded', { size: formatBytes(m.size) }) : t('ai.models.notDownloaded')}</p>
+            {#if m.mtp}<span class="badge">MTP</span>{/if}
+            <p class="small muted break">
+              {#if m.local}{m.downloaded ? t('ai.models.local', { size: formatBytes(m.size) }) : t('ai.models.localMissing', { path: m.path })} · <code>{m.path}</code>
+              {:else}{m.downloaded ? t('ai.models.downloaded', { size: formatBytes(m.size) }) : t('ai.models.notDownloaded')}{/if}
+            </p>
           </div>
-          {#if m.downloaded}
-            <button class="btn ghost small" onclick={() => deleteModel(m.id, m.name)}><Icon name="trash" size={14} /></button>
+          {#if m.local}
+            {#if m.mine}<button class="btn ghost small" title={t('ai.models.removeLocal')} aria-label={t('ai.models.removeLocal')} onclick={() => deleteModel(m)}><Icon name="x" size={14} /></button>{/if}
+          {:else if m.downloaded}
+            <button class="btn ghost small" title={t('common.delete')} aria-label={t('common.delete')} onclick={() => deleteModel(m)}><Icon name="trash" size={14} /></button>
           {:else}
             <button class="btn small" disabled={app.jobs['model:' + m.id]?.state === 'running'} onclick={() => run(() => api('ai.models.download', { id: m.id }))}><Icon name="download" size={14} />{t('ai.models.download')}</button>
           {/if}
@@ -149,6 +191,7 @@
         </li>
       {/each}
     </ul>
+    <p class="small muted">{t('ai.models.orUrl')}</p>
     <div class="add">
       <input bind:value={newModel.url} placeholder={t('ai.models.addUrl')} spellcheck="false" />
       <input bind:value={newModel.name} placeholder={t('ai.models.addName')} />
@@ -161,28 +204,74 @@
     <div class="card-head">
       <Icon name="server" />
       <h2>{t('ai.server.title')}</h2>
-      {#if status?.llama.serverRunning}<span class="badge ok"><span class="dot"></span>{t('ai.server.running', { port: status.llama.port, model: status.llama.serverModel ?? '' })}</span>{/if}
+      {#if status?.llama.serverRunning}<span class="badge ok"><span class="dot"></span>{t('ai.server.running', { port: String(status.llama.port), model: status.llama.serverModel ?? '' })}</span>{/if}
     </div>
     {#if settings && status}
       <div class="server">
         <label class="field"><span>{t('ai.server.model')}</span>
-          <select bind:value={serverModel}>
-            {#each status.models.filter((m) => m.downloaded) as m (m.id)}<option value={m.id}>{m.name}</option>{/each}
+          <select bind:value={serverModel} disabled={status.llama.serverRunning}>
+            {#each ready as m (m.id)}<option value={m.id}>{m.name}</option>{/each}
           </select>
         </label>
-        <label class="field narrow"><span>{t('ai.server.port')}</span><input type="number" bind:value={settings.llamaPort} onchange={() => saveSettings()} /></label>
-        <label class="field"><span>{t('ai.server.args')}</span><input bind:value={settings.llamaArgs} onchange={() => saveSettings()} class="mono" spellcheck="false" /></label>
+        <label class="field"><span>{t('ai.server.profile')}</span>
+          <select bind:value={profile} disabled={status.llama.serverRunning}>
+            {#each status.profiles as p (p.id)}<option value={p.id}>{t(`ai.server.profiles.${p.id}`)}</option>{/each}
+          </select>
+        </label>
+        <label class="field narrow"><span>{t('ai.server.port')}</span><input type="number" bind:value={settings.llamaPort} onchange={() => saveSettings()} disabled={status.llama.serverRunning} /></label>
       </div>
+      <p class="small muted">{t('ai.server.profileHint')}</p>
+      <label class="field args"><span>{t('ai.server.args')}</span><input bind:value={settings.llamaArgs} onchange={() => saveSettings()} class="mono" spellcheck="false" placeholder="--threads 8" /></label>
+
+      {#if status.llama.serverRunning}
+        <div class="check">
+          <span class="small muted">{t('ai.server.check')}</span>
+          {#if !status.llama.offloaded}<span class="badge">{t('ai.server.offloadedPending')}</span>
+          {:else if !partial}<span class="badge ok"><Icon name="check" size={12} />{t('ai.server.offloaded', { layers: status.llama.offloaded })}</span>{/if}
+          {#if vramFree != null}<span class="badge {vramFree < 512 ? 'warn' : 'ok'}">{t('ai.server.vramFree', { free: vramFree.toLocaleString() })}</span>{/if}
+        </div>
+        {#if partial}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.offloadedPartial', { layers: status.llama.offloaded ?? '' })}</p></div>{/if}
+        {#if vramFree != null && vramFree < 512}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.vramLow', { free: vramFree.toLocaleString() })}</p></div>{/if}
+      {/if}
+      {#if status.llama.lastError}<p class="small error">{t('ai.server.lastError', { line: status.llama.lastError })}</p>{/if}
+
       <div class="row">
         {#if status.llama.serverRunning}
           <button class="btn" onclick={async () => { await run(() => api('ai.server.stop')); await load(); }}><Icon name="stop" size={14} />{t('ai.server.stop')}</button>
           <button class="btn ghost" onclick={() => run(() => api('app.openExternal', { url: `http://127.0.0.1:${status!.llama.port}/` }))}><Icon name="external" size={14} />{t('ai.server.openUi')}</button>
         {:else}
-          <button class="btn primary" disabled={!serverModel} onclick={startServer}><Icon name="play" size={14} />{t('ai.server.start')}</button>
+          <button class="btn primary" disabled={!serverModel || !status.llama.installed.length} onclick={startServer}><Icon name="play" size={14} />{t('ai.server.start')}</button>
         {/if}
       </div>
     {/if}
   </section>
+
+  <!-- Pi -->
+  {#if status}
+    <section class="card stack tight">
+      <div class="card-head">
+        <Icon name="ai" />
+        <div class="grow"><h2>{t('ai.pi.title')}</h2><p class="small muted">{t('ai.pi.subtitle')}</p></div>
+        <span class="badge {status.pi.installed ? 'ok' : ''}">{status.pi.installed ? t('ai.pi.installed') : t('ai.pi.notInstalled')}</span>
+        {#if status.pi.configured}<span class="badge ok"><Icon name="check" size={12} />{t('ai.pi.configuredBadge')}</span>{/if}
+      </div>
+      {#if !status.pi.nodeFound}
+        <div class="note warn"><Calcifer /><p class="small">{t('ai.pi.noNode')}</p></div>
+      {:else if !status.pi.configured}
+        <p class="small muted">{t('ai.pi.notConfigured')}</p>
+      {/if}
+      <div class="row">
+        {#if !status.pi.installed}
+          <button class="btn primary small" disabled={!status.pi.nodeFound || app.jobs['pi']?.state === 'running'} onclick={() => run(() => api('ai.pi.install'))}><Icon name="download" size={14} />{t('ai.pi.install')}</button>
+        {/if}
+        <button class="btn small {status.pi.installed && !status.pi.configured ? 'primary' : ''}" onclick={configurePi}><Icon name="check" size={14} />{t('ai.pi.configure')}</button>
+      </div>
+      <JobView id="pi" />
+      <p class="small muted">{t('ai.pi.start')}</p>
+      <p class="row"><code>{status.pi.command}</code>
+        <button class="btn ghost small" aria-label={t('common.copy')} onclick={async () => { await copyText(status!.pi.command); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button></p>
+    </section>
+  {/if}
 </div>
 
 <style>
@@ -197,7 +286,11 @@
   .models li:first-child { border-top: none; }
   .grow { flex: 1; min-width: 240px; }
   .add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; margin-top: 8px; }
-  .server { display: grid; grid-template-columns: 1.5fr 100px 1.5fr; gap: 10px; margin-bottom: 10px; }
+  .server { display: grid; grid-template-columns: 1.4fr 1.4fr 100px; gap: 10px; margin-bottom: 6px; }
+  .args { margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+  .check { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .error { color: var(--error); }
+  .hint { margin: -4px 0 10px; }
   @media (max-width: 1100px) {
     .server, .add { grid-template-columns: 1fr; }
   }
