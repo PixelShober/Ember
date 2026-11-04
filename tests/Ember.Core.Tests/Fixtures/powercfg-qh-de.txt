@@ -1,0 +1,68 @@
+GUID des Energieschemas: 381b4222-f694-41f0-9685-ff5bb260df2e  (Ausbalanciert)
+  GUID-Alias: SCHEME_BALANCED
+  GUID der Untergruppe: 54533251-82be-4824-96c1-47b60b740d00  (Prozessorenergieverwaltung)
+    GUID-Alias: SUB_PROCESSOR
+    GUID der Energieeinstellung: 36687f9e-e3a5-4dbf-b1dc-15eb381c6863  (Richtlinie für die bevorzugte Prozessorenergieeffizienz)
+      GUID-Alias: PERFEPP
+      Minimum der möglichen Einstellung: 0x00000000
+      Maximum der möglichen Einstellung: 0x00000064
+      Schrittweise Erhöhung der möglichen Einstellungen: 0x00000001
+      Einheiten der möglichen Einstellungen: %
+    Index der aktuellen Wechselstromeinstellung: 0x00000000
+    Index der aktuellen Gleichstromeinstellung: 0x00000032
+
+    GUID der Energieeinstellung: 36687f9e-e3a5-4dbf-b1dc-15eb381c6864  (Richtlinie für die bevorzugte Prozessorenergieeffizienz für Prozessorleistungseffizienzklasse 1)
+      GUID-Alias: PERFEPP1
+      Minimum der möglichen Einstellung: 0x00000000
+      Maximum der möglichen Einstellung: 0x00000064
+      Schrittweise Erhöhung der möglichen Einstellungen: 0x00000001
+      Einheiten der möglichen Einstellungen: %
+    Index der aktuellen Wechselstromeinstellung: 0x00000019
+    Index der aktuellen Gleichstromeinstellung: 0x00000032
+
+    GUID der Energieeinstellung: 3b04d4fd-1cc7-4f23-ab1c-d1337819c4bb  (Drosselungszustände zulassen)
+      GUID-Alias: THROTTLING
+      Index der möglichen Einstellung: 000
+      Anzeigename der möglichen Einstellung: Aus
+      Index der möglichen Einstellung: 001
+      Anzeigename der möglichen Einstellung: Ein
+      Index der möglichen Einstellung: 002
+      Anzeigename der möglichen Einstellung: Automatisch
+    Index der aktuellen Wechselstromeinstellung: 0x00000002
+    Index der aktuellen Gleichstromeinstellung: 0x00000002
+
+    GUID der Energieeinstellung: b000397d-9b0b-483d-98c9-692a6060cfbf  (Schwellenwert zum Erhöhen der Prozessorleistungsstufe - Erhöhen der Anzahl von Prozessoren der Prozessorleistungseffizienzklasse 1)
+      GUID-Alias: HETEROINCREASETHRESHOLD
+    Index der aktuellen Wechselstromeinstellung: 0x000000fe
+    Index der aktuellen Gleichstromeinstellung: 0x000000fe
+
+    GUID der Energieeinstellung: be337238-0d82-4146-a960-4f3749d470c7  (Leistungssteigerungsmodus für Prozessoren)
+      GUID-Alias: PERFBOOSTMODE
+      Index der möglichen Einstellung: 000
+      Anzeigename der möglichen Einstellung: Deaktiviert
+      Index der möglichen Einstellung: 001
+      Anzeigename der möglichen Einstellung: Aktiviert
+      Index der möglichen Einstellung: 002
+      Anzeigename der möglichen Einstellung: Hoch
+    Index der aktuellen Wechselstromeinstellung: 0x00000002
+    Index der aktuellen Gleichstromeinstellung: 0x00000002
+
+    GUID der Energieeinstellung: 893dee8e-2bef-41e0-89c6-b55d0929964c  (Minimaler Leistungszustand des Prozessors)
+      GUID-Alias: PROCTHROTTLEMIN
+      Minimum der möglichen Einstellung: 0x00000000
+      Maximum der möglichen Einstellung: 0x00000064
+      Schrittweise Erhöhung der möglichen Einstellungen: 0x00000001
+      Einheiten der möglichen Einstellungen: %
+    Index der aktuellen Wechselstromeinstellung: 0x00000005
+    Index der aktuellen Gleichstromeinstellung: 0x00000005
+
+  GUID der Untergruppe: 238c9fa8-0aad-41ed-83f4-97be242c8f20  (Energie sparen)
+    GUID-Alias: SUB_SLEEP
+    GUID der Energieeinstellung: 29f6c1db-86da-48c5-9fdb-f2b67b1f44da  (Energie sparen nach)
+      GUID-Alias: STANDBYIDLE
+      Minimum der möglichen Einstellung: 0x00000000
+      Maximum der möglichen Einstellung: 0xffffffff
+      Schrittweise Erhöhung der möglichen Einstellungen: 0x00000001
+      Einheiten der möglichen Einstellungen: Sekunden
+    Index der aktuellen Wechselstromeinstellung: 0x00000708
+    Index der aktuellen Gleichstromeinstellung: 0x00000384

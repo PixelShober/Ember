@@ -1,0 +1,22 @@
+{
+  "name": "ember-docs",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Handbuch und Entwickler-Doku von Ember (Starlight)",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prebuild": "node -e \"require('fs').copyFileSync('../config/team.schema.json','public/team.schema.json')\"",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.7",
+    "astro": "7.4.2",
+    "sharp": "0.35.5"
+  },
+  "engines": {
+    "node": ">=22.23"
+  }
+}

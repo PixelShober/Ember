@@ -1,0 +1,39 @@
+---
+title: Ember
+description: Richtet Entwicklerrechner fürs Firmennetz ein – Proxy, Softwarecenter, Energie und KI-Werkzeuge.
+template: splash
+hero:
+  tagline: Ein neuer Dienstrechner, und nach zehn Minuten laufen git, npm, NuGet und pip durch den Firmenproxy. Ohne ein einziges gespeichertes Passwort.
+  image:
+    file: ../../assets/ember.svg
+  actions:
+    - text: Ember herunterladen
+      link: https://github.com/PixelShober/Ember/releases/latest
+      icon: external
+      variant: primary
+    - text: Zum Handbuch
+      link: /Ember/handbuch/installation/
+      icon: right-arrow
+      variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Proxy ohne Passwörter" icon="seti:config">
+    px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an. Ember installiert px, hält es aktuell und
+    zeigt in einer Tabelle, welches Werkzeug wohin zeigt.
+  </Card>
+  <Card title="Software über die IT" icon="seti:windows">
+    Programme kommen weiter aus dem Softwarecenter, mit den Freigaben der IT. Ember stößt die Installation an oder
+    bereitet die Mail ans Service-Center vor.
+  </Card>
+  <Card title="Energie, die zur Arbeit passt" icon="rocket">
+    Volle CPU-Leistung am Netzteil für lokale Modelle, kein Standby mitten im Build, Wake-on-LAN aus dem
+    ausgeschalteten Zustand. Ein Klick zurück auf die Werkseinstellung geht immer.
+  </Card>
+  <Card title="Eine Datei fürs ganze Team" icon="document">
+    Proxy, Softwareliste und Mailvorlagen stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich der Proxy,
+    passt du eine Zeile an, und alle haben ihn beim nächsten Start.
+  </Card>
+</CardGrid>

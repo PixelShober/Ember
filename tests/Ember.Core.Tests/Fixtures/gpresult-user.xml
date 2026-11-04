@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Rsop xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.microsoft.com/GroupPolicy/Rsop">
+  <ReadTime>2026-10-28T13:00:00.0000000Z</ReadTime>
+  <UserResults>
+    <GPO>
+      <Name>GPO-Benutzer-Basis</Name>
+      <IsValid>true</IsValid>
+      <FilterAllowed>true</FilterAllowed>
+      <AccessDenied>false</AccessDenied>
+    </GPO>
+    <GPO>
+      <Name>GPO-Laufwerkszuordnung Ü-Laufwerk</Name>
+      <IsValid>true</IsValid>
+      <FilterAllowed>true</FilterAllowed>
+      <AccessDenied>false</AccessDenied>
+    </GPO>
+    <GPO>
+      <Name>GPO-Nur-für-Vertrieb</Name>
+      <IsValid>true</IsValid>
+      <FilterAllowed>false</FilterAllowed>
+      <AccessDenied>false</AccessDenied>
+    </GPO>
+  </UserResults>
+</Rsop>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Ember.Core</RootNamespace>
+    <AssemblyName>Ember.Core</AssemblyName>
+    <!-- No NuGet packages on purpose: everything here uses the base class library,
+         PowerShell/CLI calls or late-bound COM. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- One source of truth for all texts: the UI locale files are embedded here as well,
+         so host messages (log, steps, errors) use the same keys and the same umlauts. -->
+    <EmbeddedResource Include="..\..\ui\src\locales\*.json" LogicalName="Ember.Locales.%(Filename).json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ember.Core.Tests" />
+  </ItemGroup>
+
+</Project>
