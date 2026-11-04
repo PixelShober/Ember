@@ -55,9 +55,14 @@ public static class Gpu
 public sealed record LlamaInstall(string Tag, string Variant, string Path, bool Current);
 
 /// <param name="Offloaded">"62/62": layers on the GPU, from the server's log ("offloaded 62/62 layers to GPU").</param>
+/// <param name="Loaded">The server answers (log: "model loaded" / "listening on").</param>
+/// <param name="Device">The GPU llama.cpp found ("CUDA0: NVIDIA RTX …"); null after loading means CPU only.</param>
+/// <param name="PromptTps">Tokens per second while reading the prompt, from the last request.</param>
+/// <param name="GenerationTps">Tokens per second while writing the answer, from the last request.</param>
 public sealed record LlamaStatus(IReadOnlyList<LlamaInstall> Installed, string? Current, string RecommendedVariant,
                                  bool ServerRunning, int Port, string? ServerModel, string? ServerAlias, string? ServerProfile,
-                                 int? ServerContext, string? Offloaded, string? LastError);
+                                 int? ServerContext, string? Offloaded, string? LastError,
+                                 bool Loaded = false, string? Device = null, double? PromptTps = null, double? GenerationTps = null);
 
 /// <summary>Context size and KV cache for llama-server; the weights stay fully in VRAM in every profile.</summary>
 public sealed record LlamaProfile(string Id, int Context, string KvCache, bool Mtp);
@@ -67,7 +72,9 @@ public static class LlamaCpp
 {
     const string Repo = "ggml-org/llama.cpp";
     static Process? _server;
-    static string? _serverModel, _serverAlias, _serverProfile, _offloaded, _lastError;
+    static string? _serverModel, _serverAlias, _serverProfile, _offloaded, _lastError, _device;
+    static bool _loaded;
+    static double? _promptTps, _genTps;
     static int? _serverContext;
 
     /// <summary>
@@ -88,7 +95,9 @@ public static class LlamaCpp
         if (!Directory.Exists(Paths.LlamaDir)) return Array.Empty<LlamaInstall>();
         return Directory.GetDirectories(Paths.LlamaDir)
             .Select(d => (Dir: d, Name: Path.GetFileName(d)))
-            .Where(x => File.Exists(Path.Combine(x.Dir, "llama-server.exe")))
+            .Where(x => !x.Name.EndsWith(".part", StringComparison.Ordinal) && File.Exists(Path.Combine(x.Dir, "llama-server.exe")))
+            // A CUDA build without its runtime (half-finished install) would run on the CPU: not offered.
+            .Where(x => !x.Name.EndsWith("-cuda", StringComparison.Ordinal) || HasCudaRuntime(x.Dir))
             .Select(x =>
             {
                 var dash = x.Name.IndexOf('-');
@@ -114,7 +123,8 @@ public static class LlamaCpp
         bool running = _server is { HasExited: false };
         return new(Installed(s), string.IsNullOrEmpty(s.LlamaCurrent) ? null : s.LlamaCurrent, await RecommendVariantAsync(s, ct),
                    running, s.LlamaPort, running ? _serverModel : null, running ? _serverAlias : null, running ? _serverProfile : null,
-                   running ? _serverContext : null, running ? _offloaded : null, _lastError);
+                   running ? _serverContext : null, running ? _offloaded : null, _lastError,
+                   running && _loaded, running ? _device : null, running ? _promptTps : null, running ? _genTps : null);
     }
 
     /// <summary>
@@ -137,8 +147,8 @@ public static class LlamaCpp
                 .OrderByDescending(n => n.Ver)
                 .FirstOrDefault();
             if (cuda.Url == null) return null;
-            var cudart = names.FirstOrDefault(n => n.Name.StartsWith("cudart", StringComparison.OrdinalIgnoreCase) &&
-                                                   n.Name.Contains($"cuda-{cuda.Ver}-x64", StringComparison.OrdinalIgnoreCase)).Url;
+            // Only the Windows zip: the same release also has "cudart-…-bin-ubuntu-cuda-13.4-x64.tar.gz".
+            var cudart = names.FirstOrDefault(n => Regex.IsMatch(n.Name, $@"^cudart-.*win-cuda-{Regex.Escape(cuda.Ver.ToString())}-x64\.zip$", RegexOptions.IgnoreCase)).Url;
             return (cuda.Url, cudart);
         }
         var pick = Candidates(variant == "vulkan" ? @"^llama-.*-bin-win-vulkan-x64\.zip$" : @"^llama-.*-bin-win-(cpu|avx2)-x64\.zip$").FirstOrDefault().Url;
@@ -203,14 +213,20 @@ public static class LlamaCpp
             {
                 step.SetProgress(null);
                 int count = 0;
+                // Unpacked next to the target first: a half-finished build never shows up as installed.
+                var temp = targetDir + ".part";
+                if (Directory.Exists(temp)) Directory.Delete(temp, recursive: true);
                 // Program and CUDA runtime go into the same folder, next to llama-server.exe.
-                foreach (var f in files) count += await Task.Run(() => Zip.ExtractSafe(f, targetDir, ct), ct);
+                foreach (var f in files) count += await Task.Run(() => Zip.ExtractSafe(f, temp, ct), ct);
                 // Some releases put everything into a sub folder; flatten so llama-server.exe is at the top.
-                var server = Directory.EnumerateFiles(targetDir, "llama-server.exe", SearchOption.AllDirectories).FirstOrDefault()
+                var server = Directory.EnumerateFiles(temp, "llama-server.exe", SearchOption.AllDirectories).FirstOrDefault()
                              ?? throw new EmberException("llamaNoServer");
                 var serverDir = Path.GetDirectoryName(server)!;
-                if (!serverDir.Equals(targetDir, StringComparison.OrdinalIgnoreCase))
-                    foreach (var file in Directory.GetFiles(serverDir)) File.Move(file, Path.Combine(targetDir, Path.GetFileName(file)), overwrite: true);
+                if (!serverDir.Equals(temp, StringComparison.OrdinalIgnoreCase))
+                    foreach (var file in Directory.GetFiles(serverDir)) File.Move(file, Path.Combine(temp, Path.GetFileName(file)), overwrite: true);
+                if (variant == "cuda" && !HasCudaRuntime(temp)) throw new EmberException("llamaNoCudaRuntime", ("path", targetDir));
+                if (Directory.Exists(targetDir)) Directory.Delete(targetDir, recursive: true);
+                Directory.Move(temp, targetDir);
                 setCurrent(Path.GetFileName(targetDir));
                 foreach (var f in files) { try { File.Delete(f); } catch { } }
                 step.Report(L.T("jobs.extracted", ("count", count), ("path", targetDir)));
@@ -272,6 +288,7 @@ public static class LlamaCpp
         var current = Installed(s).FirstOrDefault(i => i.Current) ?? Installed(s).FirstOrDefault()
                       ?? throw new EmberException("llamaNotInstalled");
         if (!File.Exists(model.Path)) throw new EmberException("modelMissing", ("path", model.Path));
+        if (current.Variant == "cuda" && !HasCudaRuntime(current.Path)) throw new EmberException("llamaNoCudaRuntime", ("path", current.Path));
         var profile = Profile(s.LlamaProfile);
         var psi = new ProcessStartInfo(Path.Combine(current.Path, "llama-server.exe"))
         {
@@ -284,14 +301,18 @@ public static class LlamaCpp
         foreach (var a in ServerArgs(model, profile, s.LlamaPort, s.LlamaArgs)) psi.ArgumentList.Add(a);
         Log.Debug("> llama-server " + string.Join(' ', psi.ArgumentList), "llama");
 
-        _offloaded = null;
-        _lastError = null;
+        _offloaded = _lastError = _device = null;
+        _loaded = false;
+        _promptTps = _genTps = null;
         var p = new Process { StartInfo = psi, EnableRaisingEvents = true };
         void OnLine(string? line)
         {
             if (line == null) return;
             Log.Debug(line, "llama");
             if (Offloaded(line) is { } layers) _offloaded = layers;
+            if (Device(line) is { } device) _device ??= device;
+            if (line.Contains("model loaded", StringComparison.OrdinalIgnoreCase) || line.Contains("listening on", StringComparison.OrdinalIgnoreCase)) _loaded = true;
+            if (Speed(line) is { } speed) { if (speed.Prompt) _promptTps = speed.Tps; else _genTps = speed.Tps; }
             if (line.Contains("out of memory", StringComparison.OrdinalIgnoreCase) || line.Contains("failed to", StringComparison.OrdinalIgnoreCase))
                 _lastError = line.Trim();
         }
@@ -309,11 +330,36 @@ public static class LlamaCpp
         Log.Info(L.T("ai.server.started", ("model", model.Name), ("port", s.LlamaPort), ("profile", profile.Id), ("context", profile.Context)), "llama");
     }
 
+    /// <summary>The CUDA runtime (cudart64_*.dll) next to llama-server.exe; without it the CUDA build silently runs on the CPU.</summary>
+    internal static bool HasCudaRuntime(string dir) =>
+        Directory.Exists(dir) && Directory.EnumerateFiles(dir, "cudart64_*.dll").Any();
+
     /// <summary>"load_tensors: offloaded 65/65 layers to GPU" → "65/65".</summary>
     internal static string? Offloaded(string line)
     {
         var m = Regex.Match(line, @"offloaded (\d+)/(\d+) layers to GPU", RegexOptions.IgnoreCase);
         return m.Success ? $"{m.Groups[1].Value}/{m.Groups[2].Value}" : null;
+    }
+
+    /// <summary>
+    /// "ggml_cuda_init: found 1 CUDA devices: Device 0: NVIDIA RTX PRO 5000 …" or
+    /// "using device CUDA0 (NVIDIA …)" → the GPU; the CPU backend says nothing like that.
+    /// </summary>
+    internal static string? Device(string line)
+    {
+        var m = Regex.Match(line, @"(?:Device \d+|using device (?:CUDA|Vulkan)\d+)\s*[:(]\s*([^,()]+)", RegexOptions.IgnoreCase);
+        return m.Success && !m.Groups[1].Value.Contains("CPU", StringComparison.OrdinalIgnoreCase) ? m.Groups[1].Value.Trim() : null;
+    }
+
+    /// <summary>
+    /// The speeds from the server log: "prompt eval time = … ( … tokens per second)" is reading the
+    /// prompt, "eval time = …" writing the answer.
+    /// </summary>
+    internal static (bool Prompt, double Tps)? Speed(string line)
+    {
+        var m = Regex.Match(line, @"(prompt eval|eval) time\s*=.*?([\d.]+) tokens per second", RegexOptions.IgnoreCase);
+        if (!m.Success || !double.TryParse(m.Groups[2].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var tps)) return null;
+        return (m.Groups[1].Value.StartsWith("prompt", StringComparison.OrdinalIgnoreCase), Math.Round(tps, 1));
     }
 
     public static void StopServer()
@@ -380,11 +426,20 @@ public static class Models
             bool local = !string.IsNullOrWhiteSpace(m.Path);
             var path = local ? Environment.ExpandEnvironmentVariables(m.Path!.Trim().Trim('"')) : System.IO.Path.Combine(Dir(s), Net.FileName(m.Url));
             var exists = File.Exists(path);
-            var name = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : System.IO.Path.GetFileNameWithoutExtension(path);
-            var alias = !string.IsNullOrWhiteSpace(m.Alias) ? m.Alias! : System.IO.Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
-            return new ModelState(m.Id, name, m.Url, m.Note, exists, exists ? new FileInfo(path).Length : null, path,
-                                  local, x.Mine, alias, m.Mtp ?? false, m.Args ?? new List<string>());
-        }).ToList();
+            // The same file as a built-in model (picked on the PC, or listed in team.json without
+            // settings): it gets that model's alias, MTP and arguments, so it runs as fast.
+            var known = Known.FirstOrDefault(k => Net.FileName(k.Url).Equals(System.IO.Path.GetFileName(path), StringComparison.OrdinalIgnoreCase));
+            var name = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : known?.Name ?? System.IO.Path.GetFileNameWithoutExtension(path);
+            var alias = !string.IsNullOrWhiteSpace(m.Alias) ? m.Alias! : known?.Alias ?? System.IO.Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+            return new ModelState(m.Id, name, m.Url, m.Note ?? known?.Note, exists, exists ? new FileInfo(path).Length : null, path,
+                                  local, x.Mine, alias, m.Mtp ?? known?.Mtp ?? false, m.Args ?? known?.Args ?? new List<string>());
+        })
+        // One entry per file: a local pick of the downloaded Qwen file is the same model.
+        .GroupBy(m => m.Path, StringComparer.OrdinalIgnoreCase)
+        .Select(g => g.OrderBy(m => m.Local ? 1 : 0).First())
+        .ToList();
+
+    static IEnumerable<ModelEntry> Known => new[] { Qwen };
 
     /// <summary>A GGUF file that is already on this PC or a share joins the list as it is.</summary>
     public static ModelEntry AddLocal(UserSettings s, string file)

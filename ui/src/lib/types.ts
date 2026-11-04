@@ -121,6 +121,8 @@ export interface ProxyRow {
   canSet: boolean;
   canRemove: boolean;
   hint: string | null;
+  /** Windows row only: what the PAC file says and the exceptions every tool gets. */
+  pac?: { proxies: string[]; direct: string[]; exceptions: string[]; source: 'user' | 'team' | 'pac' | 'none' } | null;
 }
 
 export interface AccessEntry {
@@ -463,6 +465,12 @@ export interface LlamaStatus {
   /** "62/62": layers on the GPU, from the server log. */
   offloaded: string | null;
   lastError: string | null;
+  /** The server answers. */
+  loaded: boolean;
+  /** GPU llama.cpp found; null once loaded = CPU only. */
+  device: string | null;
+  promptTps: number | null;
+  generationTps: number | null;
 }
 
 export interface ModelState {

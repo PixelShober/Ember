@@ -79,7 +79,9 @@ Jedes Profil startet mit `-ngl 99` (alle Schichten auf die GPU), `-fa on`, `--ji
 
 Der Server lauscht nur auf `127.0.0.1`. Sobald das Modell geladen ist, zeigt Ember die Prüfung aus der Anleitung:
 
-- **Schichten auf der GPU**: Im Log steht „offloaded X/Y layers to GPU“. Sind es nicht alle, rechnet ein Teil auf der CPU, das kostet viel Tempo.
+- **Grafikkarte**: welche GPU llama.cpp gefunden hat. Findet ein CUDA-Build keine, rechnet er still auf der CPU, oft weil die CUDA-Laufzeit fehlt. Ember warnt dann. Einen CUDA-Build ohne `cudart64_*.dll` startet Ember gar nicht erst.
+- **Schichten auf der GPU**: steht im Log „offloaded X/Y layers to GPU“, zeigt Ember das an. Sind es nicht alle, rechnet ein Teil auf der CPU.
+- **Tempo**: Token pro Sekunde beim Lesen des Prompts und beim Schreiben der Antwort, aus der letzten Anfrage.
 - **Freier VRAM**: Mindestens 0,5 bis 1 GB sollten frei bleiben. Sonst ein kleineres Profil nehmen.
 
 „Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Beim Beenden von Ember stoppt der Server mit.

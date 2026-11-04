@@ -106,6 +106,23 @@
               <td class="nowrap"><strong>{host(row.label)}</strong></td>
               <td>
                 <code class="break">{row.value}</code>
+                {#if row.pac}
+                  <dl class="pac">
+                    {#if row.pac.proxies.length}
+                      <dt>{t('proxy.pac.proxies')}</dt>
+                      <dd>{#each row.pac.proxies as p (p)}<span class="badge">{p}</span>{/each}</dd>
+                    {/if}
+                    {#if row.pac.direct.length && row.pac.source !== 'pac'}
+                      <dt>{t('proxy.pac.direct')}</dt>
+                      <dd>{#each row.pac.direct as d (d)}<span class="badge">{d}</span>{/each}</dd>
+                    {/if}
+                    <dt>{t('proxy.pac.exceptions')}</dt>
+                    <dd>
+                      {#each row.pac.exceptions as d (d)}<span class="badge info">{d}</span>{:else}<span class="small muted">{t('proxy.pac.none')}</span>{/each}
+                      <span class="small muted">· {t(`proxy.pac.sources.${row.pac.source}`)}</span>
+                    </dd>
+                  </dl>
+                {/if}
                 {#if row.hint}<p class="hint">{host(row.hint)}</p>{/if}
               </td>
               <td><span class="badge {stateTone[row.state]}">{row.tool === 'nodeCerts' ? t(`proxy.nodeCerts.states.${row.state}`) : t(`proxy.states.${row.state}`)}</span></td>
@@ -127,6 +144,9 @@
 </div>
 
 <style>
+  .pac { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 8px 0 4px; padding: 8px 10px; border-radius: var(--radius-small); background: var(--surface-2); }
+  .pac dt { color: var(--text-muted); font-size: 12.5px; }
+  .pac dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .kerberos { margin-bottom: 12px; }
   .actions { margin-bottom: 8px; }
   .right { text-align: right; }

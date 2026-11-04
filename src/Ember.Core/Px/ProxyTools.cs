@@ -13,7 +13,12 @@ public enum ProxyState
     Info,
 }
 
-public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint);
+/// <param name="Pac">Only on the Windows row: what the PAC file says and which exceptions every tool gets (shown once, there).</param>
+public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint, PacInfo? Pac = null);
+
+/// <param name="Exceptions">The internal domains every tool gets as exception.</param>
+/// <param name="Source">Where they come from: "user", "team", "pac" or "none".</param>
+public sealed record PacInfo(IReadOnlyList<string> Proxies, IReadOnlyList<string> Direct, IReadOnlyList<string> Exceptions, string Source);
 
 /// <param name="Domains">Internal domains git reaches without proxy.</param>
 /// <param name="MissingExceptions">git URLs for them without "proxy = ''" or without "allowNTLMAuth = true" yet.</param>
@@ -73,14 +78,15 @@ public static class ProxyTools
                 var pac = Net.ReadPacFromRegistry();
                 var sys = Net.ReadSystemProxyFromRegistry();
                 var value = pac != null ? "PAC " + pac : sys ?? L.T("proxy.none");
-                return new ProxyRow(id, label, value, ProxyState.Info, false, false, L.T("proxy.hints.windows"));
+                var info = new PacInfo(s.PacProxies, s.PacDirect, NoProxy.ForTools(s.InternalDomainList), s.InternalDomainSource);
+                return new ProxyRow(id, label, value, ProxyState.Info, false, false, L.T("proxy.hints.windows"), info);
             }
             case "env":
             {
                 var http = Environment.GetEnvironmentVariable("HTTP_PROXY", EnvironmentVariableTarget.User);
                 var https = Environment.GetEnvironmentVariable("HTTPS_PROXY", EnvironmentVariableTarget.User);
                 var no = Environment.GetEnvironmentVariable("NO_PROXY", EnvironmentVariableTarget.User);
-                var value = $"HTTP_PROXY={http ?? "–"} · HTTPS_PROXY={https ?? "–"} · NO_PROXY={no ?? "–"}";
+                var value = $"HTTP_PROXY={http ?? "–"} · HTTPS_PROXY={https ?? "–"} · NO_PROXY " + Exceptions(no, s.NoProxyList);
                 var state = StateOf(s, http, https);
                 return new ProxyRow(id, label, value, state, state != ProxyState.Px, state == ProxyState.Px, L.T("proxy.hints.env"));
             }
@@ -100,8 +106,7 @@ public static class ProxyTools
                 var value = r.LastLine;
                 var state = StateOf(s, value);
                 var missing = await GitMissingExceptionsAsync(Tools.Git, s, ct);
-                var domains = NoProxy.ForTools(s.InternalDomainList).Where(d => !d.Contains('/')).ToList();
-                var shown = $"http.proxy={Shown(value)}" + (domains.Count > 0 ? " · " + L.T("proxy.noProxyFor", ("list", string.Join(", ", domains))) : "");
+                var shown = $"http.proxy={Shown(value)}";
                 string? hint = missing.Count > 0 && state == ProxyState.Px ? L.T("proxy.hints.gitExceptionsMissing", ("list", string.Join(", ", missing))) : L.T("proxy.hints.git");
                 return new ProxyRow(id, label, shown, state, state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px, hint);
             }
@@ -128,7 +133,7 @@ public static class ProxyTools
                 var no = NuGetConfigEditor.Get(Tools.NuGetConfig, "no_proxy");
                 var state = StateOf(s, value);
                 bool stale = state == ProxyState.Px && !SameList(no, s.NoProxyList);
-                return new ProxyRow(id, label, $"http_proxy={Shown(value)} · no_proxy={Shown(no)}", state, state != ProxyState.Px || stale, state == ProxyState.Px, L.T("proxy.hints.nuget"));
+                return new ProxyRow(id, label, $"http_proxy={Shown(value)} · no_proxy " + Exceptions(no, s.NoProxyList), state, state != ProxyState.Px || stale, state == ProxyState.Px, L.T("proxy.hints.nuget"));
             }
             case "pip":
             {
@@ -144,7 +149,7 @@ public static class ProxyTools
                 var no = JsoncEditor.GetStringArray(text, "http.noProxy");
                 var state = StateOf(s, value);
                 bool stale = state == ProxyState.Px && !SameList(no == null ? null : string.Join(",", no), string.Join(",", VsCodeNoProxy(s)));
-                return new ProxyRow(id, label, $"http.proxy={Shown(value)} · http.noProxy={(no is { Count: > 0 } ? string.Join(", ", no) : "–")}", state,
+                return new ProxyRow(id, label, $"http.proxy={Shown(value)} · http.noProxy " + Exceptions(no == null ? null : string.Join(",", no), string.Join(",", VsCodeNoProxy(s))), state,
                                     state != ProxyState.Px || stale, state == ProxyState.Px, L.T("proxy.hints.vscode"));
             }
         }
@@ -189,6 +194,10 @@ public static class ProxyTools
         (a ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase)
                  .SetEquals(b.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
+    /// <summary>The exception list is shown once (Windows row); per tool only whether it is up to date.</summary>
+    static string Exceptions(string? current, string wanted) =>
+        string.IsNullOrWhiteSpace(current) ? L.T("proxy.exceptions.missing") : SameList(current, wanted) ? L.T("proxy.exceptions.current") : L.T("proxy.exceptions.stale");
+
     static ProxyRow Missing(string id, string label) =>
         new(id, label, L.T("proxy.toolMissing"), ProxyState.Missing, false, false, null);
 
@@ -209,7 +218,7 @@ public static class ProxyTools
                     Environment.SetEnvironmentVariable("HTTPS_PROXY", s.PxUrl, EnvironmentVariableTarget.User);
                     Environment.SetEnvironmentVariable("NO_PROXY", s.NoProxyList, EnvironmentVariableTarget.User);
                 }, ct);
-                return $"HTTP(S)_PROXY={s.PxUrl} · NO_PROXY={s.NoProxyList}";
+                return $"HTTP(S)_PROXY={s.PxUrl} · NO_PROXY · " + L.T("proxy.restartTerminals");
 
             case "powershell":
                 return L.T("proxy.powershell.set", ("files", string.Join(" · ", PowerShellProfile.Set(s))));
@@ -237,7 +246,7 @@ public static class ProxyTools
                     parts.Add("http.sslBackend schannel");
                 }
                 var urls = NoProxy.GitUrls(s.InternalDomainList);
-                if (urls.Count > 0) parts.Add(L.T("proxy.noProxyFor", ("list", string.Join(", ", NoProxy.ForTools(s.InternalDomainList)))) + " + allowNTLMAuth");
+                if (urls.Count > 0) parts.Add(L.T("proxy.gitInternal"));
                 return "git config --global " + string.Join(" · ", parts);
             }
 

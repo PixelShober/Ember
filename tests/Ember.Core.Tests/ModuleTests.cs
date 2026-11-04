@@ -72,6 +72,7 @@ public class ModuleTests
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cuda-13.4-x64.zip",
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-cuda-13.4-arm64.zip",
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-win-vulkan-x64.zip",
+            "https://github.com/ggml-org/llama.cpp/releases/download/b12110/cudart-llama-b12110-bin-ubuntu-cuda-13.4-x64.tar.gz",
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/cudart-llama-bin-win-cuda-12.4-x64.zip",
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/cudart-llama-bin-win-cuda-13.4-x64.zip",
             "https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-macos-arm64.zip",
@@ -119,6 +120,39 @@ public class ModuleTests
         // The old default would cut the context to 8K, so it is ignored.
         Assert.DoesNotContain("8192", LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("lang"), 8080, "-ngl 99 -c 8192"));
         Assert.Equal("62/62", LlamaCpp.Offloaded("load_tensors: offloaded 62/62 layers to GPU"));
+    }
+
+    [Fact]
+    public void Server_log_tells_gpu_and_speed()
+    {
+        Assert.Equal("NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU",
+                     LlamaCpp.Device("  Device 0: NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU, compute capability 12.0, VMM: yes"));
+        Assert.Null(LlamaCpp.Device("0.04.426.603 I cmn          init: llama threadpool init, n_threads = 24"));
+        Assert.Equal((true, 1840.2), LlamaCpp.Speed("prompt eval time =     195.61 ms /   360 tokens (    0.54 ms per token,  1840.24 tokens per second)"));
+        Assert.Equal((false, 78.4), LlamaCpp.Speed("       eval time =    6380.11 ms /   500 tokens (   12.76 ms per token,    78.37 tokens per second)"));
+        // The progress lines while reading the prompt are no measurement.
+        Assert.Null(LlamaCpp.Speed("prompt processing, n_tokens =    360, progress = 0.74, t =  10.12 s / 35.59 tokens per second"));
+    }
+
+    [Fact]
+    public void Picked_qwen_file_runs_with_the_guide_settings()
+    {
+        var dir = Directory.CreateTempSubdirectory("ember-qwen-").FullName;
+        try
+        {
+            var file = Path.Combine(dir, "Qwen3.8-27B-UD-Q4_K_XL.gguf");
+            File.WriteAllText(file, "GGUF");
+            var s = new UserSettings { ModelsDir = dir };
+            Models.AddLocal(s, file);
+            var qwen = Models.List(s, new TeamConfig()).Single(m => m.Path.Equals(file, StringComparison.OrdinalIgnoreCase));
+            Assert.Equal("qwen3.8-27b", qwen.Alias);
+            Assert.True(qwen.Mtp);
+            Assert.Contains("--chat-template-kwargs", qwen.Args);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Fact]

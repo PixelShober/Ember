@@ -62,8 +62,9 @@ export function createMockBridge(): Bridge {
   const pxUrl = px.url;
 
   const rows = (): ProxyRow[] => [
-    { tool: 'windows', label: t('proxy.tools.windows'), value: 'PAC http://pac.firma.example/proxy.pac', state: 'info', canSet: false, canRemove: false, hint: t('proxy.hints.windows') },
-    { tool: 'env', label: t('proxy.tools.env'), value: `HTTP_PROXY=${pxUrl} · HTTPS_PROXY=${pxUrl} · NO_PROXY=localhost,127.0.0.1,::1,firma.local`, state: 'px', canSet: false, canRemove: true, hint: null },
+    { tool: 'windows', label: t('proxy.tools.windows'), value: 'PAC http://pac.firma.example/proxy.pac', state: 'info', canSet: false, canRemove: false, hint: t('proxy.hints.windows'),
+      pac: { proxies: ['proxy.firma.example:8080'], direct: ['firma.local', 'intranet.firma.example', '10.0.0.0/8'], exceptions: ['firma.local', 'intranet.firma.example', '10.0.0.0/8'], source: 'pac' } },
+    { tool: 'env', label: t('proxy.tools.env'), value: `HTTP_PROXY=${pxUrl} · HTTPS_PROXY=${pxUrl} · NO_PROXY ${t('proxy.exceptions.current')}`, state: 'px', canSet: false, canRemove: true, hint: null },
     { tool: 'powershell', label: t('proxy.tools.powershell'), value: '–', state: 'unset', canSet: true, canRemove: false,
       hint: t('proxy.hints.powershell', { files: 'C:\\Users\\jmoessner\\Documents\\WindowsPowerShell\\profile.ps1 · C:\\Users\\jmoessner\\Documents\\PowerShell\\profile.ps1' }) },
     { tool: 'git', label: 'git', value: pxUrl, state: 'px', canSet: false, canRemove: true, hint: null },
@@ -226,7 +227,7 @@ export function createMockBridge(): Bridge {
   const ai: AiStatus = {
     gpus: [{ name: 'NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU', driver: '581.42', cuda: '13.2', memoryTotalMb: 24463, memoryUsedMb: 1830, powerDraw: 18.4, powerLimit: 175, temperature: 46, utilization: 3 }],
     llama: { installed: [{ tag: 'b12110', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12110-cuda', current: true }, { tag: 'b12096', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12096-cuda', current: false }],
-      current: 'b12110-cuda', recommendedVariant: 'cuda', serverRunning: false, port: 8080, serverModel: null, serverAlias: null, serverProfile: null, serverContext: null, offloaded: null, lastError: null },
+      current: 'b12110-cuda', recommendedVariant: 'cuda', serverRunning: false, port: 8080, serverModel: null, serverAlias: null, serverProfile: null, serverContext: null, offloaded: null, lastError: null, loaded: false, device: null, promptTps: null, generationTps: null },
     models: [
       { id: 'qwen3.8-27b', name: 'Qwen3.8-27B (UD-Q4_K_XL)', url: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf', note: '≈ 17,6 GB · 24 GB VRAM', downloaded: true, size: 17_612_000_000, path: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.gguf', local: false, mine: false, alias: 'qwen3.8-27b', mtp: true },
       { id: 'Devstral-Small-Q4_K_M.gguf', name: 'Devstral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 14_330_000_000, path: 'D:\\KI\\Devstral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'devstral-small-q4_k_m', mtp: false },
@@ -389,7 +390,7 @@ export function createMockBridge(): Bridge {
       const profile = profiles.find((x) => x.id === p.profile) ?? profiles[0];
       ai.profile = profile.id;
       user.llamaProfile = profile.id;
-      Object.assign(ai.llama, { serverRunning: true, serverModel: m.name, serverAlias: m.alias, serverProfile: profile.id, serverContext: profile.context, offloaded: '65/65' });
+      Object.assign(ai.llama, { serverRunning: true, serverModel: m.name, serverAlias: m.alias, serverProfile: profile.id, serverContext: profile.context, offloaded: '65/65', loaded: true, device: 'NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU', promptTps: 1840.2, generationTps: 78.4 });
       ai.gpus[0].memoryUsedMb = 22_900;
       return null;
     },

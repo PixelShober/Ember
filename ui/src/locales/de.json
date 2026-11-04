@@ -181,7 +181,8 @@
     "modelNotGguf": "Das ist keine GGUF-Datei: {path}",
     "modelLocal": "„{path}“ liegt schon auf dem PC, da gibt es nichts herunterzuladen.",
     "modelFromTeam": "Dieses Modell kommt aus der Team-Konfiguration und lässt sich hier nicht entfernen.",
-    "piConfigInvalid": "Die Pi-Konfiguration {path} ist kein gültiges JSON: {detail}"
+    "piConfigInvalid": "Die Pi-Konfiguration {path} ist kein gültiges JSON: {detail}",
+    "llamaNoCudaRuntime": "Neben llama-server.exe fehlt die CUDA-Laufzeit (cudart64_*.dll) in {path}. Ohne sie läuft der CUDA-Build nur auf der CPU. Installier llama.cpp neu."
   },
   "jobs": {
     "started": "gestartet",
@@ -336,10 +337,28 @@
         "info": "–"
       }
     },
-    "noProxyFor": "ohne Proxy: {list}",
     "powershell": {
       "partial": "nur in einem der beiden Profile",
       "set": "px im PowerShell-Profil eingetragen: {files}. Neue PowerShell-Fenster nutzen es."
+    },
+    "exceptions": {
+      "missing": "fehlt",
+      "current": "aktuell",
+      "stale": "veraltet"
+    },
+    "restartTerminals": "offene Terminals neu starten, erst neue Fenster sehen die Variablen",
+    "gitInternal": "interne Domains direkt und mit Windows-Anmeldung",
+    "pac": {
+      "proxies": "Firmenproxy laut PAC",
+      "direct": "Laut PAC ohne Proxy",
+      "exceptions": "Ohne Proxy, für alle Werkzeuge",
+      "none": "keine internen Domains",
+      "sources": {
+        "user": "aus deinen Einstellungen",
+        "team": "aus der Team-Konfiguration",
+        "pac": "aus der PAC-Datei",
+        "none": "nirgends eingetragen"
+      }
     }
   },
   "px": {
@@ -790,7 +809,10 @@
       "offloadedPending": "Modell wird geladen …",
       "vramFree": "{free} MB VRAM frei",
       "vramLow": "Nur noch {free} MB VRAM frei. Mindestens 0,5 bis 1 GB sollten frei bleiben, sonst Kontext senken.",
-      "lastError": "Letzte Fehlermeldung: {line}"
+      "lastError": "Letzte Fehlermeldung: {line}",
+      "generation": "{tps} Token/s Antwort",
+      "prompt": "{tps} Token/s Prompt",
+      "onCpu": "llama-server rechnet auf der CPU, nicht auf der NVIDIA. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu."
     },
     "pi": {
       "title": "Pi (Coding-Agent)",

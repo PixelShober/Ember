@@ -71,12 +71,13 @@
     await load();
   }
 
-  // While the model loads, the log tells how many layers made it onto the GPU.
+  // While the model loads, ask again until the server answers.
   $effect(() => {
-    if (!status?.llama.serverRunning || status.llama.offloaded) return;
-    const timer = setInterval(load, 2000);
+    if (!status?.llama.serverRunning || status.llama.loaded) return;
+    const timer = setInterval(load, 3000);
     return () => clearInterval(timer);
   });
+  const onCpu = $derived(!!status?.llama.loaded && !status.llama.device && status.llama.current?.endsWith('-cuda'));
 
   const gpu = $derived(status?.gpus[0]);
   const vramFree = $derived(gpu?.memoryTotalMb != null && gpu.memoryUsedMb != null ? gpu.memoryTotalMb - gpu.memoryUsedMb : null);
@@ -226,10 +227,17 @@
       {#if status.llama.serverRunning}
         <div class="check">
           <span class="small muted">{t('ai.server.check')}</span>
-          {#if !status.llama.offloaded}<span class="badge">{t('ai.server.offloadedPending')}</span>
-          {:else if !partial}<span class="badge ok"><Icon name="check" size={12} />{t('ai.server.offloaded', { layers: status.llama.offloaded })}</span>{/if}
+          {#if !status.llama.loaded}<span class="badge">{t('ai.server.offloadedPending')}</span>
+          {:else}
+            {#if status.llama.device}<span class="badge ok"><Icon name="check" size={12} />{status.llama.device}</span>{/if}
+            {#if status.llama.offloaded && !partial}<span class="badge ok">{t('ai.server.offloaded', { layers: status.llama.offloaded })}</span>{/if}
+          {/if}
           {#if vramFree != null}<span class="badge {vramFree < 512 ? 'warn' : 'ok'}">{t('ai.server.vramFree', { free: vramFree.toLocaleString() })}</span>{/if}
+          {#if status.llama.generationTps != null}<span class="badge info">{t('ai.server.generation', { tps: status.llama.generationTps.toLocaleString() })}</span>{/if}
+          {#if status.llama.promptTps != null}<span class="badge">{t('ai.server.prompt', { tps: status.llama.promptTps.toLocaleString() })}</span>{/if}
+          <button class="btn ghost small" onclick={load}><Icon name="refresh" size={13} />{t('common.refresh')}</button>
         </div>
+        {#if onCpu}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.onCpu')}</p></div>{/if}
         {#if partial}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.offloadedPartial', { layers: status.llama.offloaded ?? '' })}</p></div>{/if}
         {#if vramFree != null && vramFree < 512}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.vramLow', { free: vramFree.toLocaleString() })}</p></div>{/if}
       {/if}

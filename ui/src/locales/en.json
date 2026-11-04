@@ -181,7 +181,8 @@
     "modelNotGguf": "This is not a GGUF file: {path}",
     "modelLocal": "“{path}” is already on this PC, there is nothing to download.",
     "modelFromTeam": "This model comes from the team configuration and cannot be removed here.",
-    "piConfigInvalid": "The Pi configuration {path} is not valid JSON: {detail}"
+    "piConfigInvalid": "The Pi configuration {path} is not valid JSON: {detail}",
+    "llamaNoCudaRuntime": "The CUDA runtime (cudart64_*.dll) is missing next to llama-server.exe in {path}. Without it the CUDA build runs on the CPU only. Reinstall llama.cpp."
   },
   "jobs": {
     "started": "started",
@@ -336,10 +337,28 @@
         "info": "–"
       }
     },
-    "noProxyFor": "no proxy for: {list}",
     "powershell": {
       "partial": "only in one of the two profiles",
       "set": "px set in the PowerShell profile: {files}. New PowerShell windows use it."
+    },
+    "exceptions": {
+      "missing": "missing",
+      "current": "up to date",
+      "stale": "outdated"
+    },
+    "restartTerminals": "restart open terminals, only new windows see the variables",
+    "gitInternal": "internal domains directly and with Windows sign-in",
+    "pac": {
+      "proxies": "Company proxy per PAC",
+      "direct": "Without proxy per PAC",
+      "exceptions": "Without proxy, for every tool",
+      "none": "no internal domains",
+      "sources": {
+        "user": "from your settings",
+        "team": "from the team configuration",
+        "pac": "from the PAC file",
+        "none": "not set anywhere"
+      }
     }
   },
   "px": {
@@ -790,7 +809,10 @@
       "offloadedPending": "Loading the model …",
       "vramFree": "{free} MB VRAM free",
       "vramLow": "Only {free} MB VRAM left. At least 0.5 to 1 GB should stay free, otherwise lower the context.",
-      "lastError": "Last error: {line}"
+      "lastError": "Last error: {line}",
+      "generation": "{tps} tokens/s answer",
+      "prompt": "{tps} tokens/s prompt",
+      "onCpu": "llama-server runs on the CPU, not the NVIDIA card. Usually the CUDA runtime next to llama-server.exe is missing. Reinstall llama.cpp."
     },
     "pi": {
       "title": "Pi (coding agent)",

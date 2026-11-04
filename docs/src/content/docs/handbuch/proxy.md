@@ -82,6 +82,8 @@ Interne Server sind über den Firmenproxy oft nicht erreichbar, oder der Umweg k
 | VS Code | `"http.noProxy": ["localhost", "127.0.0.1", "::1", "firma.local"]` |
 | pip | `pip.ini` kennt keine Ausnahmen, pip nimmt `NO_PROXY` |
 
+Die Liste steht in der Diagnose einmal, in der Zeile „Windows (PAC/Systemproxy)“: daneben der Firmenproxy laut PAC-Datei und woher die Ausnahmen kommen. Bei den einzelnen Werkzeugen steht nur, ob ihre Ausnahmen aktuell sind, veraltet oder fehlen.
+
 Ob du `firma.local`, `.firma.local` oder `*.firma.local` einträgst, ist egal: Ember meint damit immer die Domain und alles darunter. IP-Bereiche wie `10.0.0.0/8` gehen unverändert durch. Ändern sich die Domains, zeigt die Diagnose bei git, NuGet und VS Code „Auf px setzen“ wieder an. Ein Klick bringt die Ausnahmen auf den neuen Stand.
 
 „Entfernen“ nimmt nur Einträge zurück, die auf px zeigen. Was jemand anders eingetragen hat, bleibt stehen. Das gilt auch für die Deinstallation.

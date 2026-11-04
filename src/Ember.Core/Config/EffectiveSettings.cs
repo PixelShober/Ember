@@ -15,6 +15,11 @@ public sealed record EffectiveSettings
     public string PacUrl { get; init; } = "";
     public string UpstreamProxy { get; init; } = "";
     public IReadOnlyList<string> InternalDomainList { get; init; } = Array.Empty<string>();
+    /// <summary>Where the internal domains come from: "user", "team", "pac" or "none".</summary>
+    public string InternalDomainSource { get; init; } = "none";
+    /// <summary>What the PAC file says (read at start): its proxies and what it sends DIRECT.</summary>
+    public IReadOnlyList<string> PacProxies { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> PacDirect { get; init; } = Array.Empty<string>();
     public int Port { get; init; } = DefaultPort;
 
     public string InstallDir { get; init; } = Paths.DefaultPxDir;
@@ -42,6 +47,9 @@ public sealed record EffectiveSettings
             PacUrl = u.PacUrl ?? d.PacUrl ?? "",
             UpstreamProxy = u.UpstreamProxy ?? d.Upstream ?? "",
             InternalDomainList = u.InternalDomains != null ? SplitDomains(u.InternalDomains) : (IReadOnlyList<string>?)t?.InternalDomains ?? d.Domains ?? Array.Empty<string>(),
+            InternalDomainSource = u.InternalDomains != null ? "user" : t?.InternalDomains != null ? "team" : d.Domains != null ? "pac" : "none",
+            PacProxies = detected?.PacProxies ?? Array.Empty<string>(),
+            PacDirect = detected?.PacDirect ?? Array.Empty<string>(),
             Port = u.Port ?? t?.Port ?? DefaultPort,
             InstallDir = string.IsNullOrWhiteSpace(u.InstallDir) ? Paths.DefaultPxDir : u.InstallDir,
             Autostart = u.Autostart,
