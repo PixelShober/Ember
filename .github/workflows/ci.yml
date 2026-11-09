@@ -18,7 +18,7 @@ concurrency:
 jobs:
   ui:
     name: Oberfläche (Svelte)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ui
@@ -83,7 +83,7 @@ jobs:
 
   docs:
     name: Doku (Starlight)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: docs
