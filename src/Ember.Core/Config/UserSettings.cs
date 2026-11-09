@@ -18,6 +18,8 @@ public sealed class ModelEntry
     public bool? Mtp { get; set; }
     /// <summary>Extra llama-server arguments the model wants, one per item (sampling, chat template).</summary>
     public List<string>? Args { get; set; }
+    /// <summary>The vision projector (mmproj-….gguf), as download URL or path; then the model also reads images.</summary>
+    public string? Mmproj { get; set; }
 }
 
 /// <summary>
@@ -76,6 +78,8 @@ public sealed class UserSettings
     public int LlamaPort { get; set; } = 8080;
     /// <summary>Context profile for llama-server: "standard" (96K), "lang" (160K) or "max" (256K).</summary>
     public string LlamaProfile { get; set; } = "standard";
+    /// <summary>A llama.cpp folder that is already there (e.g. C:\llama); used instead of Ember's own builds.</summary>
+    public string LlamaCustomDir { get; set; } = "";
     /// <summary>Additional arguments after the profile's (empty: none).</summary>
     public string LlamaArgs { get; set; } = "";
     public List<ModelEntry> Models { get; set; } = new();

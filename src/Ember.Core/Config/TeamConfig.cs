@@ -122,6 +122,12 @@ public sealed class TeamAdmins
     public List<string>? Groups { get; set; }
 }
 
+/// <summary>Pi in the KI tab: which extensions Ember offers (replaces the built-in list).</summary>
+public sealed class TeamPi
+{
+    public List<PiPackage>? Packages { get; set; }
+}
+
 public sealed class TeamUpdate
 {
     /// <summary>Optional UNC folder with latest.json and the release files (if GitHub is blocked).</summary>
@@ -148,6 +154,7 @@ public sealed class TeamConfig
     /// <summary>Roles: who sees which module. Without roles nobody sees anything.</summary>
     public TeamAccess? Access { get; set; }
     public List<ModelEntry>? Models { get; set; }
+    public TeamPi? Pi { get; set; }
     public TeamUpdate? Update { get; set; }
     /// <summary>Overrides the download URL of the WebView2 standalone installer.</summary>
     public string? WebView2InstallerUrl { get; set; }

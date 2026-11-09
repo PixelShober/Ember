@@ -3,7 +3,7 @@
   import { api, app, confirm, copyText, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { formatBytes } from '../lib/format';
-  import type { AiStatus, LlamaProfile, ModelState, SettingsView, UserSettings } from '../lib/types';
+  import type { AiStatus, LlamaProfile, ModelState, PiPackageState, SettingsView, UserSettings } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
@@ -86,6 +86,23 @@
     return !!m && m[1] !== m[2];
   });
 
+  // Pi and its extensions: versions come from npm (through px), so they load separately.
+  let piPackages = $state<{ pi: PiPackageState; packages: PiPackageState[] } | null>(null);
+  async function loadPackages() {
+    piPackages = (await api<{ pi: PiPackageState; packages: PiPackageState[] }>('ai.pi.packages').catch(() => null)) ?? piPackages;
+  }
+  onMount(loadPackages);
+  $effect(() => {
+    const done = Object.values(app.jobs).filter((j) => j.kind === 'pi' && j.state === 'done').length;
+    if (done) void loadPackages();
+  });
+  const piRunning = $derived(Object.values(app.jobs).some((j) => j.kind === 'pi' && j.state === 'running'));
+
+  async function useFolder() {
+    const dir = await run(() => api<string | null>('ai.llama.useFolder'));
+    if (dir) { toast('ok', t('ai.llama.usedFolder', { path: dir })); await load(); }
+  }
+
   async function configurePi() {
     const file = await run(() => api<string>('ai.pi.configure'));
     if (file) toast('ok', t('ai.pi.configuredToast', { path: file }));
@@ -136,6 +153,7 @@
           {#each ['auto', 'cuda', 'vulkan', 'cpu'] as v (v)}<option value={v}>{t(`ai.llama.variants.${v}`)}</option>{/each}
         </select>
       {/if}
+      <button class="btn small" onclick={useFolder}><Icon name="folder" size={14} />{t('ai.llama.useFolder')}</button>
       <button class="btn primary small" disabled={app.jobs['llama']?.state === 'running'} onclick={() => run(() => api('ai.llama.install'))}><Icon name="download" size={14} />{t('ai.llama.install')}</button>
     </div>
     {#if status?.llama.recommendedVariant === 'cuda'}<p class="small muted hint">{t('ai.llama.cudaHint')}</p>{/if}
@@ -144,7 +162,7 @@
         <tbody>
           {#each status.llama.installed as l (l.path)}
             <tr>
-              <td><strong>{l.tag}</strong> <span class="muted">{t(`ai.llama.variants.${l.variant}`)}</span></td>
+              <td><strong>{l.tag === 'custom' ? t('ai.llama.custom') : l.tag}</strong> <span class="muted">{l.variant === '?' ? '' : t(`ai.llama.variants.${l.variant}`)}</span></td>
               <td><code class="small">{l.path}</code></td>
               <td class="right">
                 {#if l.current}<span class="badge ok">{t('ai.llama.current')}</span>
@@ -176,6 +194,8 @@
             <strong>{m.name}</strong>
             {#if m.note}<span class="small muted"> · {m.note}</span>{/if}
             {#if m.mtp}<span class="badge">MTP</span>{/if}
+            {#if m.mmprojPresent}<span class="badge ok" title={m.mmprojPath ?? ''}><Icon name="check" size={11} />{t('ai.models.vision')}</span>
+            {:else if m.mmprojUrl && m.downloaded}<span class="badge warn">{t('ai.models.visionMissing')}</span>{/if}
             <p class="small muted break">
               {#if m.local}{m.downloaded ? t('ai.models.local', { size: formatBytes(m.size) }) : t('ai.models.localMissing', { path: m.path })} · <code>{m.path}</code>
               {:else}{m.downloaded ? t('ai.models.downloaded', { size: formatBytes(m.size) }) : t('ai.models.notDownloaded')}{/if}
@@ -184,6 +204,9 @@
           {#if m.local}
             {#if m.mine}<button class="btn ghost small" title={t('ai.models.removeLocal')} aria-label={t('ai.models.removeLocal')} onclick={() => deleteModel(m)}><Icon name="x" size={14} /></button>{/if}
           {:else if m.downloaded}
+            {#if m.mmprojUrl && !m.mmprojPresent}
+              <button class="btn small" disabled={app.jobs['model:' + m.id]?.state === 'running'} onclick={() => run(() => api('ai.models.download', { id: m.id }))}><Icon name="download" size={14} />{t('ai.models.downloadMmproj')}</button>
+            {/if}
             <button class="btn ghost small" title={t('common.delete')} aria-label={t('common.delete')} onclick={() => deleteModel(m)}><Icon name="trash" size={14} /></button>
           {:else}
             <button class="btn small" disabled={app.jobs['model:' + m.id]?.state === 'running'} onclick={() => run(() => api('ai.models.download', { id: m.id }))}><Icon name="download" size={14} />{t('ai.models.download')}</button>
@@ -260,7 +283,7 @@
       <div class="card-head">
         <Icon name="ai" />
         <div class="grow"><h2>{t('ai.pi.title')}</h2><p class="small muted">{t('ai.pi.subtitle')}</p></div>
-        <span class="badge {status.pi.installed ? 'ok' : ''}">{status.pi.installed ? t('ai.pi.installed') : t('ai.pi.notInstalled')}</span>
+        <span class="badge {status.pi.installed ? 'ok' : ''}">{status.pi.installed ? (status.pi.version ? t('ai.pi.version', { version: status.pi.version }) : t('ai.pi.installed')) : t('ai.pi.notInstalled')}</span>
         {#if status.pi.configured}<span class="badge ok"><Icon name="check" size={12} />{t('ai.pi.configuredBadge')}</span>{/if}
       </div>
       {#if !status.pi.nodeFound}
@@ -272,9 +295,36 @@
         {#if !status.pi.installed}
           <button class="btn primary small" disabled={!status.pi.nodeFound || app.jobs['pi']?.state === 'running'} onclick={() => run(() => api('ai.pi.install'))}><Icon name="download" size={14} />{t('ai.pi.install')}</button>
         {/if}
+        {#if piPackages?.pi.updateAvailable}
+          <button class="btn small" disabled={piRunning} onclick={() => run(() => api('ai.pi.update'))}><Icon name="download" size={14} />{t('ai.pi.updateTo', { version: piPackages.pi.latest ?? '' })}</button>
+        {/if}
         <button class="btn small {status.pi.installed && !status.pi.configured ? 'primary' : ''}" onclick={configurePi}><Icon name="check" size={14} />{t('ai.pi.configure')}</button>
       </div>
       <JobView id="pi" />
+
+      <h3 class="ext-title">{t('ai.pi.extensions')}</h3>
+      <p class="small muted">{t('ai.pi.extensionsHint')}</p>
+      {#if !piPackages}<p class="small muted">{t('ai.pi.checking')}</p>{/if}
+      <ul class="models ext">
+        {#each piPackages?.packages ?? [] as p (p.id)}
+          <li>
+            <div class="grow">
+              <strong>{p.npm}</strong>
+              <p class="small muted">{p.note ?? t(`ai.pi.packages.${p.id}`)}</p>
+            </div>
+            {#if p.installed}
+              <span class="badge {p.updateAvailable ? 'warn' : 'ok'}">{p.installed === '?' ? t('ai.pi.installedUnknown') : t('ai.pi.installedVersion', { version: p.installed })}</span>
+              {#if p.updateAvailable}
+                <button class="btn small" disabled={piRunning || !status.pi.installed} onclick={() => run(() => api('ai.pi.package', { id: p.id, update: true }))}><Icon name="download" size={14} />{t('ai.pi.updateTo', { version: p.latest ?? '' })}</button>
+              {:else if p.latest}<span class="small muted">{t('ai.pi.upToDate')}</span>{/if}
+            {:else}
+              {#if p.latest}<span class="small muted">{t('ai.pi.latest', { version: p.latest })}</span>{/if}
+              <button class="btn small" disabled={piRunning || !status.pi.installed} onclick={() => run(() => api('ai.pi.package', { id: p.id }))}><Icon name="download" size={14} />{t('ai.pi.installOne')}</button>
+            {/if}
+            <div class="full"><JobView id={'pi:' + p.id} compact /></div>
+          </li>
+        {/each}
+      </ul>
       <p class="small muted">{t('ai.pi.start')}</p>
       <p class="row"><code>{status.pi.command}</code>
         <button class="btn ghost small" aria-label={t('common.copy')} onclick={async () => { await copyText(status!.pi.command); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button></p>
@@ -299,6 +349,8 @@
   .check { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
   .error { color: var(--error); }
   .hint { margin: -4px 0 10px; }
+  .ext-title { margin-top: 10px; }
+  .ext li { padding: 8px 0; }
   @media (max-width: 1100px) {
     .server, .add { grid-template-columns: 1fr; }
   }

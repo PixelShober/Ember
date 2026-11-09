@@ -92,8 +92,12 @@ public static class LlamaCpp
 
     public static IReadOnlyList<LlamaInstall> Installed(UserSettings s)
     {
-        if (!Directory.Exists(Paths.LlamaDir)) return Array.Empty<LlamaInstall>();
-        return Directory.GetDirectories(Paths.LlamaDir)
+        var list = new List<LlamaInstall>();
+        // A folder that already works (e.g. C:\llama from the setup guide) comes first when chosen.
+        if (s.LlamaCustomDir.Length > 0 && File.Exists(Path.Combine(s.LlamaCustomDir, "llama-server.exe")))
+            list.Add(new LlamaInstall("custom", HasCudaRuntime(s.LlamaCustomDir) ? "cuda" : "?", s.LlamaCustomDir, s.LlamaCurrent == "custom"));
+        if (!Directory.Exists(Paths.LlamaDir)) return list;
+        return list.Concat(Directory.GetDirectories(Paths.LlamaDir)
             .Select(d => (Dir: d, Name: Path.GetFileName(d)))
             .Where(x => !x.Name.EndsWith(".part", StringComparison.Ordinal) && File.Exists(Path.Combine(x.Dir, "llama-server.exe")))
             // A CUDA build without its runtime (half-finished install) would run on the CPU: not offered.
@@ -105,7 +109,7 @@ public static class LlamaCpp
                 var variant = dash > 0 ? x.Name[(dash + 1)..] : "?";
                 return new LlamaInstall(tag, variant, x.Dir, x.Name == s.LlamaCurrent);
             })
-            .OrderByDescending(i => i.Tag, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(i => i.Tag, StringComparer.OrdinalIgnoreCase))
             .ToList();
     }
 
@@ -234,18 +238,15 @@ public static class LlamaCpp
             new(L.T("ai.llama.steps.devices"), async (step, ct) =>
             {
                 // Like "llama-server --list-devices" in the guide: CUDA0 must show the NVIDIA card.
-                var r = await ProcessRunner.RunAsync(Path.Combine(targetDir, "llama-server.exe"), new[] { "--list-devices" }, ct, 60, logOutput: false);
-                var devices = Regex.Matches(r.Output, @"^\s*((CUDA|Vulkan)\d+):\s*(.+)$", RegexOptions.Multiline)
-                                   .Select(m => $"{m.Groups[1].Value}: {m.Groups[3].Value.Trim()}")
-                                   .ToList();
+                var (devices, output) = await DevicesAsync(targetDir, ct);
                 if (variant == "cuda" && !devices.Any(d => d.StartsWith("CUDA", StringComparison.Ordinal)))
-                    throw new EmberException("llamaNoCuda", ("detail", r.Output.Trim().Split('\n').LastOrDefault() ?? ""));
+                    throw new EmberException("llamaNoCuda", ("detail", output.Split('\n').LastOrDefault()?.Trim() ?? ""));
                 step.Report(devices.Count > 0 ? string.Join(" · ", devices) : L.T("ai.llama.cpuOnly"));
             }),
             new(L.T("ai.llama.steps.cleanup"), (step, ct) =>
             {
                 // keep the two newest builds (rollback), delete older ones
-                var old = Installed(settings).Skip(2).ToList();
+                var old = Installed(settings).Where(i => i.Tag != "custom").Skip(2).ToList();
                 foreach (var i in old)
                 {
                     try { Directory.Delete(i.Path, recursive: true); } catch (Exception ex) { Log.Warn(ex.Message); }
@@ -275,6 +276,8 @@ public static class LlamaCpp
             "-ctk", profile.KvCache, "-ctv", profile.KvCache,
             "--jinja", "--parallel", "1",
         };
+        // The vision projector: the model also reads images (screenshots, diagrams).
+        if (model.MmprojPresent && model.MmprojPath != null) args.AddRange(new[] { "--mmproj", model.MmprojPath });
         args.AddRange(model.Args);
         if (profile.Mtp && model.Mtp) args.AddRange(new[] { "--spec-type", "draft-mtp", "--spec-draft-n-max", "2" });
         // The old default before the profiles; it would cut the context back to 8K.
@@ -282,11 +285,39 @@ public static class LlamaCpp
         return args;
     }
 
+    /// <summary>"llama-server --list-devices": the GPUs this build can use ("CUDA0: NVIDIA …"), and its whole output.</summary>
+    public static async Task<(List<string> Devices, string Output)> DevicesAsync(string dir, CancellationToken ct)
+    {
+        var r = await ProcessRunner.RunAsync(Path.Combine(dir, "llama-server.exe"), new[] { "--list-devices" }, ct, 60, logOutput: false);
+        var devices = Regex.Matches(r.Output, @"^\s*((CUDA|Vulkan)\d+):\s*(.+)$", RegexOptions.Multiline)
+                           .Select(m => $"{m.Groups[1].Value}: {m.Groups[3].Value.Trim()}")
+                           .ToList();
+        return (devices, r.Output.Trim());
+    }
+
+    /// <summary>
+    /// Before the start: with an NVIDIA card the build must see it, otherwise llama-server would
+    /// quietly run on the CPU (a fifth of the speed). The log gets folder, runtime DLLs and devices.
+    /// </summary>
+    public static async Task CheckBeforeStartAsync(UserSettings s, CancellationToken ct)
+    {
+        var current = Current(s);
+        var dlls = Directory.Exists(current.Path)
+            ? string.Join(", ", Directory.GetFiles(current.Path, "*.dll").Select(Path.GetFileName).Where(f => Regex.IsMatch(f!, "^(cudart|cublas|ggml)", RegexOptions.IgnoreCase)))
+            : "";
+        var (devices, output) = await DevicesAsync(current.Path, ct);
+        Log.Info(L.T("ai.server.build", ("path", current.Path), ("dlls", dlls.Length > 0 ? dlls : "–"), ("devices", devices.Count > 0 ? string.Join(" · ", devices) : "CPU")), "llama");
+        if ((await Gpu.NvidiaAsync(ct)).Count > 0 && !devices.Any(d => d.StartsWith("CUDA", StringComparison.Ordinal)))
+            throw new EmberException("llamaNoCudaAtStart", ("path", current.Path), ("detail", output.Split('\n').LastOrDefault()?.Trim() ?? ""));
+    }
+
+    static LlamaInstall Current(UserSettings s) =>
+        Installed(s).FirstOrDefault(i => i.Current) ?? Installed(s).FirstOrDefault() ?? throw new EmberException("llamaNotInstalled");
+
     public static void StartServer(UserSettings s, ModelState model)
     {
         StopServer();
-        var current = Installed(s).FirstOrDefault(i => i.Current) ?? Installed(s).FirstOrDefault()
-                      ?? throw new EmberException("llamaNotInstalled");
+        var current = Current(s);
         if (!File.Exists(model.Path)) throw new EmberException("modelMissing", ("path", model.Path));
         if (current.Variant == "cuda" && !HasCudaRuntime(current.Path)) throw new EmberException("llamaNoCudaRuntime", ("path", current.Path));
         var profile = Profile(s.LlamaProfile);
@@ -332,7 +363,7 @@ public static class LlamaCpp
 
     /// <summary>The CUDA runtime (cudart64_*.dll) next to llama-server.exe; without it the CUDA build silently runs on the CPU.</summary>
     internal static bool HasCudaRuntime(string dir) =>
-        Directory.Exists(dir) && Directory.EnumerateFiles(dir, "cudart64_*.dll").Any();
+        Directory.Exists(dir) && Directory.EnumerateFiles(dir, "cudart64_*.dll").Any() && Directory.EnumerateFiles(dir, "cublas64_*.dll").Any();
 
     /// <summary>"load_tensors: offloaded 65/65 layers to GPU" → "65/65".</summary>
     internal static string? Offloaded(string line)
@@ -383,8 +414,11 @@ public static class LlamaCpp
 
 /// <param name="Local">A file that was already there (Path in team.json or chosen on this PC): Ember neither downloads nor deletes it.</param>
 /// <param name="Mine">Added on this PC (can be removed from the list); team models cannot.</param>
+/// <param name="MmprojPath">Where the vision projector is (or would be); null: the model reads text only.</param>
+/// <param name="MmprojPresent">The projector file is there, so llama-server starts with --mmproj and the model sees images.</param>
 public sealed record ModelState(string Id, string Name, string Url, string? Note, bool Downloaded, long? Size, string Path,
-                                bool Local, bool Mine, string Alias, bool Mtp, IReadOnlyList<string> Args);
+                                bool Local, bool Mine, string Alias, bool Mtp, IReadOnlyList<string> Args,
+                                string? MmprojPath = null, bool MmprojPresent = false, string? MmprojUrl = null);
 
 public static class Models
 {
@@ -401,6 +435,7 @@ public static class Models
         Alias = "qwen3.8-27b",
         Mtp = true,
         Args = new() { "--temp", "1.0", "--top-p", "0.95", "--top-k", "20", "--min-p", "0.0", "--chat-template-kwargs", "{\"reasoning_effort\":\"medium\"}" },
+        Mmproj = "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf",
     };
 
     public static string Dir(UserSettings s) => string.IsNullOrWhiteSpace(s.ModelsDir) ? Paths.DefaultModelsDir : s.ModelsDir;
@@ -431,8 +466,10 @@ public static class Models
             var known = Known.FirstOrDefault(k => Net.FileName(k.Url).Equals(System.IO.Path.GetFileName(path), StringComparison.OrdinalIgnoreCase));
             var name = !string.IsNullOrWhiteSpace(m.Name) ? m.Name : known?.Name ?? System.IO.Path.GetFileNameWithoutExtension(path);
             var alias = !string.IsNullOrWhiteSpace(m.Alias) ? m.Alias! : known?.Alias ?? System.IO.Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+            var (mmproj, mmprojUrl) = MmprojFor(m.Mmproj ?? known?.Mmproj, path);
             return new ModelState(m.Id, name, m.Url, m.Note ?? known?.Note, exists, exists ? new FileInfo(path).Length : null, path,
-                                  local, x.Mine, alias, m.Mtp ?? known?.Mtp ?? false, m.Args ?? known?.Args ?? new List<string>());
+                                  local, x.Mine, alias, m.Mtp ?? known?.Mtp ?? false, m.Args ?? known?.Args ?? new List<string>(),
+                                  mmproj, mmproj != null && File.Exists(mmproj), mmprojUrl);
         })
         // One entry per file: a local pick of the downloaded Qwen file is the same model.
         .GroupBy(m => m.Path, StringComparer.OrdinalIgnoreCase)
@@ -440,6 +477,34 @@ public static class Models
         .ToList();
 
     static IEnumerable<ModelEntry> Known => new[] { Qwen };
+
+    /// <summary>
+    /// The vision projector for a model: a path stays as it is; a URL lands next to the model as
+    /// "&lt;model&gt;.mmproj-F16.gguf" (every repo calls it "mmproj-F16.gguf", so the model name keeps them apart).
+    /// Without either, an mmproj*.gguf in the model's own folder is taken.
+    /// </summary>
+    internal static (string? Path, string? Url) MmprojFor(string? mmproj, string modelPath)
+    {
+        var dir = System.IO.Path.GetDirectoryName(modelPath) ?? "";
+        var stem = System.IO.Path.GetFileNameWithoutExtension(modelPath);
+        if (!string.IsNullOrWhiteSpace(mmproj))
+        {
+            if (Uri.TryCreate(mmproj, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https")
+                return (System.IO.Path.Combine(dir, $"{stem}.{Net.FileName(mmproj)}"), mmproj);
+            return (Environment.ExpandEnvironmentVariables(mmproj.Trim().Trim('"')), null);
+        }
+        try
+        {
+            var found = Directory.Exists(dir)
+                ? Directory.GetFiles(dir, "*mmproj*.gguf").OrderByDescending(f => System.IO.Path.GetFileName(f).StartsWith(stem, StringComparison.OrdinalIgnoreCase)).FirstOrDefault()
+                : null;
+            return (found, null);
+        }
+        catch (IOException)
+        {
+            return (null, null);
+        }
+    }
 
     /// <summary>A GGUF file that is already on this PC or a share joins the list as it is.</summary>
     public static ModelEntry AddLocal(UserSettings s, string file)
@@ -452,13 +517,19 @@ public static class Models
         return entry;
     }
 
-    public static List<SetupStep> DownloadSteps(ModelEntry model, string dir, EffectiveSettings eff)
+    public static List<SetupStep> DownloadSteps(ModelEntry model, string dir, EffectiveSettings eff, ModelState? state = null)
     {
         var target = System.IO.Path.Combine(dir, Net.FileName(model.Url));
+        bool haveModel = File.Exists(target) && state is { Downloaded: true };
         return new List<SetupStep>
         {
             new(L.T("ai.models.steps.download"), async (step, ct) =>
             {
+                if (haveModel)
+                {
+                    step.Report(L.T("ai.models.alreadyThere", ("path", target)));
+                    return;
+                }
                 var (http, route) = await Net.SmartClientAsync(eff, TimeSpan.FromHours(6));
                 using (http)
                 {
@@ -481,7 +552,23 @@ public static class Models
                     throw new EmberException("shaMismatch", ("expected", model.Sha256), ("actual", actual));
                 }
                 step.Report(L.T("jobs.shaOk", ("hash", actual[..16] + "…")));
-            }, () => string.IsNullOrWhiteSpace(model.Sha256) ? L.T("ai.models.noSha") : null),
+            }, () => string.IsNullOrWhiteSpace(model.Sha256) || haveModel ? L.T("ai.models.noSha") : null),
+            new(L.T("ai.models.steps.mmproj"), async (step, ct) =>
+            {
+                var (path, url) = MmprojFor(model.Mmproj ?? (Net.FileName(Qwen.Url).Equals(Net.FileName(model.Url), StringComparison.OrdinalIgnoreCase) ? Qwen.Mmproj : null), target);
+                if (url == null || path == null) { step.Report(L.T("ai.models.noMmproj")); return; }
+                if (File.Exists(path)) { step.Report(L.T("ai.models.alreadyThere", ("path", path))); return; }
+                var (http, route) = await Net.SmartClientAsync(eff, TimeSpan.FromHours(1));
+                using (http)
+                {
+                    var bytes = await Net.DownloadAsync(http, url, path, (done, total) =>
+                    {
+                        step.Report(total > 0 ? L.T("jobs.downloadProgress", ("done", Net.Mb(done)), ("total", Net.Mb(total.Value))) : Net.Mb(done), log: false);
+                        step.SetProgress(total > 0 ? 100.0 * done / total.Value : null);
+                    }, ct, resume: true);
+                    step.Report(L.T("jobs.downloaded", ("size", Net.Mb(bytes)), ("path", path)) + $" ({route})");
+                }
+            }),
         };
     }
 }

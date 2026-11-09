@@ -553,7 +553,8 @@ public sealed class EmberHost : IDisposable
             var profile = LlamaCpp.Profile(Settings.LlamaProfile);
             var llama = await LlamaCpp.StatusAsync(Settings, ct);
             // Pi follows the running server, otherwise the model that would start.
-            var alias = llama.ServerAlias ?? models.FirstOrDefault(m => m.Downloaded)?.Alias ?? Models.Qwen.Alias!;
+            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? models.FirstOrDefault(m => m.Downloaded);
+            var alias = llama.ServerAlias ?? model?.Alias ?? Models.Qwen.Alias!;
             return new
             {
                 gpus = await Gpu.NvidiaAsync(ct),
@@ -562,7 +563,7 @@ public sealed class EmberHost : IDisposable
                 modelsDir = Models.Dir(Settings),
                 profiles = LlamaCpp.Profiles,
                 profile = profile.Id,
-                pi = PiAgent.State(alias, llama.ServerContext ?? profile.Context, Settings.LlamaPort),
+                pi = PiAgent.State(alias, llama.ServerContext ?? profile.Context, Settings.LlamaPort, model?.MmprojPresent ?? false),
             };
         });
         b.Register("ai.llama.install", () =>
@@ -575,11 +576,12 @@ public sealed class EmberHost : IDisposable
         });
         b.Register("ai.llama.select", (args, _) =>
         {
-            Settings.LlamaCurrent = args.Req("name");
+            var name = args.Req("name");
+            Settings.LlamaCurrent = name.StartsWith("custom", StringComparison.Ordinal) ? "custom" : name;
             Settings.Save();
             return Task.FromResult<object?>(null);
         });
-        b.Register("ai.server.start", (args, _) =>
+        b.Register("ai.server.start", async (args, ct) =>
         {
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("model")) ?? throw new EmberException("modelUnknown");
             if (args.OptStr("profile") is { } profile && LlamaCpp.Profiles.Any(p => p.Id == profile) && profile != Settings.LlamaProfile)
@@ -587,8 +589,20 @@ public sealed class EmberHost : IDisposable
                 Settings.LlamaProfile = profile;
                 Settings.Save();
             }
+            await LlamaCpp.CheckBeforeStartAsync(Settings, ct);
             LlamaCpp.StartServer(Settings, model);
-            return Task.FromResult<object?>(null);
+            return null;
+        });
+        // A llama.cpp folder that already works (e.g. C:\llama): Ember starts that build instead of its own.
+        b.Register("ai.llama.useFolder", async (args, _) =>
+        {
+            var dir = args.OptStr("path") ?? await Shell.PickFolderAsync(L.T("ai.llama.pickFolder"), null);
+            if (dir == null) return null;
+            if (!File.Exists(Path.Combine(dir, "llama-server.exe"))) throw new EmberException("llamaNoServerIn", ("path", dir));
+            Settings.LlamaCustomDir = dir;
+            Settings.LlamaCurrent = "custom";
+            Settings.Save();
+            return dir;
         });
         b.Register("ai.server.stop", () => { LlamaCpp.StopServer(); return null; });
         b.Register("ai.models.download", (args, _) =>
@@ -596,8 +610,9 @@ public sealed class EmberHost : IDisposable
             var id = args.Req("id");
             var model = Models.All(Settings, Team.Config).Select(x => x.Entry).FirstOrDefault(m => m.Id == id) ?? throw new EmberException("modelUnknown");
             if (!string.IsNullOrWhiteSpace(model.Path)) throw new EmberException("modelLocal", ("path", model.Path));
+            var state = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == id);
             return Task.FromResult<object?>(Jobs.Start("model:" + id, "model", L.T("ai.models.jobs.download", ("name", model.Name.Length > 0 ? model.Name : id)),
-                Models.DownloadSteps(model, Paths.Ensure(Models.Dir(Settings)), Effective)).Snapshot());
+                Models.DownloadSteps(model, Paths.Ensure(Models.Dir(Settings)), Effective, state)).Snapshot());
         });
         // A GGUF that is already on this PC (or a share): chosen in a file dialog, nothing is downloaded.
         b.Register("ai.models.addLocal", async (args, _) =>
@@ -629,10 +644,25 @@ public sealed class EmberHost : IDisposable
         {
             var llama = await LlamaCpp.StatusAsync(Settings, ct);
             var models = Models.List(Settings, Team.Config);
-            var alias = llama.ServerAlias ?? models.FirstOrDefault(m => m.Downloaded)?.Alias ?? Models.Qwen.Alias!;
+            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? models.FirstOrDefault(m => m.Downloaded);
+            var alias = llama.ServerAlias ?? model?.Alias ?? Models.Qwen.Alias!;
             var context = llama.ServerContext ?? LlamaCpp.Profile(Settings.LlamaProfile).Context;
-            return PiAgent.Configure(alias, context, Settings.LlamaPort);
+            return PiAgent.Configure(alias, context, Settings.LlamaPort, model?.MmprojPresent ?? false);
         });
+        // Pi itself and its extensions: installed version, newest on npm, update available.
+        b.Register("ai.pi.packages", async ct =>
+        {
+            var (pi, packages) = await PiAgent.PackagesAsync(Effective, Team.Config, ct);
+            return new { pi, packages };
+        });
+        b.Register("ai.pi.package", (args, _) =>
+        {
+            var id = args.Req("id");
+            var package = PiAgent.Packages(Team.Config).FirstOrDefault(p => p.Id == id) ?? throw new EmberException("unknownAction", ("action", id));
+            return Task.FromResult<object?>(Jobs.Start("pi:" + id, "pi", L.T("ai.pi.jobs.package", ("name", package.Npm)),
+                PiAgent.PackageSteps(package, args.Flag("update"), Effective, Team.Config)).Snapshot());
+        });
+        b.Register("ai.pi.update", () => Jobs.Start("pi", "pi", L.T("ai.pi.jobs.update"), PiAgent.UpdateSteps(Effective, Team.Config)).Snapshot());
 
         // ------------------------------------------------------------------ updates
         b.Register("update.status", () => Updater.Status);

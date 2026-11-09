@@ -229,13 +229,13 @@ export function createMockBridge(): Bridge {
     llama: { installed: [{ tag: 'b12110', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12110-cuda', current: true }, { tag: 'b12096', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12096-cuda', current: false }],
       current: 'b12110-cuda', recommendedVariant: 'cuda', serverRunning: false, port: 8080, serverModel: null, serverAlias: null, serverProfile: null, serverContext: null, offloaded: null, lastError: null, loaded: false, device: null, promptTps: null, generationTps: null },
     models: [
-      { id: 'qwen3.8-27b', name: 'Qwen3.8-27B (UD-Q4_K_XL)', url: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf', note: '≈ 17,6 GB · 24 GB VRAM', downloaded: true, size: 17_612_000_000, path: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.gguf', local: false, mine: false, alias: 'qwen3.8-27b', mtp: true },
-      { id: 'Devstral-Small-Q4_K_M.gguf', name: 'Devstral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 14_330_000_000, path: 'D:\\KI\\Devstral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'devstral-small-q4_k_m', mtp: false },
+      { id: 'qwen3.8-27b', name: 'Qwen3.8-27B (UD-Q4_K_XL)', url: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf', note: '≈ 17,6 GB · 24 GB VRAM', downloaded: true, size: 17_612_000_000, path: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.gguf', local: false, mine: false, alias: 'qwen3.8-27b', mtp: true, mmprojPath: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.mmproj-F16.gguf', mmprojPresent: true, mmprojUrl: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf' },
+      { id: 'Devstral-Small-Q4_K_M.gguf', name: 'Devstral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 14_330_000_000, path: 'D:\\KI\\Devstral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'devstral-small-q4_k_m', mtp: false, mmprojPath: null, mmprojPresent: false, mmprojUrl: null },
     ],
     modelsDir: 'C:\\Ember\\Models',
     profiles,
     profile: 'standard',
-    pi: { installed: false, nodeFound: true, configured: false, configFile: 'C:\\Users\\jmoessner\\.pi\\agent\\models.json', command: 'pi --provider llama-cpp --model qwen3.8-27b' },
+    pi: { installed: false, nodeFound: true, configured: false, configFile: 'C:\\Users\\jmoessner\\.pi\\agent\\models.json', command: 'pi --provider llama-cpp --model qwen3.8-27b', version: null },
   };
 
   let pwFailedOnce = false;
@@ -395,9 +395,21 @@ export function createMockBridge(): Bridge {
       return null;
     },
     'ai.server.stop': () => { Object.assign(ai.llama, { serverRunning: false, offloaded: null }); ai.gpus[0].memoryUsedMb = 1830; return null; },
-    'ai.models.addLocal': () => { ai.models.push({ id: 'Mistral-Small-Q4_K_M.gguf', name: 'Mistral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 13_700_000_000, path: 'D:\\KI\\Mistral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'mistral-small-q4_k_m', mtp: false }); return 'Mistral-Small-Q4_K_M.gguf'; },
+    'ai.models.addLocal': () => { ai.models.push({ id: 'Mistral-Small-Q4_K_M.gguf', name: 'Mistral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 13_700_000_000, path: 'D:\\KI\\Mistral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'mistral-small-q4_k_m', mtp: false, mmprojPath: null, mmprojPresent: false, mmprojUrl: null }); return 'Mistral-Small-Q4_K_M.gguf'; },
     'ai.pi.install': () => { void simulate('pi', 'pi', t('ai.pi.jobs.install'), [t('ai.pi.steps.install'), t('ai.pi.steps.mcp')]).then(() => (ai.pi.installed = true)); return null; },
     'ai.pi.configure': () => { ai.pi.configured = true; return ai.pi.configFile; },
+    'ai.pi.packages': async () => {
+      await wait(400);
+      const pkg = (id: string, npm: string, installed: string | null, latest: string) => ({ id, npm, note: null, installed, latest, updateAvailable: !!installed && installed !== latest });
+      return {
+        pi: pkg('pi', '@earendil-works/pi-coding-agent', ai.pi.installed ? '1.4.2' : null, '1.5.0'),
+        packages: [pkg('mcp', 'pi-mcp-adapter', '0.9.1', '0.9.1'), pkg('websearch', 'pi-web-search-lite', null, '0.11.1'), pkg('pretty', '@heyhuynhgiabuu/pi-pretty', '0.9.0', '0.10.0'),
+          pkg('ponytail', '@dietrichgebert/ponytail', null, '5.3.3'), pkg('simplify', 'pi-simplify', null, '0.2.3'), pkg('contextMode', 'context-mode', null, '2.1.7'), pkg('todo', '@juicesharp/rpiv-todo', '2.15.0', '2.15.0')],
+      };
+    },
+    'ai.pi.package': (p) => { void simulate('pi:' + p.id, 'pi', t('ai.pi.jobs.package', { name: String(p.id) }), [t('ai.pi.steps.package', { name: String(p.id) })]); return null; },
+    'ai.pi.update': () => { void simulate('pi', 'pi', t('ai.pi.jobs.update'), [t('ai.pi.steps.update', { name: 'pi' })]); return null; },
+    'ai.llama.useFolder': () => 'C:\\llama',
     'ai.models.download': (p) => { void simulate('model:' + p.id, 'model', t('ai.models.jobs.download', { name: p.id }), [t('ai.models.steps.download'), t('ai.models.steps.verify')]); return null; },
     'ai.models.delete': (p) => { const m = ai.models.find((x) => x.id === p.id); if (m?.local) ai.models.splice(ai.models.indexOf(m), 1); else if (m) m.downloaded = false; return null; },
     'update.status': () => update,

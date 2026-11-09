@@ -487,6 +487,20 @@ export interface ModelState {
   mine: boolean;
   alias: string;
   mtp: boolean;
+  /** Vision projector: where it is (or would land); present = the model also reads images. */
+  mmprojPath: string | null;
+  mmprojPresent: boolean;
+  mmprojUrl: string | null;
+}
+
+export interface PiPackageState {
+  id: string;
+  npm: string;
+  note: string | null;
+  /** Installed version, "?" = installed but version unknown, null = not installed. */
+  installed: string | null;
+  latest: string | null;
+  updateAvailable: boolean;
 }
 
 export interface LlamaProfile {
@@ -502,6 +516,7 @@ export interface PiState {
   configured: boolean;
   configFile: string;
   command: string;
+  version: string | null;
 }
 
 export interface AiStatus {

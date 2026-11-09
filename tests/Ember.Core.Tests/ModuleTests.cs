@@ -178,6 +178,60 @@ public class ModuleTests
     }
 
     [Fact]
+    public void Vision_projector_comes_with_the_model()
+    {
+        var dir = Directory.CreateTempSubdirectory("ember-mmproj-").FullName;
+        try
+        {
+            var s = new UserSettings { ModelsDir = dir };
+            var qwen = Models.List(s, new TeamConfig()).Single(m => m.Id == "qwen3.8-27b");
+            Assert.Equal(Path.Combine(dir, "Qwen3.8-27B-UD-Q4_K_XL.mmproj-F16.gguf"), qwen.MmprojPath);
+            Assert.EndsWith("/mmproj-F16.gguf", qwen.MmprojUrl);
+            Assert.False(qwen.MmprojPresent);
+            Assert.DoesNotContain("--mmproj", LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("standard"), 8080, ""));
+
+            File.WriteAllText(qwen.MmprojPath!, "GGUF");
+            qwen = Models.List(s, new TeamConfig()).Single(m => m.Id == "qwen3.8-27b");
+            var args = LlamaCpp.ServerArgs(qwen, LlamaCpp.Profile("standard"), 8080, "");
+            Assert.Equal(qwen.MmprojPath, args[args.IndexOf("--mmproj") + 1]);
+
+            // A model picked on the PC finds the mmproj next to it.
+            var other = Path.Combine(dir, "eigen");
+            Directory.CreateDirectory(other);
+            File.WriteAllText(Path.Combine(other, "Mein-Q4.gguf"), "GGUF");
+            File.WriteAllText(Path.Combine(other, "mmproj-F16.gguf"), "GGUF");
+            Models.AddLocal(s, Path.Combine(other, "Mein-Q4.gguf"));
+            var mine = Models.List(s, new TeamConfig()).Single(m => m.Id == "Mein-Q4.gguf");
+            Assert.True(mine.MmprojPresent);
+            Assert.Equal(Path.Combine(other, "mmproj-F16.gguf"), mine.MmprojPath);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Pi_extensions_are_read_from_its_settings()
+    {
+        var registered = PiAgent.Registered("""{ "packages": ["npm:pi-mcp-adapter", "npm:@juicesharp/rpiv-todo@2.15.0", { "source": "npm:context-mode" }, "git:github.com/x/y"] }""");
+        Assert.Equal(new[] { "@juicesharp/rpiv-todo", "context-mode", "pi-mcp-adapter" }, registered.OrderBy(n => n, StringComparer.Ordinal));
+        Assert.Empty(PiAgent.Registered("kaputt"));
+        Assert.Equal(new[] { "mcp", "websearch", "pretty", "ponytail", "simplify", "contextMode", "todo" }, PiAgent.Packages(new TeamConfig()).Select(p => p.Id));
+        var own = TeamConfig.Parse("""{ "pi": { "packages": [ { "id": "websearch", "npm": "@ollama/pi-web-search" } ] } }""");
+        Assert.Equal("@ollama/pi-web-search", PiAgent.Packages(own).Single().Npm);
+    }
+
+    [Fact]
+    public void Pi_model_takes_images_with_the_projector()
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(PiAgent.Apply(null, "qwen3.8-27b", 98304, 8080, vision: true))!.AsObject();
+        Assert.Equal(new[] { "text", "image" }, root["providers"]!["llama-cpp"]!["models"]![0]!["input"]!.AsArray().Select(n => (string?)n));
+        Assert.True(PiAgent.IsConfigured(root, "qwen3.8-27b", 98304, 8080, vision: true));
+        Assert.False(PiAgent.IsConfigured(root, "qwen3.8-27b", 98304, 8080, vision: false));
+    }
+
+    [Fact]
     public void Pi_gets_the_llama_provider_and_keeps_the_others()
     {
         var json = "{\n  \"providers\": {\n    \"openai\": { \"apiKey\": \"x\" }\n  }\n}\n";

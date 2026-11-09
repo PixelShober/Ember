@@ -182,7 +182,10 @@
     "modelLocal": "“{path}” is already on this PC, there is nothing to download.",
     "modelFromTeam": "This model comes from the team configuration and cannot be removed here.",
     "piConfigInvalid": "The Pi configuration {path} is not valid JSON: {detail}",
-    "llamaNoCudaRuntime": "The CUDA runtime (cudart64_*.dll) is missing next to llama-server.exe in {path}. Without it the CUDA build runs on the CPU only. Reinstall llama.cpp."
+    "llamaNoCudaRuntime": "The CUDA runtime (cudart64_*.dll) is missing next to llama-server.exe in {path}. Without it the CUDA build runs on the CPU only. Reinstall llama.cpp.",
+    "llamaNoCudaAtStart": "The llama.cpp build in {path} sees no NVIDIA card and would run on the CPU. Usually CUDA files (cudart64, cublas64) are missing or the driver is older than 580. Reinstall llama.cpp or choose a working folder. Message: {detail}",
+    "llamaNoServerIn": "There is no llama-server.exe in {path}.",
+    "piMissing": "Pi is not installed yet."
   },
   "jobs": {
     "started": "started",
@@ -755,7 +758,11 @@
         "cleanup": "Clean up old versions"
       },
       "cpuOnly": "no GPU in the build, CPU only",
-      "cudaHint": "CUDA builds need an NVIDIA driver 580 or newer (CUDA 13). Ember fetches the program and the CUDA runtime and puts both in one folder."
+      "cudaHint": "CUDA builds need an NVIDIA driver 580 or newer (CUDA 13). Ember fetches the program and the CUDA runtime and puts both in one folder.",
+      "pickFolder": "Choose the folder with llama-server.exe",
+      "useFolder": "Use an existing folder",
+      "custom": "own folder",
+      "usedFolder": "Ember now starts llama-server from {path}."
     },
     "models": {
       "title": "Models",
@@ -774,7 +781,8 @@
       },
       "steps": {
         "download": "Download model (resumes after interruptions)",
-        "verify": "Verify checksum"
+        "verify": "Verify checksum",
+        "mmproj": "Download the vision projector (mmproj)"
       },
       "local": "on this PC · {size}",
       "localMissing": "File missing: {path}",
@@ -783,7 +791,12 @@
       "addedLocal": "Model added: {name}",
       "removeLocal": "Remove from the list",
       "confirmRemoveLocal": "Remove “{name}” from the list? The file stays where it is.",
-      "orUrl": "or by download address"
+      "orUrl": "or by download address",
+      "alreadyThere": "already there: {path}",
+      "noMmproj": "This model has no vision projector (mmproj).",
+      "vision": "reads images",
+      "visionMissing": "vision projector missing",
+      "downloadMmproj": "Download vision projector"
     },
     "server": {
       "title": "llama-server",
@@ -812,7 +825,8 @@
       "lastError": "Last error: {line}",
       "generation": "{tps} tokens/s answer",
       "prompt": "{tps} tokens/s prompt",
-      "onCpu": "llama-server runs on the CPU, not the NVIDIA card. Usually the CUDA runtime next to llama-server.exe is missing. Reinstall llama.cpp."
+      "onCpu": "llama-server runs on the CPU, not the NVIDIA card. Usually the CUDA runtime next to llama-server.exe is missing. Reinstall llama.cpp.",
+      "build": "llama-server from {path} · runtime: {dlls} · devices: {devices}"
     },
     "pi": {
       "title": "Pi (coding agent)",
@@ -828,11 +842,36 @@
       "start": "Start it in the project folder with:",
       "noNode": "Pi needs Node.js with npm. Install it under Software.",
       "jobs": {
-        "install": "Install Pi"
+        "install": "Install Pi",
+        "package": "Install {name} for Pi",
+        "update": "Update Pi"
       },
       "steps": {
         "install": "npm install -g @earendil-works/pi-coding-agent",
-        "mcp": "MCP extension (pi-mcp-adapter)"
+        "mcp": "MCP extension (pi-mcp-adapter)",
+        "package": "pi install npm:{name}",
+        "update": "Update {name}"
+      },
+      "version": "version {version}",
+      "updateTo": "Update to {version}",
+      "extensions": "Extensions",
+      "extensionsHint": "Installed with “pi install npm:…” through px. Ember asks npm for new versions.",
+      "checking": "Checking versions …",
+      "notInstalledShort": "not installed",
+      "installedVersion": "{version} installed",
+      "installedUnknown": "installed",
+      "latest": "latest {version}",
+      "upToDate": "up to date",
+      "installOne": "Install",
+      "updateOne": "Update",
+      "packages": {
+        "mcp": "MCP servers from the repo’s .mcp.json",
+        "websearch": "Web search and page reading. Searching needs a search service key (Brave, Tavily, Exa …) in ~/.pi/agent/pi-web-search-lite/config.json.",
+        "pretty": "Colourful output: syntax highlighting, bash output, directory trees",
+        "ponytail": "“Lazy senior”: writes only the code that is really needed",
+        "simplify": "Reviews freshly changed code for clarity and simplicity",
+        "contextMode": "Saves context: long outputs run in a sandbox, only what matters reaches the conversation",
+        "todo": "A todo list for the model, visible live"
       }
     }
   },

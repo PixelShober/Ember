@@ -189,7 +189,29 @@
           "note": { "type": "string" },
           "alias": { "type": "string", "description": "Name, unter dem llama-server das Modell anbietet (--alias) und Pi es anspricht. Standard: der Dateiname." },
           "mtp": { "type": "boolean", "description": "Das Modell hat einen MTP-Kopf; die Profile standard und lang starten dann mit --spec-type draft-mtp." },
-          "args": { "type": "array", "items": { "type": "string" }, "description": "Weitere llama-server-Argumente, die das Modell braucht, eines pro Eintrag, z. B. [\"--temp\", \"1.0\"]." }
+          "args": { "type": "array", "items": { "type": "string" }, "description": "Weitere llama-server-Argumente, die das Modell braucht, eines pro Eintrag, z. B. [\"--temp\", \"1.0\"]." },
+          "mmproj": { "type": "string", "description": "Bild-Modell (Vision-Projektor, mmproj-….gguf) als Download-Adresse oder Pfad. Ember startet llama-server dann mit --mmproj, und Pi darf Bilder schicken. Ohne Angabe nimmt Ember eine mmproj*.gguf aus dem Ordner des Modells." }
+        }
+      }
+    },
+    "pi": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Pi im KI-Tab.",
+      "properties": {
+        "packages": {
+          "type": "array",
+          "description": "Welche Pi-Erweiterungen Ember anbietet; ersetzt die eingebaute Liste.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "npm"],
+            "properties": {
+              "id": { "type": "string" },
+              "npm": { "type": "string", "description": "npm-Paket, installiert mit pi install npm:<name>" },
+              "note": { "$ref": "#/$defs/text" }
+            }
+          }
         }
       }
     },

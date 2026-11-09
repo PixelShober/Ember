@@ -182,7 +182,10 @@
     "modelLocal": "„{path}“ liegt schon auf dem PC, da gibt es nichts herunterzuladen.",
     "modelFromTeam": "Dieses Modell kommt aus der Team-Konfiguration und lässt sich hier nicht entfernen.",
     "piConfigInvalid": "Die Pi-Konfiguration {path} ist kein gültiges JSON: {detail}",
-    "llamaNoCudaRuntime": "Neben llama-server.exe fehlt die CUDA-Laufzeit (cudart64_*.dll) in {path}. Ohne sie läuft der CUDA-Build nur auf der CPU. Installier llama.cpp neu."
+    "llamaNoCudaRuntime": "Neben llama-server.exe fehlt die CUDA-Laufzeit (cudart64_*.dll) in {path}. Ohne sie läuft der CUDA-Build nur auf der CPU. Installier llama.cpp neu.",
+    "llamaNoCudaAtStart": "Der llama.cpp-Build in {path} sieht keine NVIDIA-Karte und würde auf der CPU laufen. Meist fehlen CUDA-Dateien (cudart64, cublas64) oder der Treiber ist älter als 580. Installier llama.cpp neu oder wähle einen funktionierenden Ordner. Meldung: {detail}",
+    "llamaNoServerIn": "In {path} liegt keine llama-server.exe.",
+    "piMissing": "Pi ist noch nicht installiert."
   },
   "jobs": {
     "started": "gestartet",
@@ -755,7 +758,11 @@
         "cleanup": "Alte Versionen aufräumen"
       },
       "cpuOnly": "keine GPU im Build, nur CPU",
-      "cudaHint": "CUDA-Builds brauchen einen NVIDIA-Treiber ab Version 580 (CUDA 13). Ember holt Programm und CUDA-Laufzeit und legt beide zusammen ab."
+      "cudaHint": "CUDA-Builds brauchen einen NVIDIA-Treiber ab Version 580 (CUDA 13). Ember holt Programm und CUDA-Laufzeit und legt beide zusammen ab.",
+      "pickFolder": "Ordner mit llama-server.exe wählen",
+      "useFolder": "Vorhandenen Ordner verwenden",
+      "custom": "eigener Ordner",
+      "usedFolder": "Ember startet jetzt llama-server aus {path}."
     },
     "models": {
       "title": "Modelle",
@@ -774,7 +781,8 @@
       },
       "steps": {
         "download": "Modell herunterladen (setzt bei Abbruch fort)",
-        "verify": "Prüfsumme prüfen"
+        "verify": "Prüfsumme prüfen",
+        "mmproj": "Bild-Modell (mmproj) herunterladen"
       },
       "local": "auf dem PC · {size}",
       "localMissing": "Datei fehlt: {path}",
@@ -783,7 +791,12 @@
       "addedLocal": "Modell übernommen: {name}",
       "removeLocal": "Aus der Liste nehmen",
       "confirmRemoveLocal": "„{name}“ aus der Liste nehmen? Die Datei bleibt, wo sie ist.",
-      "orUrl": "oder per Download-Adresse"
+      "orUrl": "oder per Download-Adresse",
+      "alreadyThere": "schon da: {path}",
+      "noMmproj": "Dieses Modell hat kein Bild-Modell (mmproj).",
+      "vision": "liest Bilder",
+      "visionMissing": "Bild-Modell fehlt",
+      "downloadMmproj": "Bild-Modell laden"
     },
     "server": {
       "title": "llama-server",
@@ -812,7 +825,8 @@
       "lastError": "Letzte Fehlermeldung: {line}",
       "generation": "{tps} Token/s Antwort",
       "prompt": "{tps} Token/s Prompt",
-      "onCpu": "llama-server rechnet auf der CPU, nicht auf der NVIDIA. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu."
+      "onCpu": "llama-server rechnet auf der CPU, nicht auf der NVIDIA. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu.",
+      "build": "llama-server aus {path} · Laufzeit: {dlls} · Geräte: {devices}"
     },
     "pi": {
       "title": "Pi (Coding-Agent)",
@@ -828,11 +842,36 @@
       "start": "Im Projektordner starten mit:",
       "noNode": "Für Pi braucht es Node.js mit npm. Installier es unter Software.",
       "jobs": {
-        "install": "Pi installieren"
+        "install": "Pi installieren",
+        "package": "{name} für Pi installieren",
+        "update": "Pi aktualisieren"
       },
       "steps": {
         "install": "npm install -g @earendil-works/pi-coding-agent",
-        "mcp": "MCP-Erweiterung (pi-mcp-adapter)"
+        "mcp": "MCP-Erweiterung (pi-mcp-adapter)",
+        "package": "pi install npm:{name}",
+        "update": "{name} aktualisieren"
+      },
+      "version": "Version {version}",
+      "updateTo": "Auf {version} aktualisieren",
+      "extensions": "Erweiterungen",
+      "extensionsHint": "Installiert mit „pi install npm:…“ über px. Neue Versionen fragt Ember bei npm ab.",
+      "checking": "Versionen werden abgefragt …",
+      "notInstalledShort": "nicht installiert",
+      "installedVersion": "{version} installiert",
+      "installedUnknown": "installiert",
+      "latest": "neueste {version}",
+      "upToDate": "aktuell",
+      "installOne": "Installieren",
+      "updateOne": "Aktualisieren",
+      "packages": {
+        "mcp": "MCP-Server aus der .mcp.json des Repos",
+        "websearch": "Websuche und Seiten lesen. Für die Suche braucht es den Schlüssel eines Suchdienstes (Brave, Tavily, Exa …) in ~/.pi/agent/pi-web-search-lite/config.json.",
+        "pretty": "Farbige Ausgabe: Syntaxhervorhebung, Bash-Ausgabe, Verzeichnisbäume",
+        "ponytail": "„Fauler Senior“: schreibt nur den Code, der wirklich nötig ist",
+        "simplify": "Prüft frisch geänderten Code auf Klarheit und Einfachheit",
+        "contextMode": "Spart Kontext: lange Ausgaben laufen in einer Sandbox, nur das Wichtige kommt ins Gespräch",
+        "todo": "Aufgabenliste für das Modell, live sichtbar"
       }
     }
   },
