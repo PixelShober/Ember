@@ -4,20 +4,30 @@ using System.Text.RegularExpressions;
 
 namespace Ember.Core;
 
-public sealed record MailResult(string Method, string To, string Subject, string Body, string? ReportPath, string? ReportText);
+public sealed record MailResult(string Method, string To, string Subject, string Body);
 
 /// <summary>
-/// Prepares a mail to the service center. Ember never sends anything itself: the user reviews
-/// the mail and sends it. Classic Outlook gets a draft with the report attached; everything
-/// else gets a mailto: link (no attachment possible) plus the report as file and in the UI.
+/// Prepares a mail to the service center (to the supervisor for admin rights, to the Ember admins
+/// for access). Ember never sends anything itself: the user reviews the mail and sends it.
+/// Classic Outlook gets a draft, everything else a mailto: link. Ember's log and the diagnosis
+/// report never go along: they hold internal details that do not belong in a ticket.
 /// </summary>
 public static class Mail
 {
     public static readonly string[] Templates = { "softwareRequest", "adminAction", "problem", "accessRequest" };
 
-    /// <summary>Access requests go to whoever looks after the list (team.json access.contact), everything else to the service center.</summary>
-    public static string? Recipient(TeamConfig team, string template) =>
-        template == "accessRequest" && team.Access?.Contact is { Length: > 0 } contact ? contact : team.ServiceCenter?.Email;
+    /// <summary>
+    /// Access requests go to whoever looks after the roles (team.json access.contact, else the
+    /// service center), admin rights to the supervisor, everything else to the service center.
+    /// </summary>
+    public static string? Recipient(TeamConfig team, string template) => template switch
+    {
+        "accessRequest" when team.Access?.Contact is { Length: > 0 } contact => contact,
+        "adminAction" => NullIfBlank(team.Supervisor?.Email),
+        _ => NullIfBlank(team.ServiceCenter?.Email),
+    };
+
+    static string? NullIfBlank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
     public static (string Subject, string Body) Render(TeamConfig team, string template, IReadOnlyDictionary<string, string?> vars)
     {
@@ -32,7 +42,12 @@ public static class Mail
             ["computer"] = Environment.MachineName,
             ["date"] = DateTime.Now.ToString("d", L.Culture),
             ["ember"] = AppInfo.Version,
+            ["sender"] = vars.TryGetValue("sender", out var sender) && !string.IsNullOrWhiteSpace(sender) ? sender : Environment.UserName,
+            ["supervisor"] = team.Supervisor?.GreetingName() ?? "",
+            ["problemIntro"] = team.ServiceCenter?.ProblemIntro?.Get() ?? L.T("mail.problemIntro"),
         };
+        // Every mail ends with the greeting and the full name, also team.json's own templates.
+        if (!body.Contains("{sender}", StringComparison.OrdinalIgnoreCase)) body = body.TrimEnd() + "\n\n" + L.T("mail.signature");
         foreach (var (k, v) in all)
         {
             subject = subject.Replace("{" + k + "}", v ?? "");
@@ -45,32 +60,22 @@ public static class Mail
         return (subject, body);
     }
 
-    public static async Task<MailResult> ComposeAsync(TeamConfig team, string template, IReadOnlyDictionary<string, string?> vars,
-                                                      Func<CancellationToken, Task<string>>? report, CancellationToken ct)
+    public static Task<MailResult> ComposeAsync(TeamConfig team, string template, IReadOnlyDictionary<string, string?> vars, CancellationToken ct)
     {
         var to = Recipient(team, template);
-        if (string.IsNullOrWhiteSpace(to)) throw new EmberException("mailNoRecipient");
+        if (string.IsNullOrWhiteSpace(to)) throw new EmberException(template == "adminAction" ? "mailNoSupervisor" : "mailNoRecipient");
         var (subject, body) = Render(team, template, vars);
 
-        string? reportPath = null, reportText = null;
-        if (report != null)
-        {
-            reportText = await report(ct);
-            reportPath = Diagnostics.Save(reportText);
-        }
-
-        if (TryOutlook(to, subject, body, reportPath))
+        if (TryOutlook(to, subject, body))
         {
             Log.Info(L.T("mail.outlookDraft", ("to", to)));
-            return new MailResult("outlook", to, subject, body, reportPath, reportText);
+            return Task.FromResult(new MailResult("outlook", to, subject, body));
         }
 
-        var mailBody = reportPath == null ? body : body + "\n\n" + L.T("mail.attachHint", ("path", reportPath));
-        var uri = MailtoUri(to, subject, mailBody);
+        var uri = MailtoUri(to, subject, body);
         Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true })?.Dispose();
-        if (reportPath != null) ShowInExplorer(reportPath);
         Log.Info(L.T("mail.mailtoOpened", ("to", to)));
-        return new MailResult("mailto", to, subject, body, reportPath, reportText);
+        return Task.FromResult(new MailResult("mailto", to, subject, body));
     }
 
     /// <summary>
@@ -85,7 +90,7 @@ public static class Mail
     }
 
     /// <summary>Classic Outlook via late-bound COM (no interop assembly needed).</summary>
-    static bool TryOutlook(string to, string subject, string body, string? attachment)
+    static bool TryOutlook(string to, string subject, string body)
     {
         if (!OperatingSystem.IsWindows()) return false;
         var type = Type.GetTypeFromProgID("Outlook.Application");
@@ -100,7 +105,6 @@ public static class Mail
                 mail.To = to;
                 mail.Subject = subject;
                 mail.Body = body;
-                if (attachment != null) mail.Attachments.Add(attachment);
                 mail.Display(false);
             }
             catch (Exception ex)
@@ -124,7 +128,9 @@ public static class Mail
         try
         {
             var explorer = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
-            Process.Start(new ProcessStartInfo(explorer) { ArgumentList = { "/select," + file } })?.Dispose();
+            // Explorer parses its own command line: the path in quotes after "/select," (ArgumentList
+            // would quote the whole argument, and Explorer then opens "Dokumente" instead).
+            Process.Start(new ProcessStartInfo(explorer, "/select,\"" + file + "\"") { UseShellExecute = false })?.Dispose();
         }
         catch (Exception ex)
         {

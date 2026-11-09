@@ -7,7 +7,7 @@ description: Rollen legen fest, wer welche Module sieht. Ohne team.json schaltet
 
 Jeder Tab in Ember ist ein Modul: Proxy, Git, Software, Playwright, System, Energie, KI, Berechtigungen, Einstellungen und Log. Wer welches Modul sieht, legen Rollen in der [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#access) fest. Damit gelten sie für alle und müssen nicht auf jedem Rechner einzeln gepflegt werden. Wer in keiner Rolle steht, sieht nichts außer einem Sperrbildschirm.
 
-Gepflegt werden die Rollen im Tab **Berechtigungen**. Den sieht nur, wer eine Rolle mit dem Modul Berechtigungen hat. Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und wieder ein, etwa um Ember so zu sehen wie die anderen.
+Gepflegt werden die Rollen im Tab **Berechtigungen**. Den sieht nur, wer eine Rolle mit dem Modul Berechtigungen hat. Wie Ember für eine Rolle aussieht, zeigt [Ansehen als](#ember-als-eine-andere-rolle-ansehen). Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und wieder ein.
 
 ## Rollen
 
@@ -26,6 +26,12 @@ Mitglieder fügst du per Name hinzu, mit oder ohne Domäne (`jmoessner` oder `FI
 Am einfachsten sind AD-Gruppen, die es ohnehin gibt. Nimmt die IT jemanden in die Gruppe auf, sieht er beim nächsten Start die Module der Rolle, und in Ember ist nichts zu tun. Unter „Deine Anmeldung“ stehen deine eigenen Domänengruppen. Jede trägst du mit einem Klick in eine Rolle ein.
 
 „Zugriffsanfragen gehen an“ legt fest, wohin die Mail vom Sperrbildschirm geht. Leer heißt: ans Service-Center.
+
+## Ember als eine andere Rolle ansehen
+
+Unten in der Seitenleiste steht für Admins **Ansehen als**. Dort wählst du eine Rolle aus der `team.json`, eine Schlüsselstufe oder „Ohne Rolle“. Ember zeigt sich dann genau so wie für diese Leute: dieselben Tabs, dieselbe Startseite, und auch die Exe lässt nur zu, was die Rolle darf. „Ohne Rolle“ zeigt den Sperrbildschirm.
+
+Unten in der Mitte steht dabei „Vorschau: …“ mit dem Knopf „Zurück zur eigenen Ansicht“. Der funktioniert auch dann, wenn die gewählte Rolle das Modul Berechtigungen nicht hat. Ember merkt sich die Vorschau nicht: Nach einem Neustart siehst du wieder deine eigene Ansicht.
 
 ## Speichern
 

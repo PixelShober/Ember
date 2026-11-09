@@ -21,9 +21,9 @@ export function createMockBridge(): Bridge {
   const user: UserSettings = {
     usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null,
     installDir: 'C:\\Ember\\px', autostart: true,
-    configureEnvVars: true, configurePowerShell: true, configureGit: true, configureNpm: true, configurePip: true, configureNuGet: true,
+    configureEnvVars: true, configurePowerShell: true, configureGit: true, configureNpm: true, configurePip: true, configureVsCode: true, configureNuGet: true,
     language: lang === 'auto' ? 'auto' : lang, hideAdvanced: false, teamConfigPath: '\\\\fs01\\entwicklung\\ember\\team.json', autoUpdate: true,
-    modelsDir: '', llamaVariant: 'auto', llamaCurrent: 'b6890-cuda', llamaPort: 8080, llamaProfile: 'standard', llamaArgs: '',
+    modelsDir: '', llamaVariant: 'auto', llamaCurrent: 'b6890-cuda', llamaPort: 8080, llamaProfile: 'lang', llamaArgs: '',
     models: [],
   };
 
@@ -33,8 +33,15 @@ export function createMockBridge(): Bridge {
   const keyModules: Record<KeyLevel, ModuleId[]> = { proxy: ['proxy'], proxyPlaywright: ['proxy', 'playwright'], all: allModules };
   const keyLevel = (['proxy', 'proxyPlaywright', 'all'] as const).find((k) => k === params.get('key')) ?? null;
   const setup = params.has('setup');
-  const modules: ModuleId[] = setup || params.has('locked') ? [] : keyLevel ? keyModules[keyLevel] : allModules;
+  const ownModules: ModuleId[] = setup || params.has('locked') ? [] : keyLevel ? keyModules[keyLevel] : allModules;
   const withTeam = !setup && !keyLevel;
+  // ?preview=role:Test|key:proxy|none: an admin looks at Ember through another role (app.preview).
+  const mockRoles: Record<string, ModuleId[]> = { Admins: allModules, Entwicklung: ['proxy', 'git', 'software', 'playwright', 'system', 'settings', 'log'], Test: ['proxy', 'playwright'] };
+  const preview = ownModules.includes('access') ? params.get('preview') : null;
+  const modules: ModuleId[] = !preview ? ownModules
+    : preview === 'none' ? []
+    : preview.startsWith('key:') ? keyModules[preview.slice(4) as KeyLevel] ?? []
+    : mockRoles[preview.slice(5)] ?? [];
 
   const team = {
     path: withTeam ? '\\\\fs01\\entwicklung\\ember\\team.json' : null, source: withTeam ? ('settings' as const) : null, loadedAt: withTeam ? now() : null, fromCache: false,
@@ -46,9 +53,11 @@ export function createMockBridge(): Bridge {
     languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
     modules, grant: { source: setup ? 'none' : keyLevel ? 'key' : 'team', roles: withTeam && modules.length ? ['Admins'] : [], keyLevel },
     locked: setup ? 'setup' : modules.length ? null : 'notListed',
+    preview: ownModules.includes('access') ? { current: preview, roles: withTeam ? Object.keys(mockRoles) : [], keys: ['proxy', 'proxyPlaywright', 'all'] } : null,
     admin: modules.includes('access'), advanced: modules.some((m) => ['power', 'ai', 'access'].includes(m)), showAdvanced: true, access: modules.length > 0,
     accessContact: withTeam ? 'ember-admins@firma.example' : null, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: withTeam ? 'Team Entwicklung' : null,
     serviceCenter: withTeam ? 'servicecenter@firma.example' : null,
+    supervisor: withTeam ? { name: 'Petra Lindner', email: 'petra.lindner@firma.example' } : null,
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
   };
 
@@ -226,7 +235,7 @@ export function createMockBridge(): Bridge {
   ];
   const ai: AiStatus = {
     gpus: [{ name: 'NVIDIA RTX PRO 5000 Blackwell Generation Laptop GPU', driver: '581.42', cuda: '13.2', memoryTotalMb: 24463, memoryUsedMb: 1830, powerDraw: 18.4, powerLimit: 175, temperature: 46, utilization: 3 }],
-    llama: { installed: [{ tag: 'b12110', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12110-cuda', current: true }, { tag: 'b12096', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12096-cuda', current: false }],
+    llama: { installed: [{ tag: 'b12110', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12110-cuda', current: true, complete: true }, { tag: 'b12096', variant: 'cuda', path: 'C:\\Ember\\llama.cpp\\b12096-cuda', current: false, complete: false }],
       current: 'b12110-cuda', recommendedVariant: 'cuda', serverRunning: false, port: 8080, serverModel: null, serverAlias: null, serverProfile: null, serverContext: null, offloaded: null, lastError: null, loaded: false, device: null, promptTps: null, generationTps: null },
     models: [
       { id: 'qwen3.8-27b', name: 'Qwen3.8-27B (UD-Q4_K_XL)', url: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q4_K_XL.gguf', note: '≈ 17,6 GB · 24 GB VRAM', downloaded: true, size: 17_612_000_000, path: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.gguf', local: false, mine: false, alias: 'qwen3.8-27b', mtp: true, mmprojPath: 'C:\\Ember\\Models\\Qwen3.8-27B-UD-Q4_K_XL.mmproj-F16.gguf', mmprojPresent: true, mmprojUrl: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/mmproj-F16.gguf' },
@@ -254,7 +263,7 @@ export function createMockBridge(): Bridge {
   };
   const playwright: PlaywrightState = {
     browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
-    browsers: [{ name: 'chromium-1194', path: '' }, { name: 'chromium_headless_shell-1194', path: '' }, { name: 'ffmpeg-1011', path: '' }],
+    browsers: [{ name: 'chromium-1194', path: '', label: 'Chromium' }, { name: 'chromium_headless_shell-1194', path: '', label: null }, { name: 'ffmpeg-1011', path: '', label: null }, { name: 'firefox-1495', path: '', label: 'Firefox' }, { name: 'winldd-1007', path: '', label: null }],
     downloadHost: null, nodeCerts: false, nodeFound: true, edgeFound: true, vsCodeFound: true,
     defaultParent: 'C:\\Users\\jmoessner\\source\\repos',
     project: { dir: 'C:\\Users\\jmoessner\\source\\repos\\kundenportal', hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true, config: 'playwright.config.ts', usesEdge: false },
@@ -282,6 +291,7 @@ export function createMockBridge(): Bridge {
   const handlers: Record<string, (p: any) => unknown | Promise<unknown>> = {
     'app.info': () => info,
     'app.ready': () => null,
+    'app.me': () => ({ name: 'Jürgen Mößner' }),
     'app.openExternal': (p) => { window.open(p.url, '_blank'); return null; },
     'app.openFolder': () => null,
     'app.pickFolder': () => 'D:\\Werkzeuge\\px',
@@ -289,6 +299,12 @@ export function createMockBridge(): Bridge {
     'settings.get': () => settingsView(),
     'settings.save': (p) => { Object.assign(user, p.settings); info.languageSetting = user.language; return settingsView(); },
     'app.setAppearance': () => null,
+    'app.preview': (p) => {
+      const q = new URLSearchParams(location.search);
+      if (p.target) q.set('preview', p.target); else q.delete('preview');
+      restartWith(q.toString());
+      return info;
+    },
     'app.toggleAdvanced': () => { user.hideAdvanced = !user.hideAdvanced; info.showAdvanced = !user.hideAdvanced; emit('app.info', { ...info }); return info.showAdvanced; },
     'settings.defaults': () => ({ ...user, usePac: null, pacUrl: null, upstreamProxy: null, internalDomains: null, port: null }),
     'team.status': () => ({ status: team, name: info.teamName }),
@@ -367,8 +383,12 @@ export function createMockBridge(): Bridge {
     'devtools.install': (p) => { void simulate('devtool:' + p.id, 'devtool', t('devtools.jobs.install', { name: p.id }), [t('devtools.steps.resolve'), t('devtools.steps.download'), t('devtools.steps.verify'), t('devtools.steps.install'), t('devtools.steps.check')]); return null; },
     'devtools.installMany': (p) => { void simulate('devtools', 'devtool', t('devtools.jobs.installMany', { count: p.tools.length }), p.tools.flatMap((x: { id: string }) => [x.id + ': ' + t('devtools.steps.download'), x.id + ': ' + t('devtools.steps.install')])); return null; },
     'software.install': (p) => { void simulate('software:' + p.key, 'software', t('software.jobs.install', { name: p.name }), [t('software.steps.trigger'), t('software.steps.wait')]); return null; },
-    'mail.preview': (p) => ({ to: p.template === 'accessRequest' ? info.accessContact : info.serviceCenter, subject: t(`mail.templates.${p.template}.subject`, { ...p.vars, user: info.user, computer: info.computer }), body: t(`mail.templates.${p.template}.body`, { ...p.vars, user: info.user, computer: info.computer }) }),
-    'mail.compose': (p) => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text', reportPath: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt', reportText: p.attachReport ? 'Ember-Diagnosebericht\n…' : null }),
+    'mail.preview': (p) => {
+      const vars = { ...p.vars, user: info.user, computer: info.computer, sender: 'Jürgen Mößner', supervisor: 'Petra', problemIntro: t('mail.problemIntro') };
+      const to = p.template === 'accessRequest' ? info.accessContact : p.template === 'adminAction' ? info.supervisor?.email ?? null : info.serviceCenter;
+      return { to, subject: t(`mail.templates.${p.template}.subject`, vars), body: t(`mail.templates.${p.template}.body`, vars) };
+    },
+    'mail.compose': () => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text' }),
     'diagnostics.report': () => ({ text: 'Ember-Diagnosebericht\n=====\nRechner: NB-ENT-0427\nBenutzer: FIRMA\\jmoessner', path: 'C:\\Ember\\Reports\\ember-diagnose-20261028-141500.txt' }),
     'power.state': () => power,
     'power.apply': () => ({ changed: 2, skipped: 0, elevated: false, errors: [] }),
@@ -403,7 +423,7 @@ export function createMockBridge(): Bridge {
       const pkg = (id: string, npm: string, installed: string | null, latest: string) => ({ id, npm, note: null, installed, latest, updateAvailable: !!installed && installed !== latest });
       return {
         pi: pkg('pi', '@earendil-works/pi-coding-agent', ai.pi.installed ? '1.4.2' : null, '1.5.0'),
-        packages: [pkg('mcp', 'pi-mcp-adapter', '0.9.1', '0.9.1'), pkg('websearch', 'pi-web-search-lite', null, '0.11.1'), pkg('pretty', '@heyhuynhgiabuu/pi-pretty', '0.9.0', '0.10.0'),
+        packages: [pkg('mcp', 'pi-mcp-adapter', '0.9.1', '0.9.1'), pkg('websearch', 'pi-web-search', null, '1.7.0'), pkg('pretty', '@heyhuynhgiabuu/pi-pretty', '0.9.0', '0.10.0'),
           pkg('ponytail', '@dietrichgebert/ponytail', null, '5.3.3'), pkg('simplify', 'pi-simplify', null, '0.2.3'), pkg('contextMode', 'context-mode', null, '2.1.7'), pkg('todo', '@juicesharp/rpiv-todo', '2.15.0', '2.15.0')],
       };
     },

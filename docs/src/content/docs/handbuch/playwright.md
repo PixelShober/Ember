@@ -21,6 +21,8 @@ Dabei setzt Ember, woran es hinter einem Firmenproxy meistens scheitert:
 
 Bricht der Download ab, sagt Ember, woran es lag. Ein Zertifikatsfehler heißt: Der Proxy bricht TLS auf, die Node.js-Zertifikate fehlen. Ein 407 heißt: px läuft nicht. Ist der Server nicht erreichbar, ist `cdn.playwright.dev` vermutlich gesperrt.
 
+Unter „Installierte Browser“ zeigt Ember, was im Cache liegt: Chromium, Firefox, WebKit. Die Ordnernamen mit Build-Nummer stehen im Tooltip. Zwei weitere Ordner legt Playwright immer mit ab: `ffmpeg` nimmt Videos der Testläufe auf, `winldd` prüft, ob Windows alles hat, was die Browser brauchen. Die gehören dazu, Ember zeigt sie nicht als Browser an. Dasselbe gilt für `chromium_headless_shell`, den Chromium für Läufe ohne Fenster.
+
 ## Wenn der Download nicht klappt: Edge
 
 Microsoft Edge ist auf jedem Windows-Rechner installiert, und Playwright kann ihn statt eines heruntergeladenen Chromium nehmen (`channel: 'msedge'`). Scheitert der Browser-Download, bietet Ember darunter „Edge verwenden“ an. Dasselbe passiert mit der Browser-Wahl „Microsoft Edge (kein Download)“.

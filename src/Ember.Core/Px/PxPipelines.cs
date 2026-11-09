@@ -51,6 +51,8 @@ public static class PxPipelines
              () => !c.Settings.ConfigureNpm ? Disabled : Tools.Npm == null ? L.T("proxy.toolNotFound", ("tool", "npm")) : null),
         Step("px.steps.nuget", (s, ct) => Tool("nuget", c, s, ct), () => c.Settings.ConfigureNuGet ? null : Disabled),
         Step("px.steps.pip", (s, ct) => Tool("pip", c, s, ct), () => c.Settings.ConfigurePip ? null : Disabled),
+        Step("px.steps.vscode", (s, ct) => Tool("vscode", c, s, ct),
+             () => !c.Settings.ConfigureVsCode ? Disabled : !Tools.VsCodeInstalled ? L.T("proxy.toolNotFound", ("tool", "VS Code")) : null),
     };
 
     public static List<SetupStep> Uninstall(PxContext c) => new()

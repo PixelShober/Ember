@@ -12,7 +12,17 @@
   let status = $state<AiStatus | null>(null);
   let settings = $state<UserSettings | null>(null);
   let serverModel = $state('');
-  let profile = $state<LlamaProfile['id']>('standard');
+  /** Why "Server starten" is off, as a locale key below ai.server.blocked, or null. */
+  let startBlocked = $derived.by(() => {
+    if (!status) return null;
+    const builds = status.llama.installed;
+    if (!builds.length) return 'noLlama';
+    const current = builds.find((b) => b.current) ?? builds.find((b) => b.complete) ?? builds[0];
+    if (!current.complete) return 'incomplete';
+    if (!serverModel) return 'noModel';
+    return null;
+  });
+  let profile = $state<LlamaProfile['id']>('lang');
   let newModel = $state({ url: '', name: '' });
 
   async function load() {
@@ -162,10 +172,12 @@
         <tbody>
           {#each status.llama.installed as l (l.path)}
             <tr>
-              <td><strong>{l.tag === 'custom' ? t('ai.llama.custom') : l.tag}</strong> <span class="muted">{l.variant === '?' ? '' : t(`ai.llama.variants.${l.variant}`)}</span></td>
+              <td><strong>{l.tag === 'custom' ? t('ai.llama.custom') : l.tag}</strong> <span class="muted">{l.variant === '?' ? '' : t(`ai.llama.variants.${l.variant}`)}</span>
+                {#if !l.complete}<span class="badge warn" title={t('ai.llama.incompleteHint')}>{t('ai.llama.incomplete')}</span>{/if}</td>
               <td><code class="small">{l.path}</code></td>
               <td class="right">
-                {#if l.current}<span class="badge ok">{t('ai.llama.current')}</span>
+                {#if l.current && l.complete}<span class="badge ok">{t('ai.llama.current')}</span>
+                {:else if !l.complete}<button class="btn small" disabled={app.jobs['llama']?.state === 'running'} onclick={() => run(() => api('ai.llama.install'))}>{t('ai.llama.reinstall')}</button>
                 {:else}<button class="btn small" onclick={async () => { await run(() => api('ai.llama.select', { name: l.tag + '-' + l.variant })); await load(); }}>{t('ai.llama.use')}</button>{/if}
               </td>
             </tr>
@@ -271,7 +283,8 @@
           <button class="btn" onclick={async () => { await run(() => api('ai.server.stop')); await load(); }}><Icon name="stop" size={14} />{t('ai.server.stop')}</button>
           <button class="btn ghost" onclick={() => run(() => api('app.openExternal', { url: `http://127.0.0.1:${status!.llama.port}/` }))}><Icon name="external" size={14} />{t('ai.server.openUi')}</button>
         {:else}
-          <button class="btn primary" disabled={!serverModel || !status.llama.installed.length} onclick={startServer}><Icon name="play" size={14} />{t('ai.server.start')}</button>
+          <button class="btn primary" disabled={!!startBlocked} onclick={startServer}><Icon name="play" size={14} />{t('ai.server.start')}</button>
+          {#if startBlocked}<span class="small muted">{t(`ai.server.blocked.${startBlocked}`)}</span>{/if}
         {/if}
       </div>
     {/if}

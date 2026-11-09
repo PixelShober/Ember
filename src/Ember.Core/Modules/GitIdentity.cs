@@ -21,7 +21,7 @@ public static class GitIdentity
             email = NullIfEmpty((await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get", "user.email" }, ct, logOutput: false)).LastLine);
         }
 
-        var (suggestedName, suggestedEmail, source) = await SuggestAsync(ct);
+        var (suggestedName, suggestedEmail, source) = await (_suggestion = SuggestAsync(CancellationToken.None)).WaitAsync(ct);
         return new GitIdentityInfo(git != null, name, email, suggestedName, suggestedEmail, source);
     }
 
@@ -38,6 +38,31 @@ public static class GitIdentity
             if (!r.Ok) throw new EmberException("commandFailed", ("command", "git config " + key), ("detail", r.Output));
         }
         Log.Info(L.T("git.identitySet", ("name", name), ("email", email)));
+    }
+
+    static Task<(string? Name, string? Email, string? Source)>? _suggestion;
+
+    /// <summary>
+    /// "Vorname Nachname" for the end of a mail: from the directory (asked once per start), else
+    /// git's user.name, else the Windows user name.
+    /// </summary>
+    public static async Task<string> SenderAsync(CancellationToken ct)
+    {
+        try
+        {
+            var (name, _, _) = await (_suggestion ??= SuggestAsync(CancellationToken.None)).WaitAsync(ct);
+            if (!string.IsNullOrWhiteSpace(name) && name != Environment.UserName) return name;
+            if (Tools.Git is { } git)
+            {
+                var r = await ProcessRunner.RunAsync(git, new[] { "config", "--global", "--get", "user.name" }, ct, logOutput: false);
+                if (NullIfEmpty(r.LastLine) is { } gitName) return gitName;
+            }
+            return name ?? Environment.UserName;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return Environment.UserName;
+        }
     }
 
     static async Task<(string? Name, string? Email, string? Source)> SuggestAsync(CancellationToken ct)

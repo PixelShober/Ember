@@ -27,7 +27,7 @@ public sealed class TeamRole
     public List<string>? Groups { get; set; }
 }
 
-/// <param name="Source">"team" (roles in team.json), "key" (starter key, no team.json), "dev" (development build) or "none".</param>
+/// <param name="Source">"team" (roles in team.json), "key" (starter key, no team.json), "dev" (development build), "preview" (an admin looks through another role) or "none".</param>
 /// <param name="Locked">null, "setup" (no team.json and no key) or "notListed" (team.json has no role for this account).</param>
 public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? Locked, IReadOnlyList<string> Roles, string? KeyLevel)
 {
@@ -58,6 +58,30 @@ public static class Permissions
             return new Grant(Expand(StarterKeys.LevelModules[level]), "key", null, Array.Empty<string>(), level);
 
         return new Grant(new HashSet<string>(), "none", "setup", Array.Empty<string>(), null);
+    }
+
+    /// <summary>
+    /// What another account would see, for an admin who wants to check Ember from their side:
+    /// "role:&lt;name&gt;" (one role of the team.json), "key:&lt;level&gt;" (a starter key) or "none"
+    /// (nobody's role: the lock screen). null for an unknown target.
+    /// </summary>
+    public static Grant? Preview(TeamConfig team, string target)
+    {
+        if (target == "none") return new Grant(new HashSet<string>(), "preview", "notListed", Array.Empty<string>(), null);
+        if (target.StartsWith("key:", StringComparison.Ordinal))
+        {
+            var level = target[4..];
+            return StarterKeys.LevelModules.TryGetValue(level, out var keyModules)
+                ? new Grant(Expand(keyModules), "preview", null, Array.Empty<string>(), level) : null;
+        }
+        if (target.StartsWith("role:", StringComparison.Ordinal))
+        {
+            var role = Roles(team).FirstOrDefault(r => r.Name == target[5..]);
+            if (role == null) return null;
+            var modules = Expand(role.Modules ?? new List<string>());
+            return new Grant(modules, "preview", modules.Count == 0 ? "notListed" : null, new[] { role.Name }, null);
+        }
+        return null;
     }
 
     /// <summary>

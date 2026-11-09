@@ -47,6 +47,7 @@ public sealed class UserSettings
     public bool ConfigureGit { get; set; } = true;
     public bool ConfigureNpm { get; set; } = true;
     public bool ConfigurePip { get; set; } = true;
+    public bool ConfigureVsCode { get; set; } = true;
     public bool ConfigureNuGet { get; set; } = true;
 
     // --- App ------------------------------------------------------------------------
@@ -76,8 +77,10 @@ public sealed class UserSettings
     public string LlamaVariant { get; set; } = "auto";
     public string LlamaCurrent { get; set; } = "";
     public int LlamaPort { get; set; } = 8080;
-    /// <summary>Context profile for llama-server: "standard" (96K), "lang" (160K) or "max" (256K).</summary>
-    public string LlamaProfile { get; set; } = "standard";
+    /// <summary>Context profile for llama-server: "standard" (96K), "lang" (160K, the default) or "max" (256K).</summary>
+    public string LlamaProfile { get; set; } = "lang";
+    /// <summary>true once the user picked a profile when starting. Until then the default applies, also after it changed ("standard" → "lang").</summary>
+    public bool LlamaProfileChosen { get; set; }
     /// <summary>A llama.cpp folder that is already there (e.g. C:\llama); used instead of Ember's own builds.</summary>
     public string LlamaCustomDir { get; set; } = "";
     /// <summary>Additional arguments after the profile's (empty: none).</summary>
@@ -89,7 +92,11 @@ public sealed class UserSettings
         try
         {
             if (File.Exists(Paths.SettingsFile))
-                return Json.Deserialize<UserSettings>(File.ReadAllText(Paths.SettingsFile)) ?? new UserSettings();
+            {
+                var s = Json.Deserialize<UserSettings>(File.ReadAllText(Paths.SettingsFile)) ?? new UserSettings();
+                if (!s.LlamaProfileChosen) s.LlamaProfile = new UserSettings().LlamaProfile;
+                return s;
+            }
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {

@@ -13,7 +13,10 @@ namespace Ember.Core;
 public sealed record PlaywrightProject(string Dir, bool HasPackageJson, string? Package, string? Version, string? Wanted, bool HasLockFile,
                                        string? Config = null, bool UsesEdge = false);
 
-public sealed record PlaywrightBrowser(string Name, string Path);
+/// <param name="Name">Folder in the cache, e.g. "chromium-1194".</param>
+/// <param name="Label">What people know it as: Chromium, Firefox, WebKit. null for Playwright's helpers
+/// (ffmpeg records videos, winldd checks Windows dependencies) and the headless shell, which belongs to Chromium.</param>
+public sealed record PlaywrightBrowser(string Name, string Path, string? Label);
 
 /// <param name="DefaultParent">Where a new project goes unless the user picks another folder.</param>
 public sealed record PlaywrightState(string BrowsersDir, IReadOnlyList<PlaywrightBrowser> Browsers, string? DownloadHost,
@@ -66,10 +69,26 @@ public static class Playwright
         var dir = BrowsersDir;
         if (!Directory.Exists(dir)) return new List<PlaywrightBrowser>();
         return Directory.GetDirectories(dir)
-                        .Select(d => new PlaywrightBrowser(Path.GetFileName(d), d))
+                        .Select(d => new PlaywrightBrowser(Path.GetFileName(d), d, LabelOf(Path.GetFileName(d))))
                         .Where(b => !b.Name.StartsWith('.'))
                         .OrderBy(b => b.Name, StringComparer.OrdinalIgnoreCase)
                         .ToList();
+    }
+
+    /// <summary>"chromium-1194" → Chromium; helpers and the headless shell → null.</summary>
+    internal static string? LabelOf(string folder)
+    {
+        var dash = folder.LastIndexOf('-');
+        var kind = (dash > 0 && folder[(dash + 1)..].All(char.IsDigit) ? folder[..dash] : folder).ToLowerInvariant();
+        return kind switch
+        {
+            "chromium" => "Chromium",
+            "chromium-tip-of-tree" => "Chromium Tip-of-Tree",
+            "firefox" => "Firefox",
+            "firefox-beta" => "Firefox Beta",
+            "webkit" => "WebKit",
+            _ => null,   // ffmpeg, winldd, chromium_headless_shell, …
+        };
     }
 
     public static PlaywrightProject Inspect(string dir)

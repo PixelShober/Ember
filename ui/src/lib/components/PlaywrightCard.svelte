@@ -200,7 +200,12 @@
       <button class="btn ghost small" onclick={() => run(() => api('app.openFolder', { key: 'playwright' }))}><Icon name="folder" size={14} />{t('playwright.openCache')}</button>
     </div>
     {#if pw?.browsers.length}
-      <p class="row">{#each pw.browsers as b (b.name)}<span class="badge">{b.name}</span>{/each}</p>
+      <p class="row">
+        {#each [...new Set(pw.browsers.filter((b) => b.label).map((b) => b.label))] as label (label)}
+          <span class="badge" title={pw.browsers.filter((b) => b.label === label).map((b) => b.name).join(', ')}>{label}</span>
+        {/each}
+      </p>
+      {#if pw.browsers.some((b) => !b.label)}<p class="small muted">{t('playwright.helpers')}</p>{/if}
     {:else}
       <p class="small muted">{t('playwright.cacheEmpty')}</p>
     {/if}

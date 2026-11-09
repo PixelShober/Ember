@@ -11,6 +11,7 @@
   import ConfirmDialog from './lib/components/ConfirmDialog.svelte';
   import MailDialog from './lib/components/MailDialog.svelte';
   import UpdateBanner from './lib/components/UpdateBanner.svelte';
+  import PreviewSwitch from './lib/components/PreviewSwitch.svelte';
   import Start from './pages/Start.svelte';
   import Proxy from './pages/Proxy.svelte';
   import Git from './pages/Git.svelte';
@@ -100,7 +101,7 @@
       <p>{t('access.locked.text', { user: app.info.user })}</p>
       {#if app.info.accessContact}<p class="small muted">{t('access.locked.contact', { email: app.info.accessContact })}</p>{/if}
       <div class="row">
-        <button class="btn primary" onclick={() => openMail('accessRequest', {}, false)}><Icon name="mail" size={16} />{t('access.locked.request')}</button>
+        <button class="btn primary" onclick={() => openMail('accessRequest')}><Icon name="mail" size={16} />{t('access.locked.request')}</button>
         <button class="btn" disabled={checking} onclick={recheck}><Icon name="refresh" size={16} />{t('access.locked.retry')}</button>
       </div>
     </div>
@@ -130,6 +131,7 @@
 
       <div class="foot">
         <AppearanceSwitch />
+        <PreviewSwitch />
         {#if can('proxy')}
           <a class="px-pill {pxState}" href="#/proxy">
             <span class="dot"></span>
@@ -165,6 +167,7 @@
   </div>
 {/if}
 
+{#if app.ready}<PreviewSwitch bar />{/if}
 <Toasts />
 <ConfirmDialog />
 <MailDialog />

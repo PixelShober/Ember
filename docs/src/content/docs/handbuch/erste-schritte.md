@@ -17,7 +17,7 @@ Auf einem frischen Rechner geht es in dieser Reihenfolge am schnellsten:
 4. Unter Software „Fehlende installieren“ für die Entwicklerwerkzeuge (Node.js mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7), danach die Programme aus der Team-Liste über das Softwarecenter.
 5. Wer lokal Modelle laufen lässt und das Modul Energie hat, wendet dort das Profil „Hohe Leistung (Netzbetrieb)“ an.
 
-Unten auf der Startseite gibt es zwei Abkürzungen: „Diagnosebericht erstellen“ speichert einen Bericht und kopiert ihn in die Zwischenablage, „Service-Center kontaktieren“ öffnet die vorbereitete Mail.
+Unten auf der Startseite gibt es zwei Abkürzungen: „Diagnosebericht erstellen“ speichert einen Bericht, kopiert ihn in die Zwischenablage und zeigt die Datei im Explorer. „Service-Center kontaktieren“ öffnet die vorbereitete Mail. Den zweiten Knopf gibt es nur, wenn die `team.json` eine Service-Center-Adresse hat.
 
 ## Die Seitenleiste
 

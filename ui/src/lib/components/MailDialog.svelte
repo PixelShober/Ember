@@ -1,19 +1,23 @@
 <script lang="ts">
   import { fade, scale } from 'svelte/transition';
-  import { api, app, copyText, run, toast } from '../app.svelte';
+  import { api, app, run, toast } from '../app.svelte';
   import { host, t } from '../i18n.svelte';
   import type { MailRequest } from '../app.svelte';
   import type { MailResult } from '../types';
   import Icon from './Icon.svelte';
   import Calcifer from './Calcifer.svelte';
 
-  const standard: MailRequest['template'][] = ['softwareRequest', 'adminAction', 'problem'];
+  // Software and problems go to the service center, admin rights to the supervisor: only what has
+  // an address in team.json is offered (plus whatever was asked for, which then says what is missing).
+  const standard = $derived(
+    (['softwareRequest', 'adminAction', 'problem'] as const).filter((tpl) =>
+      tpl === app.mail?.template || (tpl === 'adminAction' ? !!app.info?.supervisor : !!app.info?.serviceCenter)),
+  );
   // The access request only comes from the lock screen, and there it is the only sensible choice.
-  const templates = $derived(app.mail?.template === 'accessRequest' ? ['accessRequest' as const] : standard);
+  const templates = $derived<MailRequest['template'][]>(app.mail?.template === 'accessRequest' ? ['accessRequest'] : standard);
 
   let template = $state<MailRequest['template']>('problem');
   let details = $state('');
-  let attach = $state(true);
   let app_ = $state('');
   let preview = $state<{ to: string | null; subject: string; body: string } | null>(null);
   let busy = $state(false);
@@ -25,7 +29,6 @@
     template = m.template;
     details = m.vars.details ?? '';
     app_ = m.vars.app ?? '';
-    attach = m.attachReport;
   });
 
   const vars = $derived({ details, app: app_ });
@@ -42,10 +45,9 @@
 
   async function compose() {
     busy = true;
-    const result = await run(() => api<MailResult>('mail.compose', { template, vars, attachReport: attach }));
+    const result = await run(() => api<MailResult>('mail.compose', { template, vars }));
     busy = false;
     if (!result) return;
-    if (result.method === 'mailto' && result.reportText) await copyText(result.reportText);
     toast('ok', result.method === 'outlook' ? t('mail.resultOutlook') : t('mail.resultMailto'));
     close();
   }
@@ -61,8 +63,8 @@
       </div>
       <p class="muted">{t('mail.subtitle')}</p>
 
-      {#if !(template === 'accessRequest' ? app.info?.accessContact : app.info?.serviceCenter)}
-        <div class="note warn"><Calcifer /><p>{t('mail.noServiceCenter')}</p></div>
+      {#if preview && !preview.to}
+        <div class="note warn"><Calcifer /><p>{template === 'adminAction' ? t('mail.noSupervisor') : t('mail.noServiceCenter')}</p></div>
       {/if}
 
       <label class="field">
@@ -72,13 +74,14 @@
         </select>
       </label>
       {#if template === 'softwareRequest'}
-        <label class="field"><span>{t('nav.software')}</span><input bind:value={app_} /></label>
+        <!-- "Was genau?" is the software here: it fills {app} in the request. -->
+        <label class="field"><span>{t('mail.detailsSoftware')}</span><input bind:value={app_} /></label>
+      {:else}
+        <label class="field">
+          <span>{template === 'adminAction' ? t('mail.detailsAdmin') : t('mail.details')}</span>
+          <textarea bind:value={details} rows="4"></textarea>
+        </label>
       {/if}
-      <label class="field">
-        <span>{t('mail.details')}</span>
-        <textarea bind:value={details} rows="4"></textarea>
-      </label>
-      <label class="check"><input type="checkbox" bind:checked={attach} />{t('mail.attachReport')}</label>
 
       {#if preview}
         <div class="preview">
@@ -90,7 +93,7 @@
 
       <div class="row actions">
         <button class="btn" onclick={close}>{t('common.cancel')}</button>
-        <button class="btn primary" disabled={busy || !app.info?.serviceCenter} onclick={compose}><Icon name="mail" size={16} />{t('mail.compose')}</button>
+        <button class="btn primary" disabled={busy || !preview?.to || (template === 'softwareRequest' && !app_.trim())} onclick={compose}><Icon name="mail" size={16} />{t('mail.compose')}</button>
       </div>
     </div>
   </div>

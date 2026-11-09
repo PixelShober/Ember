@@ -19,7 +19,9 @@
     },
     "advancedOn": "Power, AI and Permissions are visible again, as far as your roles have them. Ctrl + E hides them.",
     "advancedOff": "Power, AI and Permissions are hidden. Ctrl + E shows them again.",
-    "advancedNotAllowed": "None of your roles has Power, AI or Permissions."
+    "advancedNotAllowed": "None of your roles has Power, AI or Permissions.",
+    "previewLog": "Preview started: Ember shows what {target} sees.",
+    "previewEnd": "Preview ended, back to the own view."
   },
   "nav": {
     "start": "Home",
@@ -28,7 +30,7 @@
     "software": "Software",
     "playwright": "Playwright",
     "power": "Power",
-    "system": "System",
+    "system": "System info",
     "ai": "AI",
     "settings": "Settings",
     "log": "Log",
@@ -70,7 +72,7 @@
     },
     "resetToTeam": "Reset to team value",
     "needsAdmin": "Needs admin rights – Windows will ask",
-    "askServiceCenter": "Ask the service center",
+    "askServiceCenter": "Request admin rights",
     "saved": "Saved",
     "cancelled": "Cancelled",
     "resetToDetected": "Use detected value",
@@ -182,10 +184,12 @@
     "modelLocal": "“{path}” is already on this PC, there is nothing to download.",
     "modelFromTeam": "This model comes from the team configuration and cannot be removed here.",
     "piConfigInvalid": "The Pi configuration {path} is not valid JSON: {detail}",
-    "llamaNoCudaRuntime": "The CUDA runtime (cudart64_*.dll) is missing next to llama-server.exe in {path}. Without it the CUDA build runs on the CPU only. Reinstall llama.cpp.",
+    "llamaNoCudaRuntime": "The CUDA runtime (cudart64, cublas64) is missing in the llama.cpp folder {path}. Reinstall it or use a complete folder.",
     "llamaNoCudaAtStart": "The llama.cpp build in {path} sees no NVIDIA card and would run on the CPU. Usually CUDA files (cudart64, cublas64) are missing or the driver is older than 580. Reinstall llama.cpp or choose a working folder. Message: {detail}",
     "llamaNoServerIn": "There is no llama-server.exe in {path}.",
-    "piMissing": "Pi is not installed yet."
+    "piMissing": "Pi is not installed yet.",
+    "previewUnknown": "There is no such preview: {target}",
+    "mailNoSupervisor": "No direct supervisor is set for admin rights (team.json → supervisor)."
   },
   "jobs": {
     "started": "started",
@@ -225,7 +229,6 @@
   },
   "start": {
     "title": "Hello {name}",
-    "subtitle": "This is how your machine is doing",
     "cards": {
       "px": "px proxy",
       "proxy": "Proxy diagnosis",
@@ -249,7 +252,7 @@
     "quick": "Quick actions",
     "report": "Create diagnosis report",
     "contact": "Contact the service center",
-    "reportSaved": "Report saved and copied: {path}",
+    "reportSaved": "Report saved and copied to the clipboard. Its folder is open: {path}",
     "byKey": "Unlocked with the key “{level}”. Once you enter team.json, its roles decide what you see.",
     "setUpTeam": "Set up team configuration"
   },
@@ -395,7 +398,8 @@
       "removeVscode": "Remove VS Code proxy",
       "deleteFiles": "Delete px files",
       "powershell": "Point PowerShell to px",
-      "removePowerShell": "Remove px from the PowerShell profile"
+      "removePowerShell": "Remove px from the PowerShell profile",
+      "vscode": "Point VS Code to px"
     },
     "pacFile": "PAC file: {value}",
     "noneFound": "none found",
@@ -500,43 +504,46 @@
     "openShort": "Software Center"
   },
   "mail": {
-    "title": "Message to the service center",
-    "subtitle": "Ember prepares the mail. You review it and send it yourself.",
+    "title": "Prepare a mail",
+    "subtitle": "Ember prepares the mail. You check it and send it yourself. Logs and the diagnosis report are not included.",
     "template": "Topic",
     "templateNames": {
       "softwareRequest": "Request software",
-      "adminAction": "Admin rights for an action",
+      "adminAction": "Ask your supervisor for admin rights",
       "problem": "Report a problem",
       "accessRequest": "Access to Ember"
     },
     "details": "What exactly?",
-    "attachReport": "Attach diagnosis report",
     "to": "To",
     "compose": "Prepare mail",
     "outlookDraft": "Outlook draft to {to} opened",
     "mailtoOpened": "Mail program for {to} opened",
-    "attachHint": "Please attach the diagnosis report: {path}",
-    "resultOutlook": "The draft is open in Outlook with the report attached.",
-    "resultMailto": "Your mail program is open. The report is in the clipboard and saved as a file – please attach it.",
+    "resultOutlook": "The draft is open in Outlook.",
+    "resultMailto": "Your mail program is open.",
     "noServiceCenter": "No service center address is configured yet (team.json → serviceCenter.email).",
     "templates": {
       "softwareRequest": {
         "subject": "Software request: {app} for {user}",
-        "body": "Hello service center,\n\nplease provide {app} for me.\n\nUser: {user}\nComputer: {computer}\n\n{details}\n\nThank you!"
+        "body": "Dear colleagues,\n\nplease make the software {app} available to me through the Software Center.\n\nUser: {user}\nComputer: {computer}\n\nKind regards,\n{sender}"
       },
       "adminAction": {
-        "subject": "Admin rights needed on {computer}",
-        "body": "Hello service center,\n\nmy development environment needs admin rights once on {computer} for the following setting:\n\n{details}\n\nUser: {user}\n\nThank you!"
+        "subject": "Please request admin rights for {computer} from the service center",
+        "body": "Hello {supervisor},\n\ncould you please request admin rights for my computer ({computer}) from the service center for me?\n\n{details}\n\nThanks in advance!\n\nKind regards,\n{sender}"
       },
       "problem": {
         "subject": "Problem on {computer}",
-        "body": "Hello service center,\n\nI have the following problem:\n\n{details}\n\nUser: {user}\nComputer: {computer}\nThe Ember diagnosis report is attached.\n\nThank you!"
+        "body": "Dear colleagues,\n\n{problemIntro}\n\n{details}\n\nUser: {user}\nComputer: {computer}\n\nKind regards,\n{sender}"
       },
       "accessRequest": {
         "subject": "Access to Ember for {user}",
-        "body": "Hello,\n\nI would like to use Ember on {computer} to set up my developer machine. Please add me to the access list.\n\n{details}\n\nUser: {user}\n\nThank you!"
+        "body": "Hello,\n\nI would like to use Ember on {computer} to set up my developer machine. Please add me to a role.\n\n{details}\n\nUser: {user}\n\nKind regards,\n{sender}"
       }
-    }
+    },
+    "problemIntro": "I am facing the following problem in my development or work process:",
+    "signature": "Kind regards,\n{sender}",
+    "detailsSoftware": "Which software?",
+    "detailsAdmin": "What for? (included in the mail)",
+    "noSupervisor": "No direct supervisor is set (team.json → supervisor.email)."
   },
   "diagnostics": {
     "title": "Ember diagnosis report",
@@ -762,7 +769,10 @@
       "pickFolder": "Choose the folder with llama-server.exe",
       "useFolder": "Use an existing folder",
       "custom": "own folder",
-      "usedFolder": "Ember now starts llama-server from {path}."
+      "usedFolder": "Ember now starts llama-server from {path}.",
+      "incomplete": "incomplete",
+      "incompleteHint": "This CUDA build lacks the CUDA runtime (cudart64, cublas64) and would run on the CPU. Reinstall it or use a complete folder.",
+      "reinstall": "Reinstall"
     },
     "models": {
       "title": "Models",
@@ -826,7 +836,12 @@
       "generation": "{tps} tokens/s answer",
       "prompt": "{tps} tokens/s prompt",
       "onCpu": "llama-server runs on the CPU, not the NVIDIA card. Usually the CUDA runtime next to llama-server.exe is missing. Reinstall llama.cpp.",
-      "build": "llama-server from {path} · runtime: {dlls} · devices: {devices}"
+      "build": "llama-server from {path} · runtime: {dlls} · devices: {devices}",
+      "blocked": {
+        "noLlama": "Install llama.cpp first or use an existing folder.",
+        "incomplete": "The selected llama.cpp build is incomplete. Reinstall it or use an existing folder.",
+        "noModel": "Download a model or add a local one first."
+      }
     },
     "pi": {
       "title": "Pi (coding agent)",
@@ -866,7 +881,7 @@
       "updateOne": "Update",
       "packages": {
         "mcp": "MCP servers from the repo’s .mcp.json",
-        "websearch": "Web search and page reading. Searching needs a search service key (Brave, Tavily, Exa …) in ~/.pi/agent/pi-web-search-lite/config.json.",
+        "websearch": "Web search through the selected model's provider (Gemini, OpenAI, Anthropic, Copilot …). It does not search with the local llama.cpp server, which has no web search of its own.",
         "pretty": "Colourful output: syntax highlighting, bash output, directory trees",
         "ponytail": "“Lazy senior”: writes only the code that is really needed",
         "simplify": "Reviews freshly changed code for clarity and simplicity",
@@ -928,7 +943,8 @@
       "npm": "npm",
       "nuget": "NuGet / .NET",
       "pip": "pip",
-      "powershell": "PowerShell profile (irm, iwr)"
+      "powershell": "PowerShell profile (irm, iwr)",
+      "vscode": "VS Code (http.proxy)"
     },
     "language": {
       "title": "Language",
@@ -963,11 +979,7 @@
       "pxConfig": "px configuration",
       "reports": "Reports"
     },
-    "unsaved": "Unsaved changes",
-    "appearance": {
-      "title": "Appearance",
-      "description": "You can also switch colour scheme and design at the bottom of the sidebar. Ivy is sage by day and forest green at night, Ember has a warm reddish ground. Ivy climbs both."
-    }
+    "unsaved": "Unsaved changes"
   },
   "log": {
     "title": "Log",
@@ -1159,7 +1171,8 @@
       "nameRule": "Lower-case letters, digits, dot, hyphen and underscore. Ember turns \"My Project\" into \"my-project\".",
       "files": "The template comes with: package.json with the usual scripts (test, test:ui, report, codegen), playwright.config.ts, an example test, .gitignore, a README and the recommendation for the Playwright extension in VS Code. Then npm installs @playwright/test.",
       "submit": "Create project"
-    }
+    },
+    "helpers": "Playwright also keeps two helpers there: ffmpeg records videos of test runs, winldd checks that Windows has what the browsers need. They belong there and stay."
   },
   "appearance": {
     "scheme": "Colour scheme",
@@ -1246,5 +1259,16 @@
       "teamFailed": "team.json at {path} cannot be reached right now: {detail}",
       "account": "Signed in as {user}."
     }
+  },
+  "preview": {
+    "title": "View as",
+    "own": "Own view",
+    "roles": "Roles",
+    "keys": "Keys",
+    "none": "No role (lock screen)",
+    "role": "role “{role}”",
+    "key": "key “{level}”",
+    "active": "Preview: {view}",
+    "back": "Back to own view"
   }
 }

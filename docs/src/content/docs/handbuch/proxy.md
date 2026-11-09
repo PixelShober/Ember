@@ -54,7 +54,7 @@ Folgende Werkzeuge kennt Ember:
 | Node.js-Zertifikate | `NODE_EXTRA_CA_CERTS` für dein Benutzerkonto, zeigt auf `C:\Ember\Certs\windows-ca.pem` |
 | NuGet / .NET | `http_proxy` und `no_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
 | pip | `proxy` in `%APPDATA%\pip\pip.ini` |
-| VS Code | `"http.proxy"` und `"http.noProxy"` in `settings.json`, Kommentare bleiben erhalten |
+| VS Code | `"http.proxy"` und `"http.noProxy"` in `settings.json`, Kommentare bleiben erhalten; dazu beide in `"settingsSync.ignoredSettings"`, siehe unten |
 
 ### PowerShell
 
@@ -67,6 +67,12 @@ powershell -c "irm https://pi.dev/install.ps1 | iex"
 scheitern deshalb, in PowerShell genauso wie aus `cmd` heraus. „Auf px setzen“ trägt in das Profil von Windows PowerShell und PowerShell 7 einen Block ein, der genau diese Aufrufe über px schickt. Interne Domains und `localhost` gehen direkt. Was sonst im Profil steht, bleibt, wie es ist. Neue PowerShell-Fenster nutzen den Eintrag.
 
 Windows PowerShell lädt Profile nur mit der Ausführungsrichtlinie RemoteSigned. Steht sie auf „Restricted“ (der Windows-Standard), sagt die Diagnose das dazu. Umstellen kannst du sie unter [System](/Ember/handbuch/system/).
+
+### VS Code
+
+Der Proxy gehört zum Rechner, nicht zum Konto. Mit eingeschalteter Einstellungssynchronisierung holte VS Code beim nächsten Start aber den Stand aus der Cloud zurück, und darin fehlte der px-Eintrag oder stand der eines anderen Rechners. So sah es aus, als vergäße VS Code den Proxy. Ember trägt `http.proxy` und `http.noProxy` deshalb zusätzlich in `settingsSync.ignoredSettings` ein. Die Synchronisierung lässt die beiden dann in Ruhe, alles andere synchronisiert sie weiter.
+
+Die px-Installation stellt VS Code jetzt auch selbst um, wie git und npm. Abschalten lässt sich das in den Einstellungen unter „Werkzeuge“.
 
 ## Interne Server ohne Proxy
 

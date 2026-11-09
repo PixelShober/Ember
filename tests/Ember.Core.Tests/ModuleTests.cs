@@ -27,16 +27,60 @@ public class ModuleTests
     {
         L.Configure("de");
         var team = TeamConfig.Parse(File.ReadAllText(TestFiles.Fixture("team.example.json")));
-        var vars = new Dictionary<string, string?> { ["app"] = "Alfaview", ["details"] = "Für Schulungen", ["user"] = "FIRMA\\jmoessner" };
+        var vars = new Dictionary<string, string?> { ["app"] = "Alfaview", ["user"] = "FIRMA\\jmoessner", ["sender"] = "Jürgen Mößner" };
         var (subject, body) = Mail.Render(team, "softwareRequest", vars);
         Assert.Equal("[Ember] Softwarebereitstellung: Alfaview für FIRMA\\jmoessner", subject);
-        Assert.Contains("Für Schulungen", body);
+        Assert.StartsWith("Sehr geehrte Kolleginnen und Kollegen,", body);
+        Assert.Contains("die Software Alfaview über das Software Center", body);
         Assert.Contains(Environment.MachineName, body);
+        // The team's own template has no {sender}: Ember adds the closing line with the full name.
+        Assert.EndsWith("Mit freundlichen Grüßen,\nJürgen Mößner", body);
 
-        var (s2, b2) = Mail.Render(team, "problem", new Dictionary<string, string?> { ["details"] = "px startet nicht" });
+        var (s2, b2) = Mail.Render(team, "problem", new Dictionary<string, string?> { ["details"] = "px startet nicht", ["sender"] = "Jürgen Mößner" });
         Assert.StartsWith("[Ember] Problem auf ", s2);
+        Assert.Contains("vor folgendem Problem in meinem Entwicklungs- bzw. Arbeitsprozess", b2);
         Assert.Contains("px startet nicht", b2);
-        Assert.Contains("Diagnosebericht", b2);
+        Assert.DoesNotContain("Diagnosebericht", b2);
+        Assert.EndsWith("Mit freundlichen Grüßen,\nJürgen Mößner", b2);
+
+        team.ServiceCenter!.ProblemIntro = new LocalizedText("Bei uns hakt es:");
+        Assert.Contains("Bei uns hakt es:", Mail.Render(team, "problem", vars).Body);
+    }
+
+    [Fact]
+    public void Admin_rights_go_to_the_supervisor_with_their_first_name()
+    {
+        L.Configure("de");
+        var team = TeamConfig.Parse(File.ReadAllText(TestFiles.Fixture("team.example.json")));
+        Assert.Equal("petra.lindner@firma.example", Mail.Recipient(team, "adminAction"));
+        Assert.Equal("servicecenter@firma.example", Mail.Recipient(team, "problem"));
+        var (_, body) = Mail.Render(team, "adminAction", new Dictionary<string, string?> { ["sender"] = "Jürgen Mößner" });
+        Assert.StartsWith("Hallo Petra,", body);
+        Assert.Contains("Admin-Rechte für meinen Rechner", body);
+        Assert.Contains("Dank dir im Voraus!", body);
+
+        Assert.Equal("Petra", new TeamSupervisor { Name = "Lindner, Petra" }.GreetingName());
+        Assert.Equal("Pe", new TeamSupervisor { Name = "Petra Lindner", FirstName = "Pe" }.GreetingName());
+        Assert.Null(Mail.Recipient(new TeamConfig(), "adminAction"));
+    }
+
+    [Theory]
+    [InlineData("chromium-1194", "Chromium")]
+    [InlineData("firefox-1495", "Firefox")]
+    [InlineData("webkit-2215", "WebKit")]
+    [InlineData("chromium_headless_shell-1194", null)]
+    [InlineData("ffmpeg-1013", null)]
+    [InlineData("winldd-1007", null)]
+    public void Playwright_cache_folders_get_browser_names(string folder, string? label) =>
+        Assert.Equal(label, Playwright.LabelOf(folder));
+
+    [Fact]
+    public void Vs_code_settings_sync_leaves_the_proxy_alone()
+    {
+        Assert.Equal(new[] { "http.proxy", "http.noProxy" }, ProxyTools.WithSyncIgnore(null));
+        Assert.Equal(new[] { "editor.fontSize", "http.proxy", "http.noProxy" }, ProxyTools.WithSyncIgnore(new[] { "editor.fontSize" }));
+        Assert.Equal(new[] { "HTTP.PROXY", "http.noProxy" }, ProxyTools.WithSyncIgnore(new[] { "HTTP.PROXY" }));
+        Assert.Equal(new[] { "http.proxy", "http.noProxy" }, ProxyTools.WithSyncIgnore(new[] { "http.proxy", "http.noProxy" }));
     }
 
     [Fact]

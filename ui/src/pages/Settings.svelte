@@ -7,7 +7,6 @@
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import SourceBadge from '../lib/components/SourceBadge.svelte';
-  import AppearanceSwitch from '../lib/components/AppearanceSwitch.svelte';
 
   let view = $state<SettingsView | null>(null);
   let s = $state<UserSettings | null>(null);
@@ -90,7 +89,7 @@
   function chooseLanguage(l: 'de' | 'en') {
     if (s) s.language = l === windowsLanguage ? 'auto' : l;
   }
-  const toolKeys = [['configureEnvVars', 'envVars'], ['configurePowerShell', 'powershell'], ['configureGit', 'git'], ['configureNpm', 'npm'], ['configureNuGet', 'nuget'], ['configurePip', 'pip']] as const;
+  const toolKeys = [['configureEnvVars', 'envVars'], ['configurePowerShell', 'powershell'], ['configureGit', 'git'], ['configureNpm', 'npm'], ['configureNuGet', 'nuget'], ['configurePip', 'pip'], ['configureVsCode', 'vscode']] as const;
 </script>
 
 <header class="page-head">
@@ -179,13 +178,6 @@
       {#each toolKeys as [key, label] (key)}
         <label class="check"><input type="checkbox" bind:checked={s[key]} />{t(`settings.tools.${label}`)}</label>
       {/each}
-    </section>
-
-    <!-- appearance -->
-    <section class="card stack tight">
-      <h2>{t('settings.appearance.title')}</h2>
-      <p class="muted">{t('settings.appearance.description')}</p>
-      <AppearanceSwitch variant="card" />
     </section>
 
     <!-- language -->

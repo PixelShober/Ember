@@ -29,9 +29,8 @@ Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“
 |---|---|
 | Team-Konfiguration | Pfad zur `team.json`, Stand und Quelle, „Neu laden“ |
 | Firmenproxy | PAC-Datei oder fester Proxy, PAC-Adresse (leer = aus Windows), Firmenproxy als `host:port`, interne Domains, px-Port, „Automatisch erkennen“ |
-| Darstellung | Design „Efeu“ oder „Glut“, hell oder dunkel. Dieselben Schalter stehen unten in der Seitenleiste. |
 | px | Installationsordner, Autostart |
-| Werkzeuge | welche Werkzeuge die px-Installation umstellt (Umgebungsvariablen, PowerShell, git, npm, NuGet, pip) |
+| Werkzeuge | welche Werkzeuge die px-Installation umstellt (Umgebungsvariablen, PowerShell, git, npm, NuGet, pip, VS Code) |
 | Sprache | Deutsch oder English, vorausgewählt ist die Windows-Sprache |
 | Updates | automatisch suchen, „Jetzt prüfen“, Stand und Quelle |
 | Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist; Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein |
@@ -43,7 +42,7 @@ Wählst du die Sprache, die auch Windows hat, folgt Ember weiter der Windows-Ein
 
 ## Darstellung
 
-Ember hat zwei Designs. **Efeu** ist am Tag hell und salbeigrün, nachts waldgrün mit dunkelgrüner Seitenleiste. An der Seitenleiste rankt Efeu hoch, die Akzente sind glutrot. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel. Beim allerersten Start übernimmt Ember, was Windows gerade nutzt, danach bleibt deine Wahl.
+Design und hell oder dunkel wählst du unten in der Seitenleiste, in den Einstellungen gibt es dafür keinen eigenen Bereich mehr. Ember hat zwei Designs. **Efeu** ist am Tag hell und salbeigrün, nachts waldgrün mit dunkelgrüner Seitenleiste. An der Seitenleiste rankt Efeu hoch, die Akzente sind glutrot. **Glut** ist wärmer: rosiger Grund am Tag, verkohltes Ochsenblut bei Nacht, Moosgrün für „erledigt“. Beide gibt es hell und dunkel. Beim allerersten Start übernimmt Ember, was Windows gerade nutzt, danach bleibt deine Wahl.
 
 Beim Umschalten wächst das neue Aussehen als Kreis aus dem gedrückten Schalter. Wer unter Windows „Animationseffekte“ abgeschaltet hat, bekommt den Wechsel ohne Animation. Die Wahl merkt sich Ember in `settings.json`, auch die Titelleiste des Fensters passt sich an.
 

@@ -41,12 +41,23 @@
       "properties": {
         "email": { "type": "string", "format": "email" },
         "name": { "type": "string" },
-        "subjectPrefix": { "type": "string", "description": "Wird jedem Betreff vorangestellt, z. B. [Ember]." }
+        "subjectPrefix": { "type": "string", "description": "Wird jedem Betreff vorangestellt, z. B. [Ember]." },
+        "problemIntro": { "$ref": "#/$defs/text", "description": "Erster Satz der Mail „Problem melden“. Leer: Embers eigener Text." }
+      }
+    },
+    "supervisor": {
+      "type": "object",
+      "description": "Direkte Vorgesetzte bzw. direkter Vorgesetzter. Anfragen nach Adminrechten gehen hierhin, nicht ans Service-Center.",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Vor- und Nachname, auch „Nachname, Vorname“." },
+        "firstName": { "type": "string", "description": "Für „Hallo …“. Standard: das erste Wort von name." },
+        "email": { "type": "string", "format": "email" }
       }
     },
     "mailTemplates": {
       "type": "object",
-      "description": "Eigene Vorlagen. Platzhalter: {user}, {computer}, {app}, {details}, {date}, {ember}.",
+      "description": "Eigene Vorlagen. Platzhalter: {user}, {computer}, {app}, {details}, {date}, {ember}, {sender} (Vor- und Nachname), {supervisor} (Vorname der bzw. des Vorgesetzten), {problemIntro}. Fehlt {sender}, hängt Ember den Gruß mit Namen an.",
       "propertyNames": { "enum": ["softwareRequest", "adminAction", "problem", "accessRequest"] },
       "additionalProperties": {
         "type": "object",

@@ -29,9 +29,14 @@ export interface AppInfo {
   elevated: boolean;
   /** Modules this account sees: from its roles in team.json, or from a starter key while there is none. */
   modules: ModuleId[];
-  grant: { source: 'team' | 'key' | 'dev' | 'none'; roles: string[]; keyLevel: KeyLevel | null };
+  grant: { source: 'team' | 'key' | 'dev' | 'preview' | 'none'; roles: string[]; keyLevel: KeyLevel | null };
   /** setup: no team.json and no key; notListed: team.json has no role for this account. */
   locked: 'setup' | 'notListed' | null;
+  /**
+   * Admins only: look at Ember through a role, a key level or nobody's role. current is
+   * "role:<name>", "key:<level>", "none" or null (own view).
+   */
+  preview: { current: string | null; roles: string[]; keys: KeyLevel[] } | null;
   /** Has the Berechtigungen tab. */
   admin: boolean;
   /** Has one of the advanced tabs (KI, Energie, Berechtigungen): Ctrl+E shows or hides them. */
@@ -50,6 +55,8 @@ export interface AppInfo {
   team: TeamStatus;
   teamName: string | null;
   serviceCenter: string | null;
+  /** Direct supervisor from team.json: requests for admin rights go there. */
+  supervisor: { name: string | null; email: string } | null;
   repo: string;
   docs: string;
 }
@@ -194,6 +201,7 @@ export interface UserSettings {
   configureGit: boolean;
   configureNpm: boolean;
   configurePip: boolean;
+  configureVsCode: boolean;
   configureNuGet: boolean;
   language: string;
   hideAdvanced: boolean;
@@ -317,7 +325,7 @@ export interface PlaywrightEdgeSetup {
 
 export interface PlaywrightState {
   browsersDir: string;
-  browsers: { name: string; path: string }[];
+  browsers: { name: string; path: string; label: string | null }[];
   downloadHost: string | null;
   nodeCerts: boolean;
   nodeFound: boolean;
@@ -340,8 +348,6 @@ export interface MailResult {
   to: string;
   subject: string;
   body: string;
-  reportPath: string | null;
-  reportText: string | null;
 }
 
 export interface PowerValue {
@@ -450,6 +456,8 @@ export interface LlamaInstall {
   variant: string;
   path: string;
   current: boolean;
+  /** false: CUDA build without its runtime; it would run on the CPU. */
+  complete: boolean;
 }
 
 export interface LlamaStatus {

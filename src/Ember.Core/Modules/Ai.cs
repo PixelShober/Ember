@@ -52,7 +52,8 @@ public static class Gpu
     }
 }
 
-public sealed record LlamaInstall(string Tag, string Variant, string Path, bool Current);
+/// <param name="Complete">false: a CUDA build without its runtime (cudart64/cublas64); it would run on the CPU and is not started.</param>
+public sealed record LlamaInstall(string Tag, string Variant, string Path, bool Current, bool Complete = true);
 
 /// <param name="Offloaded">"62/62": layers on the GPU, from the server's log ("offloaded 62/62 layers to GPU").</param>
 /// <param name="Loaded">The server answers (log: "model loaded" / "listening on").</param>
@@ -88,7 +89,7 @@ public static class LlamaCpp
         new LlamaProfile("max", 262144, "q4_0", false),
     };
 
-    public static LlamaProfile Profile(string? id) => Profiles.FirstOrDefault(p => p.Id == id) ?? Profiles[0];
+    public static LlamaProfile Profile(string? id) => Profiles.FirstOrDefault(p => p.Id == id) ?? Profiles.First(p => p.Id == "lang");
 
     public static IReadOnlyList<LlamaInstall> Installed(UserSettings s)
     {
@@ -101,13 +102,13 @@ public static class LlamaCpp
             .Select(d => (Dir: d, Name: Path.GetFileName(d)))
             .Where(x => !x.Name.EndsWith(".part", StringComparison.Ordinal) && File.Exists(Path.Combine(x.Dir, "llama-server.exe")))
             // A CUDA build without its runtime (half-finished install) would run on the CPU: not offered.
-            .Where(x => !x.Name.EndsWith("-cuda", StringComparison.Ordinal) || HasCudaRuntime(x.Dir))
             .Select(x =>
             {
                 var dash = x.Name.IndexOf('-');
                 var tag = dash > 0 ? x.Name[..dash] : x.Name;
                 var variant = dash > 0 ? x.Name[(dash + 1)..] : "?";
-                return new LlamaInstall(tag, variant, x.Dir, x.Name == s.LlamaCurrent);
+                // A CUDA build without its runtime stays visible, marked, so the reason is clear.
+                return new LlamaInstall(tag, variant, x.Dir, x.Name == s.LlamaCurrent, variant != "cuda" || HasCudaRuntime(x.Dir));
             })
             .OrderByDescending(i => i.Tag, StringComparer.OrdinalIgnoreCase))
             .ToList();
@@ -311,8 +312,13 @@ public static class LlamaCpp
             throw new EmberException("llamaNoCudaAtStart", ("path", current.Path), ("detail", output.Split('\n').LastOrDefault()?.Trim() ?? ""));
     }
 
-    static LlamaInstall Current(UserSettings s) =>
-        Installed(s).FirstOrDefault(i => i.Current) ?? Installed(s).FirstOrDefault() ?? throw new EmberException("llamaNotInstalled");
+    static LlamaInstall Current(UserSettings s)
+    {
+        var all = Installed(s);
+        var current = all.FirstOrDefault(i => i.Current) ?? all.FirstOrDefault(i => i.Complete) ?? all.FirstOrDefault() ?? throw new EmberException("llamaNotInstalled");
+        if (!current.Complete) throw new EmberException("llamaNoCudaRuntime", ("path", current.Path));
+        return current;
+    }
 
     public static void StartServer(UserSettings s, ModelState model)
     {

@@ -128,7 +128,7 @@
               </button>
             {/if}
             {#if d.method === 'mail'}
-              <button class="btn small" onclick={() => openMail('softwareRequest', { app: d.name })}><Icon name="mail" size={14} />{t('software.request')}</button>
+              {#if app.info?.serviceCenter}<button class="btn small" onclick={() => openMail('softwareRequest', { app: d.name })}><Icon name="mail" size={14} />{t('software.request')}</button>{/if}
             {/if}
           </div>
           <div class="job"><JobView id={'devtool:' + d.id} compact /></div>
@@ -176,7 +176,7 @@
               {/if}
               <span class="spacer"></span>
               <button class="btn small ghost icon-only" title={t('software.open')} aria-label={t('software.open')} onclick={() => run(() => api('software.open', { link: item.link }))}><Icon name="external" size={15} /></button>
-              <button class="btn small ghost icon-only" title={t('software.request')} aria-label={t('software.request')} onclick={() => openMail('softwareRequest', { app: item.name })}><Icon name="mail" size={15} /></button>
+              {#if app.info?.serviceCenter}<button class="btn small ghost icon-only" title={t('software.request')} aria-label={t('software.request')} onclick={() => openMail('softwareRequest', { app: item.name })}><Icon name="mail" size={15} /></button>{/if}
             </div>
             <div class="job"><JobView id={'software:' + item.key} compact /></div>
           </article>

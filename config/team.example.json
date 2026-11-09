@@ -13,13 +13,17 @@
     "name": "IT-Service-Center",
     "subjectPrefix": "[Ember]"
   },
+  "supervisor": {
+    "name": "Petra Lindner",
+    "email": "petra.lindner@firma.example"
+  },
 
   "mailTemplates": {
     "softwareRequest": {
       "subject": { "de": "Softwarebereitstellung: {app} für {user}", "en": "Software request: {app} for {user}" },
       "body": {
-        "de": "Hallo Service-Center,\n\nbitte stellt {app} für mich bereit.\n\nBenutzer: {user}\nRechner: {computer}\n\n{details}\n\nDanke!",
-        "en": "Hello service center,\n\nplease provide {app} for me.\n\nUser: {user}\nComputer: {computer}\n\n{details}\n\nThank you!"
+        "de": "Sehr geehrte Kolleginnen und Kollegen,\n\nbitte stellen Sie mir die Software {app} über das Software Center bereit.\n\nBenutzer: {user}\nRechner: {computer}",
+        "en": "Dear colleagues,\n\nplease make the software {app} available to me through the Software Center.\n\nUser: {user}\nComputer: {computer}"
       }
     }
   },

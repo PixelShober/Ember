@@ -50,7 +50,7 @@
 
     <p class="small muted foot">
       {t('access.setup.account', { user: app.info?.user ?? '' })}
-      <button class="btn ghost small" onclick={() => openMail('accessRequest', {}, false)}><Icon name="mail" size={14} />{t('access.locked.request')}</button>
+      <button class="btn ghost small" onclick={() => openMail('accessRequest')}><Icon name="mail" size={14} />{t('access.locked.request')}</button>
     </p>
   </div>
 </main>

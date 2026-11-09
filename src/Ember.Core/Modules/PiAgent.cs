@@ -44,13 +44,14 @@ public static class PiAgent
     // ------------------------------------------------------------------ extensions
 
     /// <summary>
-    /// What Ember offers to install into Pi. Websearch: pi-web-search-lite, the one that works with a
-    /// local model (search through Brave, Tavily, Exa … with that service's key; reading pages needs none).
+    /// What Ember offers to install into Pi. Websearch: pi-web-search, which asks the selected model's
+    /// provider to search (Gemini, OpenAI, Anthropic, Copilot …). The local llama.cpp server has no
+    /// search of its own, so it only searches with a cloud model; team.json pi.packages can swap it.
     /// </summary>
     public static readonly IReadOnlyList<PiPackage> DefaultPackages = new PiPackage[]
     {
         new() { Id = "mcp", Npm = "pi-mcp-adapter" },
-        new() { Id = "websearch", Npm = "pi-web-search-lite" },
+        new() { Id = "websearch", Npm = "pi-web-search" },
         new() { Id = "pretty", Npm = "@heyhuynhgiabuu/pi-pretty" },
         new() { Id = "ponytail", Npm = "@dietrichgebert/ponytail" },
         new() { Id = "simplify", Npm = "pi-simplify" },

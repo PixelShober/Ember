@@ -10,11 +10,13 @@
   import TeamPathForm from '../lib/components/TeamPathForm.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
+  let me = $state<string | null>(null);
   let rows = $state<ProxyRow[] | null>(null);
 
   // Only what this account's modules cover.
   onMount(async () => {
-    [git, rows] = await Promise.all([
+    [me, git, rows] = await Promise.all([
+      api<{ name: string }>('app.me').then((r) => r.name).catch(() => null),
       can('git') ? api<GitIdentityInfo>('git.get').catch(() => null) : null,
       can('proxy') ? api<ProxyRow[]>('proxy.diagnose').catch(() => null) : null,
     ]);
@@ -24,7 +26,7 @@
   const byKey = $derived(app.info?.grant.source === 'key');
   let settingUp = $state(false);
 
-  const name = $derived(firstName(git?.name ?? git?.suggestedName, app.info?.user ?? ''));
+  const name = $derived(firstName(git?.name ?? git?.suggestedName ?? me, app.info?.user ?? ''));
   // Tools that should point to px (the Node.js certificates are no proxy setting).
   const relevant = $derived(rows?.filter((r) => r.state !== 'info' && r.state !== 'missing' && r.tool !== 'nodeCerts') ?? []);
   const okCount = $derived(relevant.filter((r) => r.state === 'px').length);
@@ -80,7 +82,6 @@
 
 <header class="page-head">
   <h1>{t('start.title', { name })}</h1>
-  <p>{t('start.subtitle')}</p>
 </header>
 
 <section class="grid">
@@ -116,7 +117,7 @@
   <h2>{t('start.quick')}</h2>
   <div class="row">
     <button class="btn" onclick={report}><Icon name="report" size={16} />{t('start.report')}</button>
-    <button class="btn" onclick={() => openMail('problem')}><Icon name="mail" size={16} />{t('start.contact')}</button>
+    {#if app.info?.serviceCenter}<button class="btn" onclick={() => openMail('problem')}><Icon name="mail" size={16} />{t('start.contact')}</button>{/if}
   </div>
 </section>
 

@@ -190,6 +190,17 @@ public static class ProxyTools
 
     static IReadOnlyList<string> VsCodeNoProxy(EffectiveSettings s) => s.NoProxyList.Split(',');
 
+    static readonly string[] VsCodeMachineSettings = { "http.proxy", "http.noProxy" };
+
+    /// <summary>The user's list of settings Settings Sync skips, plus the proxy settings.</summary>
+    internal static List<string> WithSyncIgnore(IReadOnlyList<string>? current)
+    {
+        var list = new List<string>(current ?? Array.Empty<string>());
+        foreach (var key in VsCodeMachineSettings)
+            if (!list.Contains(key, StringComparer.OrdinalIgnoreCase)) list.Add(key);
+        return list;
+    }
+
     static bool SameList(string? a, string b) =>
         (a ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase)
                  .SetEquals(b.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -278,6 +289,9 @@ public static class ProxyTools
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 text = JsoncEditor.SetString(text, "http.proxy", s.PxUrl);
                 text = JsoncEditor.SetStringArray(text, "http.noProxy", VsCodeNoProxy(s));
+                // Settings Sync would bring back the proxy of another machine (or none) at the
+                // next start; the proxy belongs to this machine, so sync leaves it alone.
+                text = JsoncEditor.SetStringArray(text, "settingsSync.ignoredSettings", WithSyncIgnore(JsoncEditor.GetStringArray(text, "settingsSync.ignoredSettings")));
                 await File.WriteAllTextAsync(path, text, ct);
                 return $"\"http.proxy\": \"{s.PxUrl}\" · \"http.noProxy\" → {path}";
             }

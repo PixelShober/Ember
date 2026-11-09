@@ -73,7 +73,7 @@ Die Team-Konfiguration kann Modelle vorgeben, mit Download-Adresse oder mit Pfad
 
 ## llama-server
 
-Du wählst Modell, Kontext-Profil und Port, der Rest folgt der Anleitung:
+Du wählst Modell, Kontext-Profil und Port, der Rest folgt der Anleitung. Voreingestellt ist **lang**:
 
 | Profil | Kontext | KV-Cache | MTP |
 |---|---|---|---|
@@ -85,7 +85,7 @@ Jedes Profil startet mit `-ngl 99` (alle Schichten auf die GPU), `-fa on`, `--ji
 
 Der Server lauscht nur auf `127.0.0.1`. Sobald das Modell geladen ist, zeigt Ember die Prüfung aus der Anleitung:
 
-- **Grafikkarte**: welche GPU llama.cpp gefunden hat. Findet ein CUDA-Build keine, rechnet er still auf der CPU, oft weil die CUDA-Laufzeit fehlt. Ember warnt dann. Einen CUDA-Build ohne `cudart64_*.dll` startet Ember gar nicht erst.
+- **Grafikkarte**: welche GPU llama.cpp gefunden hat. Findet ein CUDA-Build keine, rechnet er still auf der CPU, oft weil die CUDA-Laufzeit fehlt. Ember warnt dann. Einen CUDA-Build ohne `cudart64_*.dll` und `cublas64_*.dll` startet Ember gar nicht erst. Er steht in der Liste mit dem Hinweis „unvollständig“ und dem Knopf „Neu installieren“. Ist „Server starten“ aus, steht der Grund daneben: kein llama.cpp, ein unvollständiger Build oder noch kein Modell.
 - **Schichten auf der GPU**: steht im Log „offloaded X/Y layers to GPU“, zeigt Ember das an. Sind es nicht alle, rechnet ein Teil auf der CPU.
 - **Tempo**: Token pro Sekunde beim Lesen des Prompts und beim Schreiben der Antwort, aus der letzten Anfrage.
 - **Freier VRAM**: Mindestens 0,5 bis 1 GB sollten frei bleiben. Sonst ein kleineres Profil nehmen.
@@ -106,7 +106,7 @@ Unter **Erweiterungen** stehen Pakete für Pi, jeweils mit installierter und neu
 | Erweiterung | Paket | Wofür |
 |---|---|---|
 | MCP | `pi-mcp-adapter` | MCP-Server aus der `.mcp.json` |
-| Websuche | `pi-web-search-lite` | Suchen und Seiten lesen; die Suche braucht den Schlüssel eines Suchdienstes (Brave, Tavily, Exa …) |
+| Websuche | `pi-web-search` | sucht über den Anbieter des gewählten Modells (Gemini, OpenAI, Anthropic, Copilot …). Mit dem lokalen llama.cpp-Server sucht sie nicht, der hat keine eigene Websuche |
 | Pretty | `@heyhuynhgiabuu/pi-pretty` | farbige Ausgabe mit Syntaxhervorhebung |
 | Ponytail | `@dietrichgebert/ponytail` | schreibt nur den nötigen Code |
 | Simplify | `pi-simplify` | prüft geänderten Code auf Einfachheit |

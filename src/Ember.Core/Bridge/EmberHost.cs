@@ -43,7 +43,16 @@ public sealed class EmberHost : IDisposable
     ProxyDetectionResult? _detected;
 
     /// <summary>Which modules this account sees: roles in team.json, or a starter key while there is none.</summary>
-    public Grant Grant => Permissions.Compute(Team.Config, Team.Status, Settings.UnlockKey, Elevation.AccountName, Access.MyGroups, Access.DevBuild);
+    public Grant RealGrant => Permissions.Compute(Team.Config, Team.Status, Settings.UnlockKey, Elevation.AccountName, Access.MyGroups, Access.DevBuild);
+
+    /// <summary>
+    /// What the window shows and the bridge allows: the account's own modules, or, while an admin
+    /// previews another role (see app.preview), that role's. Not saved: a restart ends the preview.
+    /// </summary>
+    public Grant Grant => _preview != null && RealGrant.Has("access") ? Permissions.Preview(Team.Config, _preview) ?? RealGrant : RealGrant;
+
+    /// <summary>"role:&lt;name&gt;", "key:&lt;level&gt;" or "none" while an admin previews; null otherwise.</summary>
+    string? _preview;
 
     /// <summary>The advanced tabs are visible (the account has one, and Ctrl+E did not hide them).</summary>
     public bool ShowAdvanced => ModuleIds.Advanced.Any(Grant.Has) && !Settings.HideAdvanced;
@@ -57,7 +66,7 @@ public sealed class EmberHost : IDisposable
     /// </summary>
     static readonly HashSet<string> OpenMethods = new(StringComparer.Ordinal)
     {
-        "app.info", "app.ready", "app.setAppearance", "app.openExternal", "app.unlock", "app.pickFile",
+        "app.info", "app.ready", "app.setAppearance", "app.openExternal", "app.unlock", "app.pickFile", "app.preview",
         "team.reload", "team.setPath", "mail.compose", "mail.preview",
     };
 
@@ -187,6 +196,13 @@ public sealed class EmberHost : IDisposable
         elevated = Elevation.IsElevated,
         modules = ModuleIds.Known.Where(Grant.Has).ToList(),
         grant = new { Grant.Source, Grant.Roles, Grant.KeyLevel },
+        // An admin can look at Ember through any role or key level (and back), see app.preview.
+        preview = RealGrant.Has("access") ? new
+        {
+            current = _preview,
+            roles = Permissions.Roles(Team.Config).Select(r => r.Name).Where(n => n.Length > 0).Distinct().ToList(),
+            keys = StarterKeys.LevelModules.Keys.ToList(),
+        } : null,
         locked = Grant.Locked,
         admin = Grant.Has("access"),
         advanced = ModuleIds.Advanced.Any(Grant.Has),
@@ -198,10 +214,21 @@ public sealed class EmberHost : IDisposable
         logDir = Paths.LogDir,
         team = Team.Status,
         teamName = Team.Config.Name,
-        serviceCenter = Team.Config.ServiceCenter?.Email,
+        serviceCenter = string.IsNullOrWhiteSpace(Team.Config.ServiceCenter?.Email) ? null : Team.Config.ServiceCenter!.Email,
+        supervisor = string.IsNullOrWhiteSpace(Team.Config.Supervisor?.Email) ? null : new { Team.Config.Supervisor!.Name, Team.Config.Supervisor.Email },
         repo = "https://github.com/" + AppInfo.GitHubRepo,
         docs = "https://pixelshober.github.io/Ember/",
     };
+
+    /// <summary>The placeholders from the dialog plus the sender's full name for the closing line.</summary>
+    static async Task<Dictionary<string, string?>> MailVars(JsonElement args, CancellationToken ct)
+    {
+        var vars = new Dictionary<string, string?>(args.Dict("vars"), StringComparer.OrdinalIgnoreCase)
+        {
+            ["sender"] = await GitIdentity.SenderAsync(ct),
+        };
+        return vars;
+    }
 
     void RegisterApi()
     {
@@ -210,6 +237,8 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
+        // Full name from the directory (or git), for the greeting on the start page and the mail closing line.
+        b.Register("app.me", async ct => new { name = await GitIdentity.SenderAsync(ct) });
         // Colour scheme and design (switch in the sidebar). The window frame follows.
         b.Register("app.setAppearance", (args, _) =>
         {
@@ -233,6 +262,20 @@ public sealed class EmberHost : IDisposable
             Shell.SetDevTools(DevToolsAllowed);
             Bridge.Emit("app.info", Info());
             return ShowAdvanced;
+        });
+        // Admins only: see Ember as a role, a key level or nobody would; null ends it. The real
+        // account is checked, so the way back stays open while the preview hides Berechtigungen.
+        b.Register("app.preview", (args, _) =>
+        {
+            if (!RealGrant.Has("access")) throw new EmberException("accessDenied");
+            var target = args.OptStr("target");
+            if (target != null && Permissions.Preview(Team.Config, target) == null) throw new EmberException("previewUnknown", ("target", target));
+            _preview = target;
+            Log.Info(target == null ? L.T("app.previewEnd") : L.T("app.previewLog", ("target", target)));
+            Shell.SetDevTools(DevToolsAllowed);
+            var info = Info();
+            Bridge.Emit("app.info", info);
+            return Task.FromResult<object?>(info);
         });
         // Starter key (only counts while there is no team.json).
         b.Register("app.unlock", (args, _) =>
@@ -289,6 +332,7 @@ public sealed class EmberHost : IDisposable
             bool languageChanged = next.Language != Settings.Language;
             bool teamChanged = next.TeamConfigPath != Settings.TeamConfigPath;
             next.HideAdvanced = Settings.HideAdvanced;   // only Ctrl+E changes this (app.toggleAdvanced)
+            next.LlamaProfileChosen |= Settings.LlamaProfileChosen;
             next.Save();
             Settings = next;
             if (languageChanged) L.Configure(next.Language);
@@ -506,25 +550,21 @@ public sealed class EmberHost : IDisposable
             Process.Start(psi)?.Dispose();
             return Task.FromResult<object?>(null);
         });
+        // The log and the diagnosis report never go along (see Mail).
         b.Register("mail.compose", async (args, ct) =>
+            await Mail.ComposeAsync(Team.Config, args.Req("template"), await MailVars(args, ct), ct));
+        b.Register("mail.preview", async (args, ct) =>
         {
             var template = args.Req("template");
-            var vars = args.Dict("vars");
-            Func<CancellationToken, Task<string>>? report = args.Flag("attachReport")
-                ? c => Diagnostics.BuildAsync(Effective, Team.Status, c)
-                : null;
-            return await Mail.ComposeAsync(Team.Config, template, vars, report, ct);
-        });
-        b.Register("mail.preview", (args, _) =>
-        {
-            var template = args.Req("template");
-            var (subject, body) = Mail.Render(Team.Config, template, args.Dict("vars"));
-            return Task.FromResult<object?>(new { to = Mail.Recipient(Team.Config, template), subject, body });
+            var (subject, body) = Mail.Render(Team.Config, template, await MailVars(args, ct));
+            return new { to = Mail.Recipient(Team.Config, template), subject, body };
         });
         b.Register("diagnostics.report", async ct =>
         {
             var text = await Diagnostics.BuildAsync(Effective, Team.Status, ct);
-            return new { text, path = Diagnostics.Save(text) };
+            var path = Diagnostics.Save(text);
+            Mail.ShowInExplorer(path);
+            return new { text, path };
         });
 
         // ------------------------------------------------------------------ power
@@ -584,9 +624,11 @@ public sealed class EmberHost : IDisposable
         b.Register("ai.server.start", async (args, ct) =>
         {
             var model = Models.List(Settings, Team.Config).FirstOrDefault(m => m.Id == args.Req("model")) ?? throw new EmberException("modelUnknown");
-            if (args.OptStr("profile") is { } profile && LlamaCpp.Profiles.Any(p => p.Id == profile) && profile != Settings.LlamaProfile)
+            if (args.OptStr("profile") is { } profile && LlamaCpp.Profiles.Any(p => p.Id == profile)
+                && (profile != Settings.LlamaProfile || !Settings.LlamaProfileChosen))
             {
                 Settings.LlamaProfile = profile;
+                Settings.LlamaProfileChosen = true;
                 Settings.Save();
             }
             await LlamaCpp.CheckBeforeStartAsync(Settings, ct);

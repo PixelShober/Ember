@@ -10,6 +10,8 @@ public class AccessTests
     static Grant Grant(TeamConfig team, string account, string[]? groups = null, TeamStatus? status = null, string? key = null) =>
         Permissions.Compute(team, status ?? Loaded, key, account, groups ?? Array.Empty<string>(), dev: false);
 
+    internal static TeamConfig RolesForPreview => Roles;
+
     static readonly TeamConfig Roles = TeamConfig.Parse("""
         {
           "access": {
@@ -187,5 +189,24 @@ public class AccessMailTests
         Assert.Equal("servicecenter@firma.example", Mail.Recipient(team, "problem"));
         var (_, body) = Mail.Render(team, "accessRequest", new Dictionary<string, string?> { ["details"] = "" });
         Assert.DoesNotContain("\n\n\n", body);
+    }
+
+    [Fact]
+    public void Admins_preview_a_role_a_key_or_nobody()
+    {
+        var test = Permissions.Preview(AccessTests.RolesForPreview, "role:" + Permissions.Roles(AccessTests.RolesForPreview)[0].Name);
+        Assert.NotNull(test);
+        Assert.Equal("preview", test!.Source);
+
+        var key = Permissions.Preview(AccessTests.RolesForPreview, "key:proxyPlaywright")!;
+        Assert.True(key.Has("proxy") && key.Has("playwright"));
+        Assert.False(key.Has("access"));
+
+        var none = Permissions.Preview(AccessTests.RolesForPreview, "none")!;
+        Assert.False(none.Any);
+        Assert.Equal("notListed", none.Locked);
+
+        Assert.Null(Permissions.Preview(AccessTests.RolesForPreview, "role:gibt es nicht"));
+        Assert.Null(Permissions.Preview(AccessTests.RolesForPreview, "key:root"));
     }
 }

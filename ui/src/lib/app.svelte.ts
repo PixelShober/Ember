@@ -23,7 +23,6 @@ export interface ConfirmRequest {
 export interface MailRequest {
   template: 'softwareRequest' | 'adminAction' | 'problem' | 'accessRequest';
   vars: Record<string, string>;
-  attachReport: boolean;
 }
 
 const routes: Route[] = ['start', 'proxy', 'git', 'software', 'playwright', 'power', 'system', 'ai', 'access', 'settings', 'log'];
@@ -165,8 +164,8 @@ export function closeConfirm(ok: boolean): void {
   app.confirm = null;
 }
 
-export function openMail(template: MailRequest['template'], vars: Record<string, string> = {}, attachReport = true): void {
-  app.mail = { template, vars, attachReport };
+export function openMail(template: MailRequest['template'], vars: Record<string, string> = {}): void {
+  app.mail = { template, vars };
 }
 
 /**

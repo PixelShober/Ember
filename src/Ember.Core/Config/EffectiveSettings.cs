@@ -29,6 +29,7 @@ public sealed record EffectiveSettings
     public bool ConfigureGit { get; init; } = true;
     public bool ConfigureNpm { get; init; } = true;
     public bool ConfigurePip { get; init; } = true;
+    public bool ConfigureVsCode { get; init; } = true;
     public bool ConfigureNuGet { get; init; } = true;
 
     public string PxUrl => $"http://127.0.0.1:{Port}";
@@ -58,6 +59,7 @@ public sealed record EffectiveSettings
             ConfigureGit = u.ConfigureGit,
             ConfigureNpm = u.ConfigureNpm,
             ConfigurePip = u.ConfigurePip,
+            ConfigureVsCode = u.ConfigureVsCode,
             ConfigureNuGet = u.ConfigureNuGet,
         };
     }

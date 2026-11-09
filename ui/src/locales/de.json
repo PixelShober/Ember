@@ -19,7 +19,9 @@
     },
     "advancedOn": "Energie, KI und Berechtigungen sind wieder sichtbar, soweit deine Rollen sie haben. Strg + E blendet sie aus.",
     "advancedOff": "Energie, KI und Berechtigungen sind ausgeblendet. Strg + E zeigt sie wieder.",
-    "advancedNotAllowed": "Energie, KI und Berechtigungen hat keine deiner Rollen."
+    "advancedNotAllowed": "Energie, KI und Berechtigungen hat keine deiner Rollen.",
+    "previewLog": "Vorschau gestartet: Ember zeigt, was {target} sieht.",
+    "previewEnd": "Vorschau beendet, wieder die eigene Ansicht."
   },
   "nav": {
     "start": "Start",
@@ -28,7 +30,7 @@
     "software": "Software",
     "playwright": "Playwright",
     "power": "Energie",
-    "system": "System",
+    "system": "System Info",
     "ai": "KI",
     "settings": "Einstellungen",
     "log": "Log",
@@ -70,7 +72,7 @@
     },
     "resetToTeam": "Auf Team-Wert zurücksetzen",
     "needsAdmin": "Braucht Adminrechte – Windows fragt nach",
-    "askServiceCenter": "Beim Service-Center anfragen",
+    "askServiceCenter": "Adminrechte beantragen",
     "saved": "Gespeichert",
     "cancelled": "Abgebrochen",
     "resetToDetected": "Erkannten Wert nutzen",
@@ -182,10 +184,12 @@
     "modelLocal": "„{path}“ liegt schon auf dem PC, da gibt es nichts herunterzuladen.",
     "modelFromTeam": "Dieses Modell kommt aus der Team-Konfiguration und lässt sich hier nicht entfernen.",
     "piConfigInvalid": "Die Pi-Konfiguration {path} ist kein gültiges JSON: {detail}",
-    "llamaNoCudaRuntime": "Neben llama-server.exe fehlt die CUDA-Laufzeit (cudart64_*.dll) in {path}. Ohne sie läuft der CUDA-Build nur auf der CPU. Installier llama.cpp neu.",
+    "llamaNoCudaRuntime": "Im llama.cpp-Ordner {path} fehlt die CUDA-Laufzeit (cudart64, cublas64). Neu installieren oder einen vollständigen Ordner verwenden.",
     "llamaNoCudaAtStart": "Der llama.cpp-Build in {path} sieht keine NVIDIA-Karte und würde auf der CPU laufen. Meist fehlen CUDA-Dateien (cudart64, cublas64) oder der Treiber ist älter als 580. Installier llama.cpp neu oder wähle einen funktionierenden Ordner. Meldung: {detail}",
     "llamaNoServerIn": "In {path} liegt keine llama-server.exe.",
-    "piMissing": "Pi ist noch nicht installiert."
+    "piMissing": "Pi ist noch nicht installiert.",
+    "previewUnknown": "Diese Vorschau gibt es nicht: {target}",
+    "mailNoSupervisor": "Für Adminrechte ist keine direkte Vorgesetzte bzw. kein direkter Vorgesetzter eingetragen (team.json → supervisor)."
   },
   "jobs": {
     "started": "gestartet",
@@ -225,7 +229,6 @@
   },
   "start": {
     "title": "Hallo {name}",
-    "subtitle": "So steht es um deinen Rechner",
     "cards": {
       "px": "px-Proxy",
       "proxy": "Proxy-Diagnose",
@@ -249,7 +252,7 @@
     "quick": "Schnellzugriff",
     "report": "Diagnosebericht erstellen",
     "contact": "Service-Center kontaktieren",
-    "reportSaved": "Bericht gespeichert und kopiert: {path}",
+    "reportSaved": "Bericht gespeichert und in die Zwischenablage kopiert. Der Ordner ist geöffnet: {path}",
     "byKey": "Freigeschaltet mit dem Schlüssel „{level}“. Sobald du die team.json einträgst, bestimmen ihre Rollen, was du siehst.",
     "setUpTeam": "Team-Konfiguration einrichten"
   },
@@ -395,7 +398,8 @@
       "removeVscode": "VS-Code-Proxy entfernen",
       "deleteFiles": "px-Dateien löschen",
       "powershell": "PowerShell auf px setzen",
-      "removePowerShell": "px aus dem PowerShell-Profil entfernen"
+      "removePowerShell": "px aus dem PowerShell-Profil entfernen",
+      "vscode": "VS Code auf px stellen"
     },
     "pacFile": "PAC-Datei: {value}",
     "noneFound": "keine gefunden",
@@ -500,43 +504,46 @@
     "openShort": "Softwarecenter"
   },
   "mail": {
-    "title": "Nachricht ans Service-Center",
-    "subtitle": "Ember bereitet die Mail vor. Du prüfst sie und schickst sie selbst ab.",
+    "title": "Mail vorbereiten",
+    "subtitle": "Ember bereitet die Mail vor. Du prüfst sie und schickst sie selbst ab. Logs und Diagnosebericht gehen nicht mit.",
     "template": "Anliegen",
     "templateNames": {
       "softwareRequest": "Software anfordern",
-      "adminAction": "Adminrechte für eine Aktion",
+      "adminAction": "Adminrechte über Vorgesetzte beantragen",
       "problem": "Problem melden",
       "accessRequest": "Zugriff auf Ember"
     },
     "details": "Was genau?",
-    "attachReport": "Diagnosebericht anhängen",
     "to": "An",
     "compose": "Mail vorbereiten",
     "outlookDraft": "Outlook-Entwurf an {to} geöffnet",
     "mailtoOpened": "Mailprogramm für {to} geöffnet",
-    "attachHint": "Den Diagnosebericht bitte anhängen: {path}",
-    "resultOutlook": "Der Entwurf ist in Outlook offen, der Bericht hängt an.",
-    "resultMailto": "Dein Mailprogramm ist offen. Der Bericht liegt in der Zwischenablage und als Datei bereit – bitte anhängen.",
+    "resultOutlook": "Der Entwurf ist in Outlook offen.",
+    "resultMailto": "Dein Mailprogramm ist offen.",
     "noServiceCenter": "Es ist noch keine Service-Center-Adresse eingetragen (team.json → serviceCenter.email).",
     "templates": {
       "softwareRequest": {
         "subject": "Softwarebereitstellung: {app} für {user}",
-        "body": "Hallo Service-Center,\n\nbitte stellt {app} für mich bereit.\n\nBenutzer: {user}\nRechner: {computer}\n\n{details}\n\nVielen Dank!"
+        "body": "Sehr geehrte Kolleginnen und Kollegen,\n\nbitte stellen Sie mir die Software {app} über das Software Center bereit.\n\nBenutzer: {user}\nRechner: {computer}\n\nMit freundlichen Grüßen,\n{sender}"
       },
       "adminAction": {
-        "subject": "Adminrechte benötigt auf {computer}",
-        "body": "Hallo Service-Center,\n\nfür meine Entwicklungsumgebung braucht es auf {computer} einmalig Adminrechte für folgende Einstellung:\n\n{details}\n\nBenutzer: {user}\n\nVielen Dank!"
+        "subject": "Adminrechte für {computer} beim Service-Center beantragen",
+        "body": "Hallo {supervisor},\n\nkannst du bitte einmal für mich Admin-Rechte für meinen Rechner ({computer}) beim Service-Center beantragen?\n\n{details}\n\nDank dir im Voraus!\n\nMit freundlichen Grüßen,\n{sender}"
       },
       "problem": {
         "subject": "Problem auf {computer}",
-        "body": "Hallo Service-Center,\n\nich habe folgendes Problem:\n\n{details}\n\nBenutzer: {user}\nRechner: {computer}\nDer Diagnosebericht von Ember hängt an.\n\nVielen Dank!"
+        "body": "Sehr geehrte Kolleginnen und Kollegen,\n\n{problemIntro}\n\n{details}\n\nBenutzer: {user}\nRechner: {computer}\n\nMit freundlichen Grüßen,\n{sender}"
       },
       "accessRequest": {
         "subject": "Zugriff auf Ember für {user}",
-        "body": "Hallo,\n\nich möchte Ember auf {computer} nutzen, um meinen Entwicklerrechner einzurichten. Bitte nehmt mich in die Zugriffsliste auf.\n\n{details}\n\nBenutzer: {user}\n\nDanke!"
+        "body": "Hallo,\n\nich möchte Ember auf {computer} nutzen, um meinen Entwicklerrechner einzurichten. Bitte nehmt mich in eine Rolle auf.\n\n{details}\n\nBenutzer: {user}\n\nMit freundlichen Grüßen,\n{sender}"
       }
-    }
+    },
+    "problemIntro": "Ich stehe vor folgendem Problem in meinem Entwicklungs- bzw. Arbeitsprozess, das sich wie folgt gestaltet:",
+    "signature": "Mit freundlichen Grüßen,\n{sender}",
+    "detailsSoftware": "Welche Software?",
+    "detailsAdmin": "Wofür? (wird mitgeschickt)",
+    "noSupervisor": "Es ist keine direkte Vorgesetzte bzw. kein direkter Vorgesetzter eingetragen (team.json → supervisor.email)."
   },
   "diagnostics": {
     "title": "Ember-Diagnosebericht",
@@ -762,7 +769,10 @@
       "pickFolder": "Ordner mit llama-server.exe wählen",
       "useFolder": "Vorhandenen Ordner verwenden",
       "custom": "eigener Ordner",
-      "usedFolder": "Ember startet jetzt llama-server aus {path}."
+      "usedFolder": "Ember startet jetzt llama-server aus {path}.",
+      "incomplete": "unvollständig",
+      "incompleteHint": "Der CUDA-Build hat keine CUDA-Laufzeit (cudart64, cublas64) und würde auf der CPU laufen. Neu installieren oder einen vollständigen Ordner verwenden.",
+      "reinstall": "Neu installieren"
     },
     "models": {
       "title": "Modelle",
@@ -826,7 +836,12 @@
       "generation": "{tps} Token/s Antwort",
       "prompt": "{tps} Token/s Prompt",
       "onCpu": "llama-server rechnet auf der CPU, nicht auf der NVIDIA. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu.",
-      "build": "llama-server aus {path} · Laufzeit: {dlls} · Geräte: {devices}"
+      "build": "llama-server aus {path} · Laufzeit: {dlls} · Geräte: {devices}",
+      "blocked": {
+        "noLlama": "Erst llama.cpp installieren oder einen vorhandenen Ordner verwenden.",
+        "incomplete": "Der gewählte llama.cpp-Build ist unvollständig. Neu installieren oder einen vorhandenen Ordner verwenden.",
+        "noModel": "Erst ein Modell laden oder ein lokales hinzufügen."
+      }
     },
     "pi": {
       "title": "Pi (Coding-Agent)",
@@ -866,7 +881,7 @@
       "updateOne": "Aktualisieren",
       "packages": {
         "mcp": "MCP-Server aus der .mcp.json des Repos",
-        "websearch": "Websuche und Seiten lesen. Für die Suche braucht es den Schlüssel eines Suchdienstes (Brave, Tavily, Exa …) in ~/.pi/agent/pi-web-search-lite/config.json.",
+        "websearch": "Websuche über den Anbieter des gewählten Modells (Gemini, OpenAI, Anthropic, Copilot …). Mit dem lokalen llama.cpp-Server sucht sie nicht, der hat keine eigene Websuche.",
         "pretty": "Farbige Ausgabe: Syntaxhervorhebung, Bash-Ausgabe, Verzeichnisbäume",
         "ponytail": "„Fauler Senior“: schreibt nur den Code, der wirklich nötig ist",
         "simplify": "Prüft frisch geänderten Code auf Klarheit und Einfachheit",
@@ -928,7 +943,8 @@
       "npm": "npm",
       "nuget": "NuGet / .NET",
       "pip": "pip",
-      "powershell": "PowerShell-Profil (irm, iwr)"
+      "powershell": "PowerShell-Profil (irm, iwr)",
+      "vscode": "VS Code (http.proxy)"
     },
     "language": {
       "title": "Sprache",
@@ -963,11 +979,7 @@
       "pxConfig": "px-Konfiguration",
       "reports": "Berichte"
     },
-    "unsaved": "Ungespeicherte Änderungen",
-    "appearance": {
-      "title": "Darstellung",
-      "description": "Farbschema und Design wechselst du auch unten in der Seitenleiste. Efeu ist am Tag salbeigrün und nachts waldgrün, Glut hat einen warmen, rötlichen Grund. An beiden rankt Efeu."
-    }
+    "unsaved": "Ungespeicherte Änderungen"
   },
   "log": {
     "title": "Log",
@@ -1159,7 +1171,8 @@
       "nameRule": "Kleinbuchstaben, Ziffern, Punkt, Binde- und Unterstrich. Ember macht aus „Mein Projekt“ automatisch „mein-projekt“.",
       "files": "Die Vorlage bringt mit: package.json mit den üblichen Skripten (test, test:ui, report, codegen), playwright.config.ts, einen Beispieltest, .gitignore, eine README und die Empfehlung für die Playwright-Erweiterung in VS Code. Danach installiert npm @playwright/test.",
       "submit": "Projekt anlegen"
-    }
+    },
+    "helpers": "Dazu legt Playwright zwei Helfer ab: ffmpeg nimmt Videos der Testläufe auf, winldd prüft, ob Windows alles hat, was die Browser brauchen. Die gehören dazu und bleiben liegen."
   },
   "appearance": {
     "scheme": "Farbschema",
@@ -1246,5 +1259,16 @@
       "teamFailed": "Die team.json unter {path} ist gerade nicht erreichbar: {detail}",
       "account": "Angemeldet als {user}."
     }
+  },
+  "preview": {
+    "title": "Ansehen als",
+    "own": "Eigene Ansicht",
+    "roles": "Rollen",
+    "keys": "Schlüssel",
+    "none": "Ohne Rolle (Sperrbildschirm)",
+    "role": "Rolle „{role}“",
+    "key": "Schlüssel „{level}“",
+    "active": "Vorschau: {view}",
+    "back": "Zurück zur eigenen Ansicht"
   }
 }

@@ -59,9 +59,19 @@ Den Firmenproxy (PAC-Datei oder fester Proxy) erkennt Ember bei jedem Start selb
 | `internalDomains` | Domains, die ohne Proxy erreichbar sind. Ember trägt sie bei px, `NO_PROXY`, npm, git, NuGet und VS Code als Ausnahme ein, siehe [Proxy](/Ember/handbuch/proxy/#interne-server-ohne-proxy). |
 | `port` | Port von px, Standard 3128 |
 
-### serviceCenter und mailTemplates
+### serviceCenter, supervisor und mailTemplates
 
-`serviceCenter.email` ist der Empfänger aller Mails, `subjectPrefix` wird jedem Betreff vorangestellt. Unter `mailTemplates` lassen sich die vier Vorlagen `softwareRequest`, `adminAction`, `problem` und `accessRequest` ersetzen, jeweils mit `subject` und `body`. Platzhalter: `{user}`, `{computer}`, `{app}`, `{details}`, `{date}`, `{ember}`.
+`serviceCenter.email` bekommt die Mails „Software anfordern“ und „Problem melden“, `subjectPrefix` wird jedem Betreff vorangestellt. `serviceCenter.problemIntro` ersetzt den ersten Satz der Problem-Mail. Ohne den Eintrag schreibt Ember: „Ich stehe vor folgendem Problem in meinem Entwicklungs- bzw. Arbeitsprozess, das sich wie folgt gestaltet:“.
+
+`supervisor` ist die direkte Vorgesetzte bzw. der direkte Vorgesetzte. Anträge auf Adminrechte gehen dorthin und beginnen mit „Hallo“ und dem Vornamen:
+
+```json
+"supervisor": { "name": "Petra Lindner", "email": "petra.lindner@firma.example" }
+```
+
+Den Vornamen nimmt Ember aus `name`, auch bei „Lindner, Petra“. Passt das nicht, setzt `firstName` ihn fest. Fehlt `supervisor.email`, bietet Ember den Antrag nicht an.
+
+Unter `mailTemplates` lassen sich die vier Vorlagen `softwareRequest`, `adminAction`, `problem` und `accessRequest` ersetzen, jeweils mit `subject` und `body`. Platzhalter: `{user}`, `{computer}`, `{app}`, `{details}`, `{date}`, `{ember}`, `{sender}` (dein Vor- und Nachname), `{supervisor}` (Vorname der bzw. des Vorgesetzten) und `{problemIntro}`. Steht `{sender}` nicht im Text, hängt Ember „Mit freundlichen Grüßen“ und den Namen selbst an.
 
 ### software
 

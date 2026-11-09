@@ -58,6 +58,27 @@ public sealed class TeamServiceCenter
     public string? Email { get; set; }
     public string? Name { get; set; }
     public string? SubjectPrefix { get; set; }
+    /// <summary>First sentence of the "Problem melden" mail; Ember's own text if empty.</summary>
+    public LocalizedText? ProblemIntro { get; set; }
+}
+
+/// <summary>The direct supervisor: requests for admin rights go to them, and they ask the service center.</summary>
+public sealed class TeamSupervisor
+{
+    public string? Name { get; set; }
+    /// <summary>For "Hallo {Vorname}"; defaults to the first word of Name (or the part after the comma in "Nachname, Vorname").</summary>
+    public string? FirstName { get; set; }
+    public string? Email { get; set; }
+
+    public string? GreetingName()
+    {
+        if (!string.IsNullOrWhiteSpace(FirstName)) return FirstName.Trim();
+        var name = Name?.Trim();
+        if (string.IsNullOrEmpty(name)) return null;
+        var comma = name.IndexOf(',');
+        if (comma > 0 && comma < name.Length - 1) return name[(comma + 1)..].Trim().Split(' ')[0];
+        return name.Split(' ')[0];
+    }
 }
 
 public sealed class MailTemplate
@@ -144,6 +165,7 @@ public sealed class TeamConfig
     public string? Name { get; set; }
     public TeamProxy? Proxy { get; set; }
     public TeamServiceCenter? ServiceCenter { get; set; }
+    public TeamSupervisor? Supervisor { get; set; }
     public Dictionary<string, MailTemplate>? MailTemplates { get; set; }
     public List<TeamSoftware>? Software { get; set; }
     public TeamDevTools? DevTools { get; set; }
