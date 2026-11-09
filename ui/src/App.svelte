@@ -136,7 +136,7 @@
         <img src="./favicon.svg" alt="" width="32" height="32" />
         <div>
           <strong>Ember</strong>
-          <span class="small muted">{app.info?.teamName ?? t('app.tagline')}</span>
+          <span class="small muted">{t('app.tagline')}</span>
         </div>
       </div>
 
@@ -153,9 +153,6 @@
       </nav>
 
       <div class="foot">
-        <button class="handbook-link" onclick={() => openHandbook(app.route)}>
-          <Icon name="book" size={16} /><span>{t('handbook.title')}</span><kbd>{t('handbook.shortcut')}</kbd>
-        </button>
         <AppearanceSwitch />
         <PreviewSwitch />
         {#if can('proxy')}
@@ -206,16 +203,6 @@
   .locked h1 { margin: 6px 0 0; font-family: var(--font-display); font-size: 22px; }
   .locked p { margin: 0; }
   .locked .row { margin-top: 10px; justify-content: center; }
-  .handbook-link {
-    display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: var(--radius-small);
-    background: transparent; color: var(--text-muted); font: inherit; font-size: 13px; cursor: pointer; text-align: left;
-  }
-  .handbook-link:hover { background: var(--surface-2); color: var(--text); }
-  .handbook-link span { flex: 1; }
-  .handbook-link kbd {
-    font-family: var(--font); font-size: 11px; padding: 1px 6px; border-radius: 5px;
-    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
-  }
   .locked .key-form { width: 100%; flex-wrap: nowrap; }
   .locked .key-form input { flex: 1; min-width: 0; text-align: center; letter-spacing: 0.04em; }
   .locked .note { text-align: left; }

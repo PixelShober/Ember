@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, PlaywrightTemplateInfo, TemplateEntry, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, PlaywrightTemplateInfo, TemplateEntry, TeamFileView, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -261,6 +261,28 @@ export function createMockBridge(): Bridge {
     modules: allModules,
     legacy: false,
   };
+  let teamView: TeamFileView = {
+    doc: {
+      serviceCenter: { email: 'servicecenter@firma.example', name: 'IT-Service-Center', subjectPrefix: '[Ember]', problemIntro: '' },
+      supervisor: { name: 'Petra Lindner', firstName: '', email: 'petra.lindner@firma.example' },
+      access: {
+        roles: [
+          { name: 'Admins', modules: ['*'], members: [{ name: 'FIRMA\\jmoessner', kind: 'user' }, { name: 'FIRMA\\GG-Ember-Admins', kind: 'group' }], hideTools: [] },
+          { name: 'Entwickler', modules: ['proxy', 'playwright', 'git', 'software'], members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }, { name: 'FIRMA\\ext.schmidt', kind: 'user' }], hideTools: ['bruno'] },
+          { name: 'Test', modules: ['proxy', 'playwright'], members: [{ name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }], hideTools: ['bruno'] },
+        ],
+        blocked: [{ name: 'FIRMA\\praktikant.alt', kind: 'user' }],
+      },
+      update: { mirror: '' },
+      playwright: { template: '\\\\fs01\\entwicklung\\vorlagen\\playwright', downloadHost: '' },
+      mailTemplates: { softwareRequest: { subject: '', body: '' }, problem: { subject: '', body: '' }, adminAction: { subject: '', body: '' } },
+    },
+    extra: '{\n  "proxy": { "internalDomains": ["firma.local", "intranet.firma.example"] },\n  "devTools": { "allowDirect": true }\n}',
+    path: '\\\\fs01\\entwicklung\\ember\\team.ember', version: 12, signedBy: 'FIRMA\\akaya', signedAt: '2026-11-03T16:42:00', keyId: '3f9a 61c2 08de 7b14',
+    signatureRequired: true, trusted: true, writable: true, problem: null, account: 'FIRMA\\jmoessner',
+    myGroups: ['FIRMA\\Domain Users', 'FIRMA\\GG-Entwicklung', 'FIRMA\\GG-Ember-Admins', 'FIRMA\\GG-VPN'],
+    modules: allModules, keyFile: 'H:\\Admin\\ember-team-signing.pem',
+  };
   const playwright: PlaywrightState = {
     browsersDir: 'C:\\Users\\jmoessner\\AppData\\Local\\ms-playwright',
     browsers: [{ name: 'chromium-1194', path: '', label: 'Chromium' }, { name: 'chromium_headless_shell-1194', path: '', label: null }, { name: 'ffmpeg-1011', path: '', label: null }, { name: 'firefox-1495', path: '', label: 'Firefox' }, { name: 'winldd-1007', path: '', label: null }],
@@ -325,6 +347,11 @@ export function createMockBridge(): Bridge {
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'], pacDirect: ['firma.local', 'intranet.firma.example', '10.0.0.0/8'] }),
     'proxy.diagnose': () => proxyRows,
     'access.get': () => structuredClone(accessView),
+    'team.admin': () => structuredClone(teamView),
+    'team.save': (p) => {
+      teamView = { ...teamView, doc: p.doc, extra: p.extra, version: teamView.version + 1, signedBy: info.user, signedAt: new Date().toISOString(), keyFile: p.keyFile };
+      return structuredClone(teamView);
+    },
     'access.newKey': () => {
       const a = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
       const part = () => Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => a[b % 32]).join('');

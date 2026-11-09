@@ -155,11 +155,38 @@ public sealed class MainWindow : Window, IHostShell
         ShowUi(start.Value.Dir, start.Value.Version);
     }
 
+    string? _uiDir;
+    bool _indexFilter;
+
+    /// <summary>
+    /// The handbook (Starlight, under /Ember/) links to folders like /Ember/handbuch/ki/. The folder
+    /// mapping of WebView2 serves files only, so a folder address gets its index.html here.
+    /// </summary>
+    void ServeFolderIndex(CoreWebView2 core)
+    {
+        if (_indexFilter) return;
+        _indexFilter = true;
+        core.AddWebResourceRequestedFilter(UiHost.Origin + "/Ember/*", CoreWebView2WebResourceContext.All);
+        core.WebResourceRequested += (_, e) =>
+        {
+            if (_uiDir == null || !Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var uri)) return;
+            var path = Uri.UnescapeDataString(uri.AbsolutePath);
+            if (!path.EndsWith('/') && Path.HasExtension(path)) return;
+            var file = Path.GetFullPath(Path.Combine(_uiDir, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar), "index.html"));
+            // Only inside the UI folder, never a step outside it.
+            if (!file.StartsWith(Path.GetFullPath(_uiDir), StringComparison.OrdinalIgnoreCase) || !File.Exists(file)) return;
+            var stream = new MemoryStream(File.ReadAllBytes(file));
+            e.Response = core.Environment.CreateWebResourceResponse(stream, 200, "OK", "Content-Type: text/html; charset=utf-8");
+        };
+    }
+
     void ShowUi(string dir, string version)
     {
         var core = _web.CoreWebView2;
         try { core.ClearVirtualHostNameToFolderMapping(UiHost.HostName); } catch { }
         core.SetVirtualHostNameToFolderMapping(UiHost.HostName, dir, CoreWebView2HostResourceAccessKind.Allow);
+        _uiDir = dir;
+        ServeFolderIndex(core);
         // The query string keeps the browser cache from serving an older index.html.
         core.Navigate($"{UiHost.Origin}/index.html?v={Uri.EscapeDataString(version)}");
         Log.Info(L.T("app.uiShown", ("version", version), ("kind", _ui.CurrentIsEmbedded ? "embedded" : "update")));

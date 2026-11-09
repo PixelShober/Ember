@@ -27,14 +27,12 @@
 
 <script lang="ts">
   // The Starlight handbook, built into the UI under /Ember/ (scripts/embed-docs.mjs), in a frame over
-  // the app. Ctrl+K opens and closes it; inside, Ctrl+K is Starlight's own search. Without the built
-  // handbook (dev server, browser preview) the online version stands in.
+  // the app. Ctrl+K opens and closes it; inside, Ctrl+K is Starlight's own search. It always comes
+  // from Ember itself (works offline); the Vite dev server has no handbook and says so.
   import { fade, scale } from 'svelte/transition';
-  import { api, app } from '../app.svelte';
   import { t } from '../i18n.svelte';
   import Icon from './Icon.svelte';
 
-  const online = 'https://pixelshober.github.io';
   let local = $state<boolean | null>(null);
   let frame = $state<HTMLIFrameElement>();
 
@@ -43,7 +41,7 @@
     fetch('/Ember/index.html', { method: 'HEAD' }).then((r) => (local = r.ok)).catch(() => (local = false));
   });
 
-  const src = $derived(`${local ? '' : online}/Ember/${handbook.page ?? 'handbuch/erste-schritte'}/`);
+  const src = $derived(`/Ember/${handbook.page ?? 'handbuch/erste-schritte'}/`);
 
   // Starlight keeps its colour scheme in localStorage; same origin, so it follows Ember.
   $effect(() => {
@@ -68,11 +66,6 @@
     });
   }
 
-  function external() {
-    const url = `${online}/Ember/${handbook.page ?? ''}/`;
-    if (app.native) void api('app.openExternal', { url });
-    else window.open(url, '_blank');
-  }
 </script>
 
 <svelte:window onkeydown={(e) => { if (handbook.open && e.key === 'Escape') close(); }} />
@@ -86,11 +79,12 @@
         <strong>{t('handbook.title')}</strong>
         <span class="small muted hint">{t('handbook.hint')}</span>
         <span class="spacer"></span>
-        <button class="btn small ghost" onclick={external}><Icon name="external" size={14} />{t('handbook.browser')}</button>
         <button class="btn small ghost icon-only" onclick={close} title={t('common.close')} aria-label={t('common.close')}><Icon name="x" size={16} /></button>
       </header>
       {#if local === null}
         <div class="wait muted small">{t('common.loading')}</div>
+      {:else if !local}
+        <div class="wait muted small">{t('handbook.missing')}</div>
       {:else}
         <iframe bind:this={frame} {src} title={t('handbook.title')} onload={wire}></iframe>
       {/if}

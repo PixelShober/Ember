@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Ember",
-    "tagline": "Sets up your developer machine for the company network",
+    "tagline": "DevProblemFixer",
     "loading": "Ember is starting …",
     "browserPreview": "Browser preview with sample data – without the Ember exe nothing changes on the system.",
     "started": "Ember {version} started ({mode}, language {language})",
@@ -1322,6 +1322,81 @@
       "teamFailed": "team.json at {path} cannot be reached right now: {detail}",
       "account": "Signed in as {user}."
     },
+    "hideBruno": "Offer Bruno",
+    "tabs": {
+      "roles": "Roles",
+      "blocked": "Block list",
+      "team": "Team",
+      "file": "Team file"
+    },
+    "status": {
+      "signed": "Team file signed",
+      "unsigned": "Team file not validly signed",
+      "noCheck": "This Ember build checks no signature",
+      "version": "Version {version}",
+      "by": "signed by {user}, {date}"
+    },
+    "teamfile": {
+      "title": "Team file",
+      "path": "Path",
+      "version": "Version",
+      "signedBy": "Signed",
+      "key": "Key",
+      "trusted": "known to Ember",
+      "hint": "Ember loads the file only if the signature matches, it is at this path and its version is not older than the last one seen. A home-made or old copy gets nobody further.",
+      "extra": "More settings",
+      "extraHint": "Everything optional: internal domains, software list, power profiles, developer tools. As JSON, signed along.",
+      "extraObject": "This needs to be a JSON object: { … }"
+    },
+    "sign": {
+      "button": "Sign and save",
+      "title": "Sign the team file",
+      "text": "Ember saves version {to} instead of {from} and signs it with the admins' key. The password is not stored.",
+      "keyFile": "Signing key",
+      "keyFilter": "Signing key",
+      "password": "Password",
+      "confirm": "Sign",
+      "saved": "Team file saved, version {version}",
+      "pick": "Choose file"
+    },
+    "savedVersion": "Team file version {version}",
+    "blocked": {
+      "title": "Block list",
+      "hint": "Whoever is on it does not get into Ember, even if a role or group names them.",
+      "empty": "Nobody is blocked.",
+      "unblock": "Unblock",
+      "add": "Block"
+    },
+    "team": {
+      "serviceCenter": "Service center",
+      "email": "Email",
+      "name": "Name",
+      "subjectPrefix": "Before every subject",
+      "problemIntro": "First sentence of “Report a problem”",
+      "supervisor": "Supervisor",
+      "supervisorHint": "Gets the request for admin rights and asks the service center for them.",
+      "firstName": "First name for “Hello …”",
+      "template": "Project template folder",
+      "downloadHost": "Mirror for browser downloads",
+      "update": "Updates",
+      "mirror": "Mirror folder for releases",
+      "mirrorHint": "Empty: Ember gets updates from GitHub. With a folder they come from the network drive, e.g. when GitHub is blocked.",
+      "mails": "Mail texts",
+      "custom": "own text",
+      "subject": "Subject",
+      "body": "Text",
+      "placeholders": "Placeholders:",
+      "mailsHint": "Empty means Ember's own text. Every mail ends with the closing and the name."
+    },
+    "moduleGroups": {
+      "daily": "Everyday",
+      "advanced": "Advanced",
+      "more": "Other"
+    },
+    "noModules": "no modules",
+    "deleteRole": "Delete role",
+    "members": "Members",
+    "myGroups": "Your groups ({count})",
     "key": {
       "title": "Key",
       "none": "No key. Access only through members.",
@@ -1335,8 +1410,7 @@
       "rotateConfirm": "Everyone who works with the key of role “{role}” loses access once you save. They then need the new key.",
       "rotated": "New key for “{role}”. It counts once you save.",
       "hint": "Whoever enters the key gets the role, even without being a member."
-    },
-    "hideBruno": "Offer Bruno"
+    }
   },
   "preview": {
     "title": "View as",
@@ -1352,7 +1426,6 @@
   "handbook": {
     "title": "Handbook",
     "hint": "Ctrl + K closes, inside the handbook Ctrl + K searches",
-    "browser": "Open in browser",
-    "shortcut": "Ctrl K"
+    "missing": "The handbook is only part of the built UI (npm run build, then scripts/embed-docs.mjs)."
   }
 }

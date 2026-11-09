@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Current page. Its successor for the signed team file is AccessNext.svelte (not routed yet).
   // Who sees which module: roles in team.json, each with modules and members (users, AD groups).
   // The host only rewrites "access" there and refuses when the file changed in between.
   import { onMount } from 'svelte';

@@ -167,6 +167,41 @@ export interface AccessView {
   legacy: boolean;
 }
 
+/** What the Berechtigungen page edits: the required parts of the team file. Everything else is "extra". */
+export interface TeamDoc {
+  serviceCenter: { email: string; name: string; subjectPrefix: string; problemIntro: string };
+  supervisor: { name: string; firstName: string; email: string };
+  access: { roles: AccessRole[]; blocked: AccessEntry[] };
+  update: { mirror: string };
+  playwright: { template: string; downloadHost: string };
+  /** Per template: subject and body (German; other languages stay as they are in the file). */
+  mailTemplates: Record<'softwareRequest' | 'adminAction' | 'problem', { subject: string; body: string }>;
+}
+
+export interface TeamFileView {
+  doc: TeamDoc;
+  /** The optional sections (software, proxy, power, devTools …) as JSON text. */
+  extra: string;
+  path: string | null;
+  /** Counts up with every save; Ember never accepts an older one. */
+  version: number;
+  signedBy: string | null;
+  signedAt: string | null;
+  /** Fingerprint of the key that signed the file. */
+  keyId: string | null;
+  /** This Ember build checks signatures (a public key is built in). */
+  signatureRequired: boolean;
+  /** The signature is valid and the key is one Ember trusts. */
+  trusted: boolean;
+  writable: boolean;
+  problem: 'noTeamFile' | 'teamOffline' | 'teamReadOnly' | null;
+  account: string;
+  myGroups: string[];
+  modules: ModuleId[];
+  /** Where the admin's signing key was last taken from (never the password). */
+  keyFile: string | null;
+}
+
 export interface AccessLookup {
   name: string;
   kind: 'user' | 'group' | null;

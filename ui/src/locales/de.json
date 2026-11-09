@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Ember",
-    "tagline": "Richtet deinen Entwicklerrechner fürs Firmennetz ein",
+    "tagline": "DevProblemFixer",
     "loading": "Ember startet …",
     "browserPreview": "Vorschau im Browser mit Beispieldaten – ohne Ember-Exe ändert sich nichts am System.",
     "started": "Ember {version} gestartet ({mode}, Sprache {language})",
@@ -1322,6 +1322,81 @@
       "teamFailed": "Die team.json unter {path} ist gerade nicht erreichbar: {detail}",
       "account": "Angemeldet als {user}."
     },
+    "hideBruno": "Bruno anbieten",
+    "tabs": {
+      "roles": "Rollen",
+      "blocked": "Sperrliste",
+      "team": "Team",
+      "file": "Teamdatei"
+    },
+    "status": {
+      "signed": "Teamdatei signiert",
+      "unsigned": "Teamdatei nicht gültig signiert",
+      "noCheck": "Diese Ember-Version prüft keine Signatur",
+      "version": "Version {version}",
+      "by": "signiert von {user}, {date}"
+    },
+    "teamfile": {
+      "title": "Teamdatei",
+      "path": "Pfad",
+      "version": "Version",
+      "signedBy": "Signiert",
+      "key": "Schlüssel",
+      "trusted": "in Ember hinterlegt",
+      "hint": "Ember lädt die Datei nur, wenn die Signatur passt, sie unter diesem Pfad liegt und ihre Version nicht älter ist als die zuletzt gesehene. Eine selbst gebaute oder alte Kopie hilft also nicht weiter.",
+      "extra": "Weitere Einstellungen",
+      "extraHint": "Alles, was keine Pflicht ist: interne Domains, Softwareliste, Energieprofile, Entwicklerwerkzeuge. Als JSON, wird mit signiert.",
+      "extraObject": "Hier muss ein JSON-Objekt stehen: { … }"
+    },
+    "sign": {
+      "button": "Signieren und speichern",
+      "title": "Teamdatei signieren",
+      "text": "Ember speichert Version {to} statt {from} und unterschreibt sie mit dem Schlüssel der Admins. Das Passwort bleibt nicht gespeichert.",
+      "keyFile": "Signaturschlüssel",
+      "keyFilter": "Signaturschlüssel",
+      "password": "Passwort",
+      "confirm": "Signieren",
+      "saved": "Teamdatei gespeichert, Version {version}",
+      "pick": "Datei wählen"
+    },
+    "savedVersion": "Teamdatei Version {version}",
+    "blocked": {
+      "title": "Sperrliste",
+      "hint": "Wer hier steht, kommt nicht in Ember, auch wenn eine Rolle oder Gruppe ihn nennt.",
+      "empty": "Niemand gesperrt.",
+      "unblock": "Entsperren",
+      "add": "Sperren"
+    },
+    "team": {
+      "serviceCenter": "Service-Center",
+      "email": "E-Mail",
+      "name": "Name",
+      "subjectPrefix": "Vor jedem Betreff",
+      "problemIntro": "Erster Satz bei „Problem melden“",
+      "supervisor": "Vorgesetzte bzw. Vorgesetzter",
+      "supervisorHint": "Bekommt die Bitte um Adminrechte und beantragt sie beim Service-Center.",
+      "firstName": "Vorname für „Hallo …“",
+      "template": "Ordner der Projektvorlage",
+      "downloadHost": "Spiegel für Browser-Downloads",
+      "update": "Updates",
+      "mirror": "Spiegelordner für Releases",
+      "mirrorHint": "Leer: Ember holt Updates von GitHub. Mit Ordner kommen sie vom Netzlaufwerk, etwa wenn GitHub gesperrt ist.",
+      "mails": "Mailtexte",
+      "custom": "eigener Text",
+      "subject": "Betreff",
+      "body": "Text",
+      "placeholders": "Platzhalter:",
+      "mailsHint": "Leer heißt: Embers eigener Text. Jede Mail endet mit dem Gruß und dem Namen."
+    },
+    "moduleGroups": {
+      "daily": "Alltag",
+      "advanced": "Erweitert",
+      "more": "Sonstiges"
+    },
+    "noModules": "keine Module",
+    "deleteRole": "Rolle löschen",
+    "members": "Mitglieder",
+    "myGroups": "Deine Gruppen ({count})",
     "key": {
       "title": "Schlüssel",
       "none": "Kein Schlüssel. Zugang nur über Mitglieder.",
@@ -1335,8 +1410,7 @@
       "rotateConfirm": "Alle, die bisher mit dem Schlüssel der Rolle „{role}“ arbeiten, verlieren den Zugang, sobald du speicherst. Sie brauchen dann den neuen Schlüssel.",
       "rotated": "Neuer Schlüssel für „{role}“. Er gilt, sobald du speicherst.",
       "hint": "Wer den Schlüssel eingibt, bekommt die Rolle, auch ohne Mitglied zu sein."
-    },
-    "hideBruno": "Bruno anbieten"
+    }
   },
   "preview": {
     "title": "Ansehen als",
@@ -1352,7 +1426,6 @@
   "handbook": {
     "title": "Handbuch",
     "hint": "Strg + K schließt, im Handbuch sucht Strg + K",
-    "browser": "Im Browser öffnen",
-    "shortcut": "Strg K"
+    "missing": "Das Handbuch steckt nur in der gebauten Oberfläche (npm run build, dann scripts/embed-docs.mjs)."
   }
 }
