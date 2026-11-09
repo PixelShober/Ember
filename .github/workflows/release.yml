@@ -77,9 +77,11 @@ jobs:
       - uses: actions/setup-node@v7
         if: steps.version.outputs.release == 'true'
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-          cache-dependency-path: ui/package-lock.json
+          cache-dependency-path: |
+            ui/package-lock.json
+            docs/package-lock.json
 
       - uses: actions/setup-dotnet@v6
         if: steps.version.outputs.release == 'true'
@@ -97,6 +99,9 @@ jobs:
           npm test
           npm run build
           node ../scripts/check-encoding.mjs
+          npm ci --prefix ../docs
+          npm run build --prefix ../docs
+          node ../scripts/embed-docs.mjs
 
       - name: Tests
         if: steps.version.outputs.release == 'true'

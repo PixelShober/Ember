@@ -65,6 +65,27 @@ public class ModuleTests
     }
 
     [Theory]
+    [InlineData("0.00.778.896 W common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort", false)]
+    [InlineData("common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort", false)]
+    [InlineData("0.01.200.000 E llama_model_load: error loading model: out of memory", true)]
+    [InlineData("ggml_backend_cuda_buffer_type_alloc_buffer: allocating 9000 MiB on device 0: cudaMalloc failed: out of memory", true)]
+    [InlineData("0.00.100.000 I main: model loaded", false)]
+    public void Llama_warnings_are_no_errors(string line, bool error) => Assert.Equal(error, LlamaCpp.IsError(line));
+
+    [Fact]
+    public void Web_search_goes_through_px_unless_the_user_set_another_proxy()
+    {
+        const string px = "http://127.0.0.1:3128";
+        Assert.Contains("\"proxy\": \"http://127.0.0.1:3128\"", PiAgent.WithWebSearchProxy(null, px));
+        var kept = PiAgent.WithWebSearchProxy("{ \"braveApiKey\": \"x\", \"proxy\": \"http://localhost:3129\" }", px)!;
+        Assert.Contains("braveApiKey", kept);
+        Assert.Contains("127.0.0.1:3128", kept);
+        Assert.Null(PiAgent.WithWebSearchProxy("{ \"proxy\": \"http://127.0.0.1:3128\" }", px));
+        Assert.Null(PiAgent.WithWebSearchProxy("{ \"proxy\": \"http://mcr:4444\" }", px));   // the user's own proxy stays
+        Assert.Null(PiAgent.WithWebSearchProxy("{ kaputt", px));
+    }
+
+    [Theory]
     [InlineData("chromium-1194", "Chromium")]
     [InlineData("firefox-1495", "Firefox")]
     [InlineData("webkit-2215", "WebKit")]

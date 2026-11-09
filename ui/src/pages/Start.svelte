@@ -10,13 +10,11 @@
   import TeamPathForm from '../lib/components/TeamPathForm.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
-  let me = $state<string | null>(null);
   let rows = $state<ProxyRow[] | null>(null);
 
   // Only what this account's modules cover.
   onMount(async () => {
-    [me, git, rows] = await Promise.all([
-      api<{ name: string }>('app.me').then((r) => r.name).catch(() => null),
+    [git, rows] = await Promise.all([
       can('git') ? api<GitIdentityInfo>('git.get').catch(() => null) : null,
       can('proxy') ? api<ProxyRow[]>('proxy.diagnose').catch(() => null) : null,
     ]);
@@ -26,7 +24,8 @@
   const byKey = $derived(app.info?.grant.source === 'key');
   let settingUp = $state(false);
 
-  const name = $derived(firstName(git?.name ?? git?.suggestedName ?? me, app.info?.user ?? ''));
+  // From Ember.exe (directory name, remembered from the last start), so it is right from the first frame.
+  const name = $derived(firstName(app.info?.displayName, app.info?.user ?? ''));
   // Tools that should point to px (the Node.js certificates are no proxy setting).
   const relevant = $derived(rows?.filter((r) => r.state !== 'info' && r.state !== 'missing' && r.tool !== 'nodeCerts') ?? []);
   const okCount = $derived(relevant.filter((r) => r.state === 'px').length);

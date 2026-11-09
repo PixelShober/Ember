@@ -35,3 +35,10 @@
   border-radius: 10px;
   box-shadow: 0 4px 18px -4px rgb(64 32 16 / 0.14);
 }
+
+/* Inside Ember (Ctrl+K): the app chooses light or dark, GitHub links live in the app already. */
+.in-ember starlight-theme-select,
+.in-ember .social-icons,
+.in-ember .edit-link {
+  display: none !important;
+}

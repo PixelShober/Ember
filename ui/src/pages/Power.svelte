@@ -54,7 +54,6 @@
 
 <header class="page-head">
   <h1>{t('power.title')}</h1>
-  <p>{t('power.subtitle', { scheme: power?.schemeName ?? t('power.schemes.balanced') })}</p>
 </header>
 
 {#if power}

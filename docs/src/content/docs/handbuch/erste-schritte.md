@@ -19,6 +19,10 @@ Auf einem frischen Rechner geht es in dieser Reihenfolge am schnellsten:
 
 Unten auf der Startseite gibt es zwei Abkürzungen: „Diagnosebericht erstellen“ speichert einen Bericht, kopiert ihn in die Zwischenablage und zeigt die Datei im Explorer. „Service-Center kontaktieren“ öffnet die vorbereitete Mail. Den zweiten Knopf gibt es nur, wenn die `team.json` eine Service-Center-Adresse hat.
 
+## Das Handbuch
+
+<kbd>Strg</kbd> + <kbd>K</kbd> öffnet dieses Handbuch in Ember, gleich auf der Seite zum Tab, in dem du gerade bist. Es ist in Ember eingebaut und braucht kein Netz. Im Handbuch sucht <kbd>Strg</kbd> + <kbd>K</kbd> nach Stichworten, <kbd>Esc</kbd> schließt es. Unten in der Seitenleiste steht dafür auch „Handbuch“.
+
 ## Die Seitenleiste
 
 Die Seitenleiste zeigt nur die Tabs, die deine Rollen freigeben. Unten links siehst du jederzeit, ob px läuft und auf welchem Port, sofern du den Proxy-Tab hast. Darunter stehen die Ember-Version und der Modus (installiert oder portabel).

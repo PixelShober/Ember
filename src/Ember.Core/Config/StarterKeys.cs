@@ -13,18 +13,48 @@ public static class StarterKeys
     static readonly (string Level, string Hash)[] Known =
     {
         ("proxy", "f81d49f0fcdb42538578c926bc43113f86e7f99518ca4c07767aea08957c968e"),
-        ("proxyPlaywright", "45278f6982655ad5edfae1a08ec1fc26a097e5e6c8b6038b60a6d75b2bbb1387"),
+        ("developer", "45278f6982655ad5edfae1a08ec1fc26a097e5e6c8b6038b60a6d75b2bbb1387"),
         ("all", "36b0229843346a0bfe62ea57c687e22286305ed71ed6a750ee798f230deed86c"),
     };
 
     public static readonly IReadOnlyDictionary<string, string[]> LevelModules = new Dictionary<string, string[]>
     {
         ["proxy"] = new[] { "proxy" },
-        ["proxyPlaywright"] = new[] { "proxy", "playwright" },
+        ["developer"] = new[] { "proxy", "playwright", "git", "software" },
         ["all"] = new[] { ModuleIds.All },
     };
 
-    /// <summary>The level a key unlocks ("proxy", "proxyPlaywright", "all"), or null.</summary>
+    /// <summary>Developer tools a level does not offer (Bruno is for API testing, not for every developer).</summary>
+    public static readonly IReadOnlyDictionary<string, string[]> LevelHiddenTools = new Dictionary<string, string[]>
+    {
+        ["developer"] = new[] { "bruno" },
+    };
+
+    /// <summary>A new key: 100 random bits as EMBER-XXXXX-XXXXX-XXXXX-XXXXX (Crockford base32).</summary>
+    public static string Generate()
+    {
+        const string alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+        var bytes = RandomNumberGenerator.GetBytes(13);
+        var bits = new System.Numerics.BigInteger(bytes, isUnsigned: true);
+        var chars = new char[20];
+        for (int i = 0; i < 20; i++)
+        {
+            chars[i] = alphabet[(int)(bits & 31)];
+            bits >>= 5;
+        }
+        var s = new string(chars);
+        return $"EMBER-{s[..5]}-{s[5..10]}-{s[10..15]}-{s[15..]}";
+    }
+
+    /// <summary>Two keys are the same, whatever dashes, spaces or case.</summary>
+    public static bool Same(string? a, string? b)
+    {
+        var x = Normalize(a);
+        var y = Normalize(b);
+        return x.Length == 20 && CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(x), Encoding.ASCII.GetBytes(y));
+    }
+
+    /// <summary>The level a key unlocks ("proxy", "developer", "all"), or null.</summary>
     public static string? Level(string? key) => Level(key, Known);
 
     internal static string? Level(string? key, IEnumerable<(string Level, string Hash)> known)

@@ -14,7 +14,9 @@ public class ConfigTests
         Assert.Equal("servicecenter@firma.example", team.ServiceCenter!.Email);
         Assert.Contains(team.Software!, s => s.Name == "Alfaview" && s.SccmName == "alfaview*");
         Assert.Null(team.Admins);
-        Assert.Equal(new[] { "Admins", "Entwicklung", "Test" }, team.Access!.Roles!.Select(r => r.Name));
+        Assert.Equal(new[] { "Admins", "Entwickler", "Test" }, team.Access!.Roles!.Select(r => r.Name));
+        Assert.Equal("pi-web-access", team.Pi!.Packages!.Single(p => p.Id == "websearch").Npm);
+        Assert.NotNull(team.Playwright!.Template);
         Assert.False(Permissions.UsesLegacyFormat(team));
         var tester = Permissions.Compute(team, new TeamStatus("x", "settings", DateTime.Now, false, null, 1, null), null,
                                          @"FIRMA\erika.musterfrau", Array.Empty<string>(), dev: false);

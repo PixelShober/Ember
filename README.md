@@ -30,7 +30,7 @@ Ein neuer Dienstrechner kostet einen halben Tag, bis git, npm, NuGet und pip dur
 | KI | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp mit CUDA (samt Laufzeit) installieren, Qwen3.8-27B laden oder eine GGUF-Datei vom PC nehmen, `llama-server` mit Kontext-Profilen starten und den Coding-Agenten Pi anbinden. |
 | Berechtigungen | Rollen legen fest, wer welche Module sieht, für Benutzer und AD-Gruppen. Ember prüft die Namen im Verzeichnis und schreibt die Rollen in die `team.json`. Wer in keiner Rolle steht, kann per Mail Zugriff anfragen. |
 
-Jeder Tab ist ein Modul. Wer welches sieht, steht in den Rollen der `team.json`, ohne Rolle sieht man nichts. Gibt es noch keine `team.json`, schaltet ein Schlüssel Ember frei: für den Proxy, für Proxy und Playwright oder für alles. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein.
+Jeder Tab ist ein Modul. Wer welches sieht, steht in den Rollen der `team.json`, ohne Rolle sieht man nichts. Gibt es noch keine `team.json`, schaltet ein Schlüssel Ember frei: für den Proxy, für Entwickler (Proxy, Playwright, Git, Software) oder für alles. Mit `team.json` kann jede Rolle einen eigenen Schlüssel haben. <kbd>Strg</kbd> + <kbd>K</kbd> öffnet das Handbuch in Ember. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein.
 
 Gemeinsame Einstellungen fürs Team (interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, Rollen) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
 

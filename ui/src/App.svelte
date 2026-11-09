@@ -12,6 +12,7 @@
   import MailDialog from './lib/components/MailDialog.svelte';
   import UpdateBanner from './lib/components/UpdateBanner.svelte';
   import PreviewSwitch from './lib/components/PreviewSwitch.svelte';
+  import Handbook, { handbook, openHandbook } from './lib/components/Handbook.svelte';
   import Start from './pages/Start.svelte';
   import Proxy from './pages/Proxy.svelte';
   import Git from './pages/Git.svelte';
@@ -59,6 +60,14 @@
 
   /** Lock screen: check team.json again (an admin may just have added this account). */
   let checking = $state(false);
+  /** Lock screen: a role key from the admins (Berechtigungen → Schlüssel). */
+  let lockKey = $state('');
+  async function unlockWithKey() {
+    checking = true;
+    const ok = await run(() => api('app.unlock', { key: lockKey.trim() }));
+    checking = false;
+    if (ok) location.reload();
+  }
   async function recheck() {
     checking = true;
     await run(() => api('team.reload'));
@@ -72,6 +81,13 @@
 
   /** Ctrl+E shows or hides the advanced tabs (whoever has one; remembered in the settings). */
   async function onKey(e: KeyboardEvent) {
+    // Ctrl+K: the handbook, at the page of the open tab.
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k' && app.ready) {
+      e.preventDefault();
+      if (handbook.open) handbook.open = false;
+      else openHandbook(app.route);
+      return;
+    }
     if (!(e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'e') || !app.info?.access) return;
     e.preventDefault();
     if (!app.info.advanced) {
@@ -99,6 +115,13 @@
       <Calcifer size={72} />
       <h1>{t('access.locked.title')}</h1>
       <p>{t('access.locked.text', { user: app.info.user })}</p>
+      {#if app.info.grant.staleKey}<div class="note warn"><Icon name="key" /><p class="small">{t('access.locked.stale')}</p></div>{/if}
+      {#if app.info.team.loadedAt && app.info.grant.source !== 'preview'}
+        <form class="row key-form" onsubmit={(e) => { e.preventDefault(); void unlockWithKey(); }}>
+          <input bind:value={lockKey} placeholder={t('access.locked.keyPlaceholder')} aria-label={t('access.locked.keyLabel')} spellcheck="false" autocomplete="off" class="mono" />
+          <button class="btn" type="submit" disabled={checking || !lockKey.trim()}><Icon name="key" size={16} />{t('access.locked.keySubmit')}</button>
+        </form>
+      {/if}
       {#if app.info.accessContact}<p class="small muted">{t('access.locked.contact', { email: app.info.accessContact })}</p>{/if}
       <div class="row">
         <button class="btn primary" onclick={() => openMail('accessRequest')}><Icon name="mail" size={16} />{t('access.locked.request')}</button>
@@ -130,6 +153,9 @@
       </nav>
 
       <div class="foot">
+        <button class="handbook-link" onclick={() => openHandbook(app.route)}>
+          <Icon name="book" size={16} /><span>{t('handbook.title')}</span><kbd>{t('handbook.shortcut')}</kbd>
+        </button>
         <AppearanceSwitch />
         <PreviewSwitch />
         {#if can('proxy')}
@@ -168,6 +194,7 @@
 {/if}
 
 {#if app.ready}<PreviewSwitch bar />{/if}
+<Handbook />
 <Toasts />
 <ConfirmDialog />
 <MailDialog />
@@ -179,6 +206,19 @@
   .locked h1 { margin: 6px 0 0; font-family: var(--font-display); font-size: 22px; }
   .locked p { margin: 0; }
   .locked .row { margin-top: 10px; justify-content: center; }
+  .handbook-link {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: var(--radius-small);
+    background: transparent; color: var(--text-muted); font: inherit; font-size: 13px; cursor: pointer; text-align: left;
+  }
+  .handbook-link:hover { background: var(--surface-2); color: var(--text); }
+  .handbook-link span { flex: 1; }
+  .handbook-link kbd {
+    font-family: var(--font); font-size: 11px; padding: 1px 6px; border-radius: 5px;
+    border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
+  }
+  .locked .key-form { width: 100%; flex-wrap: nowrap; }
+  .locked .key-form input { flex: 1; min-width: 0; text-align: center; letter-spacing: 0.04em; }
+  .locked .note { text-align: left; }
   .loading img { animation: glow 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
   @keyframes glow { 50% { opacity: 0.7; transform: scale(0.94, 1.04); } }
   @media (prefers-reduced-motion: reduce) { .loading img { animation: none; } }

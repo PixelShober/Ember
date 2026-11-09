@@ -1,9 +1,13 @@
 ---
 title: Playwright
-description: Browser für ein Projekt über px installieren, Playwright hinzufügen, neue Projekte anlegen und Edge nutzen, wenn der Download nicht klappt.
+description: Browser für ein Projekt über px installieren, Playwright hinzufügen, neue Projekte aus einer Vorlage anlegen, Vorlagen aus Projekten machen und Edge nutzen, wenn der Download nicht klappt.
 ---
 
 ![Playwright](../../../assets/screens/playwright-de-light.png)
+
+Der Tab hat drei Reiter: **Projekt** (Browser für ein vorhandenes Projekt), **Neues Projekt** (ein Projekt aus der Vorlage) und **Vorlage** (welche Vorlage gilt, und eine neue aus einem Projekt).
+
+Ember installiert genau die Browser, die die Playwright-Version deines Projekts braucht, über px und mit den Firmenzertifikaten. Klappt der Download nicht, testest du mit dem Edge, der schon da ist.
 
 Playwright gehört zum Projekt, als npm-Paket in der `package.json`. Die Browser liegen dagegen in einem gemeinsamen Cache unter `%LOCALAPPDATA%\ms-playwright`, ein Ordner pro Browser-Version. Jede Playwright-Version braucht ihre eigenen Browser-Builds, deshalb arbeitet Ember immer mit einem Projektordner.
 
@@ -43,11 +47,32 @@ Steht im gewählten Ordner noch kein Playwright in der `package.json`, heißt de
 
 Danach installiert Ember wie oben die Browser oder richtet Edge ein. Vorhandene Dateien und Skripte bleiben, wie sie sind.
 
-## Neues Projekt aus der Ember-Vorlage
+## Neues Projekt
 
-„Neues Projekt“ legt ein fertiges Playwright-Projekt an. Du wählst den Speicherort (vorgeschlagen ist der Ordner neben dem aktuellen Projekt oder `%USERPROFILE%\source\repos`) und gibst einen Namen ein. Der Name folgt den npm-Regeln, aus „Mein Projekt“ wird `mein-projekt`.
+„Neues Projekt“ funktioniert wie eine Projektvorlage in Visual Studio. Oben steht, aus welcher Vorlage das Projekt entsteht, darunter wählst du den Speicherort (vorgeschlagen ist der Ordner neben dem aktuellen Projekt oder `%USERPROFILE%\source\repos`) und den Namen. Der Name folgt den npm-Regeln, aus „Mein Projekt“ wird `mein-projekt`. Unter „Das entsteht“ siehst du die Dateien der Vorlage.
 
-Die Vorlage entspricht dem, was `npm init playwright` anlegt:
+Ember kopiert die Vorlage in den neuen Ordner und ersetzt dabei in Dateien und Dateinamen:
+
+| Platzhalter | wird zu |
+|---|---|
+| `$projectname$`, `$safeprojectname$` | dem Projektnamen, z. B. `kundenportal-tests` |
+| `$year$` | dem aktuellen Jahr |
+
+Danach installiert npm die Pakete der Vorlage. Fehlt `@playwright/test`, kommt es dazu. Zum Schluss lädt Ember die Browser oder richtet Edge ein. „Zum Projekt“ öffnet das neue Projekt im ersten Reiter.
+
+„Diesmal die Ember-Vorlage nehmen“ legt ein Projekt aus Embers eingebauter Vorlage an, auch wenn das Team eine eigene hat.
+
+## Die Vorlage
+
+Welche Vorlage gilt, entscheidet Ember in dieser Reihenfolge:
+
+1. `playwright.template` in der [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#playwright), ein Ordner auf dem Netzlaufwerk,
+2. sonst ein Ordner, den du im Reiter „Vorlage“ gewählt hast,
+3. sonst Embers eingebaute Vorlage.
+
+Ist der Ordner gerade nicht erreichbar (kein VPN), sagt Ember das, und neue Projekte bekommen so lange die eingebaute Vorlage.
+
+Die eingebaute Vorlage entspricht dem, was `npm init playwright` anlegt:
 
 | Datei | Inhalt |
 |---|---|
@@ -58,4 +83,20 @@ Die Vorlage entspricht dem, was `npm init playwright` anlegt:
 | `.vscode/extensions.json` | Empfehlung für die Playwright-Erweiterung |
 | `README.md` | die wichtigsten Befehle |
 
-Danach installiert npm `@playwright/test`, und Ember lädt die Browser oder richtet Edge ein. Mit „In VS Code öffnen“ geht es direkt weiter.
+## Vorlage aus einem Projekt
+
+Hat sich in einem Projekt ein Aufbau bewährt (Page Objects, Fixtures, Config, Skripte), machst du daraus die Vorlage für alle. Du wählst das Projekt, und Ember zeigt alle Dateien mit einem Vorschlag:
+
+| Was | Vorschlag | Warum |
+|---|---|---|
+| Config, Code, Page Objects, Fixtures, README, `.env.example` | übernehmen | das ist die Struktur |
+| Testdateien (`*.spec.ts`, `*.test.ts`) | weglassen | echte Tests gehören ins Projekt, nicht in die Vorlage |
+| Ordner `data`, `testdata`, `*-snapshots`, Tabellen, Bilder, PDFs | weglassen | Testdaten |
+| `.env`, `.auth`, Storage States, Zertifikate | weglassen | Zugangsdaten |
+| `node_modules`, `.git`, Berichte, `package-lock.json` | immer weg | wird neu erzeugt |
+
+Jeden Vorschlag kannst du per Häkchen ändern, ein Häkchen am Ordner gilt für alles darin. Ordner, deren Inhalt wegfällt, bleiben als leere Ordner erhalten (mit `.gitkeep`), damit die Struktur stimmt. Außerdem macht Ember die Vorlage neutral: In der `package.json` wird der Name zu `$projectname$` und die Version zu `1.0.0`, Autor und Repository fallen weg. Ein fester `baseURL` in der Playwright-Config wird zu `process.env.BASE_URL`.
+
+Gespeichert wird in den Vorlagenordner: den aus der `team.json`, sonst deinen eigenen. Gibt es noch keinen, wählst du einen. Eine vorhandene Vorlage ersetzt Ember erst nach einer Rückfrage und sichert sie vorher unter `C:\Ember\Config\template-backups` (die letzten zehn). Neben die Dateien legt Ember `ember-template.json` mit Name, Beschreibung, Datum und wer sie erstellt hat. Die Datei landet nicht in neuen Projekten.
+
+Für die Team-Vorlage brauchst du Schreibrechte auf den Ordner. Alle anderen können damit nur Projekte anlegen.

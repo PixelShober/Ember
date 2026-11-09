@@ -134,6 +134,8 @@ public sealed class TeamPlaywright
 {
     /// <summary>Internal mirror for the browser downloads (sets PLAYWRIGHT_DOWNLOAD_HOST), if cdn.playwright.dev is blocked.</summary>
     public string? DownloadHost { get; set; }
+    /// <summary>Folder with the team's project template (UNC); "Neues Projekt" copies it, "Vorlage" replaces it.</summary>
+    public string? Template { get; set; }
 }
 
 /// <summary>Format before roles: these accounts and groups get every module (see <see cref="Permissions.Roles"/>).</summary>
@@ -203,6 +205,23 @@ public sealed class TeamConfigService
     sealed record Cache(string Path, DateTime LoadedAt, TeamConfig Config);
 
     public TeamConfig Config { get; private set; } = new();
+    DateTime? _writeTime;
+
+    /// <summary>The loaded team.json was changed since (time stamp on the share); false when unreachable.</summary>
+    public async Task<bool> ChangedOnDiskAsync(CancellationToken ct)
+    {
+        var path = Status.Path;
+        if (path == null) return false;
+        try
+        {
+            var time = await Task.Run(() => File.GetLastWriteTimeUtc(path), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
+            return time.Year > 1601 && time != _writeTime;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return false;
+        }
+    }
     public TeamStatus Status { get; private set; } = TeamStatus.None;
 
     /// <summary>
@@ -283,9 +302,10 @@ public sealed class TeamConfigService
         try
         {
             // Network shares can hang for a long time when the VPN is down.
-            var text = await Task.Run(() => File.ReadAllText(path), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
+            var (text, written) = await Task.Run(() => (File.ReadAllText(path), File.GetLastWriteTimeUtc(path)), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
             var config = TeamConfig.Parse(text);
             Config = config;
+            _writeTime = written;
             Status = new TeamStatus(path, source, DateTime.Now, false, null, config.Version, config.Name);
             SaveCache(new Cache(path, DateTime.Now, config));
             Log.Info(L.T("team.loaded", ("path", path)));

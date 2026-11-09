@@ -13,7 +13,7 @@ public sealed class EmberHost : IDisposable
     readonly List<LogEntry> _pendingLog = new();
     readonly object _logSync = new();
     readonly CancellationTokenSource _cts = new();
-    Timer? _logTimer, _pxTimer, _updateTimer;
+    Timer? _logTimer, _pxTimer, _updateTimer, _teamTimer;
     PxStatus? _lastPx;
 
     public EmberHost(IHostShell shell)
@@ -79,12 +79,53 @@ public sealed class EmberHost : IDisposable
         await Team.LoadAsync(Settings, _cts.Token);
         Shell.SetDevTools(DevToolsAllowed);
         _ = DetectProxyAtStartAsync();
+        _ = RefreshDisplayNameAsync();
 
         _logTimer = new Timer(_ => FlushLog(), null, 150, 150);
         _pxTimer = new Timer(async _ => await PollPxAsync(), null, 500, 4000);
+        // A rotated key or a changed role should not wait for the next start.
+        _teamTimer = new Timer(async _ => await ReloadTeamIfChangedAsync(), null, TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
         if (Settings.AutoUpdate && !AppInfo.IsPrerelease)
             _updateTimer = new Timer(async _ => await Updater.CheckAsync(download: true, _cts.Token), null,
                                      TimeSpan.FromSeconds(15), TimeSpan.FromHours(6));
+    }
+
+    /// <summary>Reads team.json again when it changed on the share; the window follows when the access changed.</summary>
+    async Task ReloadTeamIfChangedAsync()
+    {
+        try
+        {
+            if (!await Team.ChangedOnDiskAsync(_cts.Token)) return;
+            var before = Grant;
+            await Team.LoadAsync(Settings, _cts.Token);
+            var after = Grant;
+            if (!before.Modules.SetEquals(after.Modules) || before.StaleKey != after.StaleKey || !before.Roles.SequenceEqual(after.Roles))
+                GrantChanged();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Debug("team reload: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// "Vorname Nachname" for the greeting: the copy from the last start right away, then the
+    /// directory once more; the window only hears about it if the name changed.
+    /// </summary>
+    async Task RefreshDisplayNameAsync()
+    {
+        try
+        {
+            var name = await GitIdentity.SenderAsync(_cts.Token);
+            if (string.IsNullOrWhiteSpace(name) || name == Environment.UserName || name == Settings.DisplayName) return;
+            Settings.DisplayName = name;
+            Settings.Save();
+            Bridge.Emit("app.info", Info());
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Debug("display name: " + ex.Message);
+        }
     }
 
     /// <summary>
@@ -192,10 +233,11 @@ public sealed class EmberHost : IDisposable
         languageSetting = Settings.Language,
         windowsLanguage = L.Resolve("auto", System.Globalization.CultureInfo.CurrentUICulture).Language,
         user = Elevation.AccountName,
+        displayName = Settings.DisplayName ?? GitIdentity.NameFromAccount(Environment.UserName),
         computer = Environment.MachineName,
         elevated = Elevation.IsElevated,
         modules = ModuleIds.Known.Where(Grant.Has).ToList(),
-        grant = new { Grant.Source, Grant.Roles, Grant.KeyLevel },
+        grant = new { Grant.Source, Grant.Roles, Grant.KeyLevel, Grant.StaleKey },
         // An admin can look at Ember through any role or key level (and back), see app.preview.
         preview = RealGrant.Has("access") ? new
         {
@@ -237,8 +279,6 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ app
         b.Register("app.info", Info);
-        // Full name from the directory (or git), for the greeting on the start page and the mail closing line.
-        b.Register("app.me", async ct => new { name = await GitIdentity.SenderAsync(ct) });
         // Colour scheme and design (switch in the sidebar). The window frame follows.
         b.Register("app.setAppearance", (args, _) =>
         {
@@ -281,10 +321,21 @@ public sealed class EmberHost : IDisposable
         b.Register("app.unlock", (args, _) =>
         {
             var key = args.Req("key");
-            var level = StarterKeys.Level(key) ?? throw new EmberException("keyInvalid");
+            string label;
+            if (Team.Status.LoadedAt != null)
+            {
+                // With a team.json the role keys count (Berechtigungen → Schlüssel), the starter keys not.
+                var role = Permissions.Roles(Team.Config).FirstOrDefault(r => StarterKeys.Same(r.Key, key)) ?? throw new EmberException("keyInvalid");
+                label = role.Name;
+            }
+            else
+            {
+                var level = StarterKeys.Level(key) ?? throw new EmberException("keyInvalid");
+                label = L.T($"access.keyLevels.{level}");
+            }
             Settings.UnlockKey = key.Trim();
             Settings.Save();
-            Log.Info(L.T("access.unlocked", ("level", L.T($"access.keyLevels.{level}"))));
+            Log.Info(L.T("access.unlocked", ("level", label)));
             GrantChanged();
             return Task.FromResult<object?>(Info());
         });
@@ -311,6 +362,7 @@ public sealed class EmberHost : IDisposable
                 "models" => Models.Dir(Settings),
                 "llama" => Paths.LlamaDir,
                 "playwright" => Playwright.BrowsersDir,
+                "playwrightTemplate" => PlaywrightTemplates.Location(Team.Config, Settings).Path ?? throw new EmberException("folderMissing", ("path", "–")),
                 "playwrightProject" => Settings.PlaywrightProject ?? throw new EmberException("folderMissing", ("path", "–")),
                 "root" => Paths.Root,
                 var other => throw new EmberException("unknownFolder", ("key", other)),
@@ -333,6 +385,7 @@ public sealed class EmberHost : IDisposable
             bool teamChanged = next.TeamConfigPath != Settings.TeamConfigPath;
             next.HideAdvanced = Settings.HideAdvanced;   // only Ctrl+E changes this (app.toggleAdvanced)
             next.LlamaProfileChosen |= Settings.LlamaProfileChosen;
+            next.DisplayName ??= Settings.DisplayName;
             next.Save();
             Settings = next;
             if (languageChanged) L.Configure(next.Language);
@@ -366,6 +419,7 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ access (admins)
         b.Register("access.get", async ct => await Access.ViewAsync(Team.Config, Team.Status, ct));
+        b.Register("access.newKey", () => StarterKeys.Generate());
         b.Register("access.lookup", (args, _) => Task.FromResult<object?>(Access.Lookup(args.Req("name"))));
         b.Register("access.save", async (args, ct) =>
         {
@@ -468,7 +522,12 @@ public sealed class EmberHost : IDisposable
         });
 
         // ------------------------------------------------------------------ software & mail
-        b.Register("software.list", async ct => await SoftwareCenter.ListAsync(Team.Config, ct));
+        b.Register("software.list", async ct =>
+        {
+            var list = await SoftwareCenter.ListAsync(Team.Config, ct);
+            // Tools the account's roles do not offer (e.g. Bruno for developers) are not shown at all.
+            return list with { DevTools = list.DevTools.Where(d => !Grant.Hides(d.Id)).ToList() };
+        });
         b.Register("software.open", (args, _) =>
         {
             SoftwareCenter.Open(args.OptStr("link"));
@@ -491,12 +550,14 @@ public sealed class EmberHost : IDisposable
         b.Register("devtools.install", (args, _) =>
         {
             var id = args.Req("id");
+            if (Grant.Hides(id)) throw new EmberException("accessDenied");
             var steps = DevToolSteps(id, args.OptStr("packageId"), args.OptStr("programId"), null);
             return Task.FromResult<object?>(Jobs.Start("devtool:" + id, "devtool", L.T("devtools.jobs.install", ("name", DevTools.NameOf(id))), steps).Snapshot());
         });
         b.Register("devtools.installMany", (args, _) =>
         {
             var tools = args.Get<List<DevToolRequest>>("tools") ?? new List<DevToolRequest>();
+            tools = tools.Where(t => !Grant.Hides(t.Id)).ToList();
             if (tools.Count == 0) throw new EmberException("devToolNothingToDo");
             var steps = tools.SelectMany(t => DevToolSteps(t.Id, t.PackageId, t.ProgramId, DevTools.NameOf(t.Id))).ToList();
             return Task.FromResult<object?>(Jobs.Start("devtools", "devtool", L.T("devtools.jobs.installMany", ("count", tools.Count)), steps).Snapshot());
@@ -529,8 +590,43 @@ public sealed class EmberHost : IDisposable
             if (Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any()) throw new EmberException("playwrightFolderNotEmpty", ("path", dir));
             Settings.PlaywrightProject = dir;
             Settings.Save();
+            // "builtin": Ember's own template even when a team template exists.
+            var template = args.OptStr("template") == "builtin" ? null : PlaywrightTemplates.Location(Team.Config, Settings).Path;
             return Task.FromResult<object?>(Jobs.Start("playwright", "playwright", L.T("playwright.jobs.create", ("name", name)),
-                Playwright.CreateSteps(parent, name, args.OptStr("browsers") ?? "chromium", Effective, Team.Config)).Snapshot());
+                Playwright.CreateSteps(parent, name, args.OptStr("browsers") ?? "chromium", template, Effective, Team.Config)).Snapshot());
+        });
+        // ---- project templates (Visual Studio style): which one, preview of a new one, replace it
+        b.Register("playwright.template", async ct => await PlaywrightTemplates.InfoAsync(Team.Config, Settings, ct));
+        b.Register("playwright.template.use", async (args, ct) =>
+        {
+            // Only while team.json names no template; null goes back to Ember's built-in one.
+            if (!string.IsNullOrWhiteSpace(Team.Config.Playwright?.Template)) throw new EmberException("playwrightTemplateFromTeam");
+            Settings.PlaywrightTemplate = args.OptStr("path")?.Trim() ?? "";
+            Settings.Save();
+            return await PlaywrightTemplates.InfoAsync(Team.Config, Settings, ct);
+        });
+        b.Register("playwright.template.preview", async (args, ct) =>
+        {
+            var dir = args.Req("dir");
+            return await Task.Run(() => PlaywrightTemplates.Preview(dir), ct).WaitAsync(TimeSpan.FromSeconds(30), ct);
+        });
+        b.Register("playwright.template.save", async (args, ct) =>
+        {
+            var dir = args.Req("dir");
+            var keep = args.Get<List<string>>("keep") ?? new List<string>();
+            var (target, _) = PlaywrightTemplates.Location(Team.Config, Settings);
+            target = args.OptStr("target") is { Length: > 0 } chosen && string.IsNullOrWhiteSpace(Team.Config.Playwright?.Template) ? chosen : target;
+            if (target == null) throw new EmberException("playwrightTemplateNoTarget");
+            if (Path.GetFullPath(target).TrimEnd('\\').Equals(Path.GetFullPath(dir).TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
+                throw new EmberException("playwrightTemplateSameFolder");
+            var count = await Task.Run(() => PlaywrightTemplates.Save(dir, target, keep, args.OptStr("name"), args.OptStr("description"), Elevation.AccountName), ct)
+                                  .WaitAsync(TimeSpan.FromMinutes(2), ct);
+            if (string.IsNullOrWhiteSpace(Team.Config.Playwright?.Template) && Settings.PlaywrightTemplate != target)
+            {
+                Settings.PlaywrightTemplate = target;
+                Settings.Save();
+            }
+            return new { count, template = await PlaywrightTemplates.InfoAsync(Team.Config, Settings, ct) };
         });
         // When the browser download is blocked: run the tests in the Edge Windows already has.
         b.Register("playwright.useEdge", (args, _) =>
@@ -689,7 +785,9 @@ public sealed class EmberHost : IDisposable
             var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? models.FirstOrDefault(m => m.Downloaded);
             var alias = llama.ServerAlias ?? model?.Alias ?? Models.Qwen.Alias!;
             var context = llama.ServerContext ?? LlamaCpp.Profile(Settings.LlamaProfile).Context;
-            return PiAgent.Configure(alias, context, Settings.LlamaPort, model?.MmprojPresent ?? false);
+            var file = PiAgent.Configure(alias, context, Settings.LlamaPort, model?.MmprojPresent ?? false);
+            if (PiAgent.InstalledVersion(PiAgent.WebSearchPackage) != null) PiAgent.SetWebSearchProxy(Effective.PxUrl);
+            return file;
         });
         // Pi itself and its extensions: installed version, newest on npm, update available.
         b.Register("ai.pi.packages", async ct =>
@@ -814,6 +912,7 @@ public sealed class EmberHost : IDisposable
         _cts.Cancel();
         _logTimer?.Dispose();
         _pxTimer?.Dispose();
+        _teamTimer?.Dispose();
         _updateTimer?.Dispose();
         Log.Written -= OnLog;
         LlamaCpp.StopServer();

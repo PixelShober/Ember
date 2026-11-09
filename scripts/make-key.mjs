@@ -1,10 +1,10 @@
 // Creates a starter key for Ember (the key a user enters when there is no team.json yet).
-//   node scripts/make-key.mjs <proxy|proxyPlaywright|all>
+//   node scripts/make-key.mjs <proxy|developer|all>
 // Prints the key (hand it out, never commit it) and the line for src/Ember.Core/Config/StarterKeys.cs.
 // The key has 100 random bits, so its SHA-256 can sit in the public code.
 import { createHash, randomBytes } from 'node:crypto';
 
-const levels = ['proxy', 'proxyPlaywright', 'all'];
+const levels = ['proxy', 'developer', 'all'];
 const level = process.argv[2];
 if (!levels.includes(level)) {
   console.error(`usage: node scripts/make-key.mjs <${levels.join('|')}>`);

@@ -154,7 +154,8 @@ public static class Playwright
     }
 
     /// <summary>A new project from the Ember template in parent\name, then npm and the browsers (or Edge).</summary>
-    public static List<SetupStep> CreateSteps(string parent, string name, string mode, EffectiveSettings eff, TeamConfig team)
+    /// <param name="template">Template folder (team.json or settings); null: Ember's built-in template.</param>
+    public static List<SetupStep> CreateSteps(string parent, string name, string mode, string? template, EffectiveSettings eff, TeamConfig team)
     {
         var dir = Path.Combine(parent, name);
         var run = new Run(dir, PlaywrightTemplate.Mode(mode), eff, team);
@@ -163,7 +164,7 @@ public static class Playwright
             new(L.T("playwright.steps.template"), (step, ct) =>
             {
                 run.RequireNode();
-                var files = PlaywrightTemplate.Write(parent, name, run.Mode);
+                var files = template != null ? PlaywrightTemplates.Instantiate(template, parent, name) : PlaywrightTemplate.Write(parent, name, run.Mode);
                 step.Report(L.T("playwright.created", ("files", string.Join(", ", files)), ("path", dir)));
                 return Task.CompletedTask;
             }),

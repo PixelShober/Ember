@@ -59,9 +59,11 @@
         "groups": ["FIRMA\\Entwicklung-Admins"]
       },
       {
-        "name": "Entwicklung",
-        "modules": ["proxy", "git", "software", "playwright", "system", "settings", "log"],
-        "groups": ["FIRMA\\Entwicklung"]
+        "name": "Entwickler",
+        "modules": ["proxy", "playwright", "git", "software"],
+        "groups": ["FIRMA\\Entwicklung"],
+        "key": "EMBER-7QK2M-H4RTA-9VXCE-1BN5D",
+        "hideTools": ["bruno"]
       },
       {
         "name": "Test",
@@ -80,7 +82,8 @@
   },
 
   "playwright": {
-    "downloadHost": "https://artifactory.firma.example/playwright"
+    "downloadHost": "https://artifactory.firma.example/playwright",
+    "template": "\\\\fs01\\entwicklung\\vorlagen\\playwright"
   },
 
   "models": [
@@ -91,6 +94,18 @@
       "note": "Gut für Code, passt in 24 GB VRAM"
     }
   ],
+
+  "pi": {
+    "packages": [
+      { "id": "mcp", "npm": "pi-mcp-adapter" },
+      { "id": "websearch", "npm": "pi-web-access", "note": { "de": "Websuche auch mit dem lokalen Modell, ohne Schlüssel; Ember stellt sie auf px.", "en": "Web search also with the local model, no key; Ember points it at px." } },
+      { "id": "pretty", "npm": "@heyhuynhgiabuu/pi-pretty" },
+      { "id": "ponytail", "npm": "@dietrichgebert/ponytail" },
+      { "id": "simplify", "npm": "pi-simplify" },
+      { "id": "contextMode", "npm": "context-mode" },
+      { "id": "todo", "npm": "@juicesharp/rpiv-todo" }
+    ]
+  },
 
   "update": {
     "mirror": ""

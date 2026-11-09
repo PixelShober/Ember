@@ -46,7 +46,6 @@
 
 <header class="page-head">
   <h1>{t('system.title')}</h1>
-  <p>{t('system.subtitle')}</p>
 </header>
 
 <div class="row head">

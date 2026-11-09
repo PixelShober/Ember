@@ -41,6 +41,33 @@ public class AccessTests
     }
 
     [Fact]
+    public void A_role_key_opens_the_role_until_it_is_rotated()
+    {
+        var team = TeamConfig.Parse("""
+            { "access": { "roles": [
+              { "name": "Entwickler", "modules": ["proxy", "playwright", "git", "software"], "groups": ["FIRMA\\GG-Dev"],
+                "key": "EMBER-01234-56789-ABCDE-FGHJK", "hideTools": ["bruno"] },
+              { "name": "Test", "modules": ["proxy", "log"], "users": ["max.muster"] } ] } }
+            """);
+        var byKey = Grant(team, @"FIRMAremd", key: "ember-01234 56789-abcde-fghjk");
+        Assert.Equal(new[] { "Entwickler" }, byKey.Roles);
+        Assert.True(byKey.Hides("bruno"));
+        Assert.False(byKey.StaleKey);
+
+        // Rotated: the old key opens nothing, the account is locked out and Ember says why.
+        var old = Grant(team, @"FIRMAremd", key: "EMBER-ZZZZZ-56789-ABCDE-FGHJK");
+        Assert.False(old.Any);
+        Assert.True(old.StaleKey);
+
+        // Bruno stays only hidden if every role of the account hides it.
+        var both = Grant(team, @"FIRMA\max.muster", new[] { @"FIRMA\GG-Dev" });
+        Assert.False(both.Hides("bruno"));
+
+        Assert.Matches("^EMBER-[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){3}$", StarterKeys.Generate());
+        Assert.NotEqual(StarterKeys.Generate(), StarterKeys.Generate());
+    }
+
+    [Fact]
     public void Without_a_role_nothing_is_visible()
     {
         var nobody = Grant(Roles, @"FIRMA\gast", new[] { @"FIRMA\Vertrieb" });
@@ -66,14 +93,15 @@ public class AccessTests
     public void Starter_keys_are_compared_by_hash_and_forgive_typing()
     {
         // Test table: SHA-256("ember-key-v1:" + "0123456789ABCDEFGHJK")
-        var known = new[] { ("proxyPlaywright", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+        var known = new[] { ("developer", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
             System.Text.Encoding.UTF8.GetBytes("ember-key-v1:0123456789ABCDEFGHJK"))).ToLowerInvariant()) };
-        Assert.Equal("proxyPlaywright", StarterKeys.Level("EMBER-01234-56789-ABCDE-FGHJK", known));
-        Assert.Equal("proxyPlaywright", StarterKeys.Level(" ember-o1234 56789-abcde-fghjk ", known));   // O for 0, lower case, spaces
-        Assert.Equal("proxyPlaywright", StarterKeys.Level("0123456789ABCDEFGHJK", known));
+        Assert.Equal("developer", StarterKeys.Level("EMBER-01234-56789-ABCDE-FGHJK", known));
+        Assert.Equal("developer", StarterKeys.Level(" ember-o1234 56789-abcde-fghjk ", known));   // O for 0, lower case, spaces
+        Assert.Equal("developer", StarterKeys.Level("0123456789ABCDEFGHJK", known));
         Assert.Null(StarterKeys.Level("EMBER-01234-56789-ABCDE-FGHJX", known));
         Assert.Null(StarterKeys.Level("", known));
-        Assert.Equal(new[] { "proxy", "playwright" }, StarterKeys.LevelModules["proxyPlaywright"]);
+        Assert.Equal(new[] { "proxy", "playwright", "git", "software" }, StarterKeys.LevelModules["developer"]);
+        Assert.Equal(new[] { "bruno" }, StarterKeys.LevelHiddenTools["developer"]);
     }
 
     [Fact]
@@ -198,7 +226,7 @@ public class AccessMailTests
         Assert.NotNull(test);
         Assert.Equal("preview", test!.Source);
 
-        var key = Permissions.Preview(AccessTests.RolesForPreview, "key:proxyPlaywright")!;
+        var key = Permissions.Preview(AccessTests.RolesForPreview, "key:developer")!;
         Assert.True(key.Has("proxy") && key.Has("playwright"));
         Assert.False(key.Has("access"));
 

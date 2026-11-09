@@ -25,11 +25,13 @@ export interface AppInfo {
   /** "de" or "en": what "auto" means on this machine. */
   windowsLanguage: 'de' | 'en';
   user: string;
+  /** "Vorname Nachname" from the directory (remembered from the last start), else a guess from the account name. */
+  displayName: string;
   computer: string;
   elevated: boolean;
   /** Modules this account sees: from its roles in team.json, or from a starter key while there is none. */
   modules: ModuleId[];
-  grant: { source: 'team' | 'key' | 'dev' | 'preview' | 'none'; roles: string[]; keyLevel: KeyLevel | null };
+  grant: { source: 'team' | 'key' | 'dev' | 'preview' | 'none'; roles: string[]; keyLevel: KeyLevel | null; staleKey?: boolean };
   /** setup: no team.json and no key; notListed: team.json has no role for this account. */
   locked: 'setup' | 'notListed' | null;
   /**
@@ -137,13 +139,17 @@ export interface AccessEntry {
   kind: 'user' | 'group';
 }
 
-export type KeyLevel = 'proxy' | 'proxyPlaywright' | 'all';
+export type KeyLevel = 'proxy' | 'developer' | 'all';
 
 export interface AccessRole {
   name: string;
   /** Module ids or "*" for all. */
   modules: string[];
   members: AccessEntry[];
+  /** Whoever enters it gets the role (EMBER-XXXXX-…); null: no key. */
+  key?: string | null;
+  /** Developer tools the role does not offer, e.g. ["bruno"]. */
+  hideTools?: string[] | null;
 }
 
 export interface AccessView {
@@ -321,6 +327,31 @@ export interface PlaywrightEdgeSetup {
   file: string;
   command: string;
   created: boolean;
+}
+
+export interface PlaywrightTemplateInfo {
+  /** team: team.json playwright.template · user: chosen in Ember · builtin: Ember's own. */
+  source: 'team' | 'user' | 'builtin';
+  path: string | null;
+  name: string | null;
+  description: string | null;
+  created: string | null;
+  createdBy: string | null;
+  files: number;
+  /** The first files, for a look at what a new project gets. */
+  sample: string[];
+  /** Why the folder cannot be used right now; the built-in template steps in. */
+  problem: string | null;
+  writable: boolean;
+}
+
+export interface TemplateEntry {
+  path: string;
+  dir: boolean;
+  /** keep: copied · drop: left out, its folder stays · skip: never part of a template. */
+  action: 'keep' | 'drop' | 'skip';
+  reason: 'test' | 'data' | 'secret' | 'generated' | 'report' | 'dependencies' | 'git' | null;
+  size: number;
 }
 
 export interface PlaywrightState {

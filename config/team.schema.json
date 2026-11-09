@@ -136,7 +136,9 @@
                 "items": { "enum": ["*", "proxy", "git", "software", "playwright", "system", "power", "ai", "access", "settings", "log"] }
               },
               "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-              "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+              "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } },
+              "key": { "type": "string", "pattern": "^(?i)(ember-?)?[0-9a-z]{5}-?[0-9a-z]{5}-?[0-9a-z]{5}-?[0-9a-z]{5}$", "description": "Wer diesen Schlüssel eingibt, bekommt die Rolle, auch ohne Mitglied zu sein. Im Tab „Berechtigungen“ erzeugen, anzeigen und erneuern; ein erneuerter Schlüssel sperrt den alten aus." },
+              "hideTools": { "type": "array", "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh", "bruno"] }, "description": "Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. [\"bruno\"]." }
             }
           }
         },
@@ -181,7 +183,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "downloadHost": { "type": "string", "format": "uri", "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist." }
+        "downloadHost": { "type": "string", "format": "uri", "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist." },
+        "template": { "type": "string", "description": "Ordner mit der Projektvorlage des Teams (UNC-Pfad). „Neues Projekt“ kopiert ihn und ersetzt $projectname$ und $year$; im Tab „Vorlage“ lässt er sich aus einem Projekt neu erzeugen." }
       }
     },
     "models": {

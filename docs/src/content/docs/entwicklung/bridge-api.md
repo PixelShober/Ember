@@ -23,7 +23,7 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 
 | Bereich | Methoden |
 |---|---|
-| App | `app.info`, `app.me`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.preview`, `app.unlock`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
+| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.preview`, `app.unlock`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
 | Einstellungen | `settings.get`, `settings.save`, `settings.defaults`, `team.status`, `team.reload`, `team.setPath` |
 | Proxy | `proxy.detect`, `proxy.diagnose`, `proxy.set`, `proxy.remove` |
 | Berechtigungen | `access.get`, `access.lookup`, `access.save` |
@@ -62,7 +62,7 @@ Alles andere (`jobs.*`, `update.*`, `mail.*`, `settings.get`, `app.openFolder` �
 
 `app.preview` (`{ target }`) gibt es nur für Konten mit dem Modul `access`. `target` ist `role:<Name>`, `key:<Stufe>`, `none` oder `null` für die eigene Ansicht. Solange die Vorschau läuft, prüft der Guard gegen die Module der Vorschau (`grant.source` ist `preview`), `app.preview` selbst aber gegen das echte Konto, damit der Weg zurück offen bleibt. `app.info.preview` nennt die aktuelle Vorschau und die Rollen und Stufen, die zur Wahl stehen. Die Vorschau lebt nur im Speicher der Exe.
 
-`mail.compose` (`{ template, vars }`) hängt nichts an, weder Log noch Diagnosebericht. Den Namen für die Grußzeile (`{sender}`) setzt die Exe selbst, `app.me` liefert ihn auch der Startseite.
+`mail.compose` (`{ template, vars }`) hängt nichts an, weder Log noch Diagnosebericht. Den Namen für die Grußzeile (`{sender}`) setzt die Exe selbst. Für die Begrüßung steht er in `app.info.displayName`, gemerkt vom letzten Start, damit er vom ersten Bild an stimmt.
 
 `app.unlock` nimmt einen Schlüssel (`{ key }`) und antwortet mit `app.info`, oder mit `keyInvalid`. `team.setPath` (`{ path }`) liest die Datei zur Probe, speichert den Pfad und lädt neu. Ist schon eine `team.json` geladen, braucht `team.setPath` das Modul `settings`.
 

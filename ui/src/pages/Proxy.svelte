@@ -57,7 +57,7 @@
 
 <header class="page-head">
   <h1>{t('proxy.title')}</h1>
-  <p>{t('proxy.subtitle', { url: px?.url ?? 'http://127.0.0.1:3128' })}</p>
+  <p>{t('proxy.subtitle')}</p>
 </header>
 
 <div class="stack">

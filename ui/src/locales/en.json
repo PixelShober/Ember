@@ -189,7 +189,15 @@
     "llamaNoServerIn": "There is no llama-server.exe in {path}.",
     "piMissing": "Pi is not installed yet.",
     "previewUnknown": "There is no such preview: {target}",
-    "mailNoSupervisor": "No direct supervisor is set for admin rights (team.json → supervisor)."
+    "mailNoSupervisor": "No direct supervisor is set for admin rights (team.json → supervisor).",
+    "accessKeyInvalid": "The key of role “{role}” is not of the form EMBER-XXXXX-XXXXX-XXXXX-XXXXX.",
+    "accessKeyDuplicate": "Two roles have the same key (“{role}”). Each role needs its own.",
+    "playwrightTemplateFromTeam": "The team configuration sets the template (playwright.template). It can only be changed there.",
+    "playwrightTemplateMissing": "The template folder {path} does not exist or cannot be reached right now.",
+    "playwrightTemplateNoProject": "There is no package.json in {path}. A template is made from a Node project.",
+    "playwrightTemplateNoTarget": "Where should the template go? Pick a folder for it first.",
+    "playwrightTemplateSameFolder": "Project and template cannot be the same folder.",
+    "playwrightTemplateTooBig": "{path} has {count} entries. That is not a project for a template but a whole drive folder."
   },
   "jobs": {
     "started": "started",
@@ -258,7 +266,7 @@
   },
   "proxy": {
     "title": "Proxy",
-    "subtitle": "px signs in to the company proxy with Kerberos and your Windows login. Your tools only talk to {url}.",
+    "subtitle": "Install the px proxy here and choose which programs go through it.",
     "px": {
       "title": "px proxy",
       "install": "Install / update",
@@ -464,7 +472,6 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Developer tools and everything Software Center offers.",
     "client": "Software Center client {version}",
     "noClient": "No Software Center client found. Installing then only works through the service center.",
     "empty": "The team configuration does not list any programs yet (section \"software\").",
@@ -497,7 +504,6 @@
       "unknown": "unknown status"
     },
     "center": "Software Center",
-    "centerHint": "Everything Software Center offers on this machine. Installing runs through the Configuration Manager client, with your IT's approvals.",
     "filter": "Search …",
     "more": "More in Software Center",
     "nothingOffered": "Software Center offers nothing to this machine right now.",
@@ -565,7 +571,6 @@
   },
   "power": {
     "title": "Power",
-    "subtitle": "Ember only changes values inside the \"{scheme}\" scheme. It never switches the power plan and never creates \"High performance\" or \"Ultimate performance\".",
     "activeScheme": "Active plan: {name}",
     "notActive": "The active plan is not \"{scheme}\". Changes only take effect once it is active.",
     "schemeByPolicy": "The active plan is set by group policy.",
@@ -674,7 +679,6 @@
   },
   "system": {
     "title": "System & policies",
-    "subtitle": "Ember cannot change group policies. It shows what applies, refreshes them and sets up the things you are allowed to change yourself.",
     "run": "Check",
     "status": {
       "ok": "OK",
@@ -881,23 +885,22 @@
       "updateOne": "Update",
       "packages": {
         "mcp": "MCP servers from the repo’s .mcp.json",
-        "websearch": "Web search through the selected model's provider (Gemini, OpenAI, Anthropic, Copilot …). It does not search with the local llama.cpp server, which has no web search of its own.",
+        "websearch": "Web search and page reading, also with the local model. Searches without a key (Exa, DuckDuckGo); Ember points it at px.",
         "pretty": "Colourful output: syntax highlighting, bash output, directory trees",
         "ponytail": "“Lazy senior”: writes only the code that is really needed",
         "simplify": "Reviews freshly changed code for clarity and simplicity",
         "contextMode": "Saves context: long outputs run in a sandbox, only what matters reaches the conversation",
         "todo": "A todo list for the model, visible live"
-      }
+      },
+      "webSearchProxy": "Web search goes through px: proxy in {path} = {url}"
     }
   },
   "settings": {
     "title": "Settings",
-    "subtitle": "Saved in {path}",
     "saved": "Settings saved: {path}",
     "loadFailed": "Settings could not be read, Ember uses the defaults: {detail}",
     "team": {
       "title": "Team configuration",
-      "description": "A shared team.json on a network share provides internal domains, software list, admins, service center address and mail templates. When something changes there, Ember picks it up at the next start. Ember detects the company proxy itself.",
       "path": "Path to team.json",
       "placeholder": "\\\\server\\share\\ember\\team.json",
       "reload": "Reload",
@@ -919,16 +922,12 @@
       "pacUrl": "PAC address",
       "pacAuto": "empty = automatically from Windows ({value})",
       "upstream": "Company proxy (host:port)",
-      "upstreamHint": "Also used for downloads as long as px is not running yet. Empty = Windows system proxy.",
       "domains": "Internal domains (no proxy)",
-      "domainsHint": "Comma separated, e.g. company.local, intranet.company.com. Without an own value or team.json, Ember takes what the PAC file reaches without proxy.",
       "port": "px port",
       "detect": "Detect automatically",
       "detected": "Found: {items}. Save to apply.",
       "notDetected": "No proxy settings found. Please enter them manually.",
-      "autoHint": "Ember detects the company proxy from Windows at every start (PAC address, proxy from the PAC file, system proxy). Only enter something if the detection is wrong.",
       "fromPac": "from PAC file",
-      "upstreamPac": "px takes the company proxy from the PAC file. A fixed proxy only applies when you choose “Fixed proxy” above.",
       "domainsFound": "{count} internal destinations from the PAC file"
     },
     "px": {
@@ -967,9 +966,7 @@
       "title": "Your modules",
       "roles": "Your roles from team.json: {roles}.",
       "byKey": "Unlocked with the key “{level}” until a team.json is entered.",
-      "dev": "Development build: every module is visible.",
-      "toggle": "Ctrl + E shows and hides Power, AI and Permissions.",
-      "none": "Power, AI and Permissions are not enabled for you."
+      "dev": "Development build: every module is visible."
     },
     "folders": {
       "title": "Folders",
@@ -1108,7 +1105,6 @@
   },
   "playwright": {
     "title": "Playwright",
-    "subtitle": "Playwright belongs to the project, its browsers live in a shared cache. Ember installs exactly the browsers your project's Playwright version needs, through px and with the company certificates. If the download fails, test with the Edge that is already there.",
     "project": "Project folder",
     "pick": "Choose folder",
     "noProject": "Pick your project's folder or create a new one.",
@@ -1172,7 +1168,70 @@
       "files": "The template comes with: package.json with the usual scripts (test, test:ui, report, codegen), playwright.config.ts, an example test, .gitignore, a README and the recommendation for the Playwright extension in VS Code. Then npm installs @playwright/test.",
       "submit": "Create project"
     },
-    "helpers": "Playwright also keeps two helpers there: ffmpeg records videos of test runs, winldd checks that Windows has what the browsers need. They belong there and stay."
+    "helpers": "Playwright also keeps two helpers there: ffmpeg records videos of test runs, winldd checks that Windows has what the browsers need. They belong there and stay.",
+    "tabs": {
+      "project": "Project",
+      "new": "New project",
+      "template": "Template"
+    },
+    "newTab": {
+      "from": "From",
+      "what": "What you get",
+      "andMore": "and {count} more",
+      "placeholders": "$projectname$ and $year$ in files and file names are filled in.",
+      "builtinOnce": "Use the Ember template this time",
+      "done": "Project created.",
+      "openProject": "Go to project"
+    },
+    "template": {
+      "sources": {
+        "team": "Team template",
+        "user": "Own template",
+        "builtin": "Ember template"
+      },
+      "current": "Current template",
+      "files": "{count} files",
+      "by": "by {user}, {date}",
+      "builtinText": "Config, example test, .gitignore and VS Code recommendation, as “npm init playwright” creates them.",
+      "fromTeam": "Set in team.json. Whoever may write to the folder can replace it below.",
+      "problem": "The template cannot be used right now ({problem}). New projects get the Ember template meanwhile.",
+      "choose": "Choose folder",
+      "useBuiltin": "Use Ember template",
+      "open": "Open folder",
+      "change": "Change",
+      "make": "Template from a project",
+      "makeHint": "Ember keeps the structure and the code, but no tests, test data or credentials. Folders whose content is left out stay as empty folders.",
+      "source": "Project",
+      "pickProject": "Choose project",
+      "keep": "Keep",
+      "kept": "{kept} kept · {dropped} left out",
+      "always": "Always left out: {list}",
+      "reasons": {
+        "test": "test",
+        "data": "test data",
+        "secret": "credentials",
+        "generated": "regenerated",
+        "report": "report",
+        "dependencies": "packages",
+        "git": "git"
+      },
+      "name": "Template name",
+      "namePlaceholder": "e.g. Playwright web tests",
+      "description": "Description",
+      "descriptionPlaceholder": "What is the template for?",
+      "target": "Saved to",
+      "targetNone": "No template folder yet. Pick one and Ember creates the template there.",
+      "replace": "Replace template",
+      "create": "Create template",
+      "replaceConfirm": "The template in {path} gets replaced. Ember backs up the old one to C:\\Ember\\Config\\template-backups first. New projects are then made from this project.",
+      "savedToast": "Template saved: {count} files",
+      "emptyPreview": "Pick a project and Ember shows what goes into the template.",
+      "scrubbed": "In package.json the name becomes $projectname$, a fixed baseURL in the Playwright config becomes process.env.BASE_URL.",
+      "pickTitle": "Choose template folder",
+      "missing": "folder missing",
+      "saved": "Template saved: {count} files in {path}",
+      "backup": "Old template backed up: {path}"
+    }
   },
   "appearance": {
     "scheme": "Colour scheme",
@@ -1190,7 +1249,7 @@
     "saved": "Permissions saved to {path}: {roles} roles, {members} entries",
     "unlocked": "Unlocked with a key: {level}",
     "title": "Permissions",
-    "subtitle": "Who sees which modules. The roles live in team.json; everybody else gets them at their next start.",
+    "subtitle": "Who sees which modules. The roles are in team.json; everyone else gets them within two minutes.",
     "roles": "Roles",
     "rolesHint": "A role decides which modules its members see. Whoever is in several roles sees all of them together. Whoever is in none only sees the lock screen.",
     "noRoles": "No roles yet. Nobody sees anything that way, not even you.",
@@ -1228,7 +1287,7 @@
     "file": "Saving to {path}",
     "keyLevels": {
       "proxy": "Proxy",
-      "proxyPlaywright": "Proxy and Playwright",
+      "developer": "Developer",
       "all": "Full access"
     },
     "problems": {
@@ -1242,7 +1301,11 @@
       "request": "Request access",
       "contact": "Requests go to {email}.",
       "retry": "Check again",
-      "stillLocked": "Not enabled yet. Once team.json has a role for you, the next check lets you in."
+      "stillLocked": "Not enabled yet. Once team.json has a role for you, the next check lets you in.",
+      "keyLabel": "Key",
+      "keyPlaceholder": "EMBER-XXXXX-XXXXX-XXXXX-XXXXX",
+      "keySubmit": "Unlock",
+      "stale": "Your key is no longer valid. The admins renewed it; ask them for the new one."
     },
     "setup": {
       "title": "Set up Ember",
@@ -1258,7 +1321,22 @@
       "teamSaved": "Team configuration set: {path}",
       "teamFailed": "team.json at {path} cannot be reached right now: {detail}",
       "account": "Signed in as {user}."
-    }
+    },
+    "key": {
+      "title": "Key",
+      "none": "No key. Access only through members.",
+      "show": "Show",
+      "hide": "Hide",
+      "copy": "Copy",
+      "copied": "Key copied",
+      "create": "Create key",
+      "rotate": "Renew",
+      "remove": "Remove",
+      "rotateConfirm": "Everyone who works with the key of role “{role}” loses access once you save. They then need the new key.",
+      "rotated": "New key for “{role}”. It counts once you save.",
+      "hint": "Whoever enters the key gets the role, even without being a member."
+    },
+    "hideBruno": "Offer Bruno"
   },
   "preview": {
     "title": "View as",
@@ -1270,5 +1348,11 @@
     "key": "key “{level}”",
     "active": "Preview: {view}",
     "back": "Back to own view"
+  },
+  "handbook": {
+    "title": "Handbook",
+    "hint": "Ctrl + K closes, inside the handbook Ctrl + K searches",
+    "browser": "Open in browser",
+    "shortcut": "Ctrl K"
   }
 }

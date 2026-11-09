@@ -94,7 +94,6 @@
 
 <header class="page-head">
   <h1>{t('settings.title')}</h1>
-  {#if view}<p class="break">{t('settings.subtitle', { path: view.paths.settings })}</p>{/if}
 </header>
 
 {#if s && view}
@@ -102,7 +101,6 @@
     <!-- Team configuration -->
     <section class="card stack tight">
       <h2>{t('settings.team.title')}</h2>
-      <p class="muted">{t('settings.team.description')}</p>
       <label class="field">
         <span>{t('settings.team.path')}</span>
         <div class="row nowrap-row">
@@ -132,7 +130,6 @@
         <h2>{t('settings.proxy.title')}</h2>
         <button class="btn small" onclick={detect}><Icon name="proxy" size={14} />{t('settings.proxy.detect')}</button>
       </div>
-      <p class="muted">{t('settings.proxy.autoHint')}</p>
       <div class="row">
         <span class="label">{t('settings.proxy.mode')}</span>
         <label class="check"><input type="radio" name="mode" checked={usePac} onchange={() => (s!.usePac = base.usePac === true ? null : true)} />{t('settings.proxy.pac')}</label>
@@ -148,12 +145,10 @@
       <label class="field">
         <span class="row">{t('settings.proxy.upstream')} <SourceBadge user={s.upstreamProxy} team={team?.upstreamProxy} detected={detected?.upstreamProxy} onreset={() => (s!.upstreamProxy = null)} /></span>
         <input value={s.upstreamProxy ?? base.upstreamProxy ?? ''} oninput={(e) => setTeamManaged('upstreamProxy', e.currentTarget.value)} spellcheck="false" class="mono" placeholder="proxy.firma.de:8080" disabled={usePac} />
-        <span class="hint">{usePac ? t('settings.proxy.upstreamPac') : t('settings.proxy.upstreamHint')}</span>
       </label>
       <label class="field">
         <span class="row">{t('settings.proxy.domains')} <SourceBadge user={s.internalDomains} team={team?.internalDomains} detected={detected?.internalDomains} detectedLabel={t('settings.proxy.fromPac')} onreset={() => (s!.internalDomains = null)} /></span>
         <input value={s.internalDomains ?? base.internalDomains ?? ''} oninput={(e) => setTeamManaged('internalDomains', e.currentTarget.value)} spellcheck="false" />
-        <span class="hint">{t('settings.proxy.domainsHint')}</span>
       </label>
       <label class="field small-field">
         <span class="row">{t('settings.proxy.port')} <SourceBadge user={s.port} team={team?.port} onreset={() => (s!.port = null)} /></span>
@@ -218,7 +213,6 @@
       {:else}
         <p class="muted">{t('settings.advanced.roles', { roles: app.info?.grant.roles.join(', ') || '–' })}</p>
       {/if}
-      <p class="small muted">{app.info?.advanced ? t('settings.advanced.toggle') : t('settings.advanced.none')}</p>
     </section>
 
     <!-- folders -->

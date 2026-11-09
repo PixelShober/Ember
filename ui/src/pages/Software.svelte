@@ -77,7 +77,6 @@
 
 <header class="page-head">
   <h1>{t('software.title')}</h1>
-  <p>{t('software.subtitle')}</p>
 </header>
 
 {#if list}
@@ -140,7 +139,7 @@
   <!-- Software Center -->
   <section class="section">
     <div class="section-head">
-      <div class="grow"><h2>{t('software.center')}</h2><p class="small muted">{t('software.centerHint')}</p></div>
+      <div class="grow"><h2>{t('software.center')}</h2></div>
       {#if list.items.length > 8}
         <input class="filter" type="search" bind:value={filter} placeholder={t('software.filter')} aria-label={t('software.filter')} />
       {/if}

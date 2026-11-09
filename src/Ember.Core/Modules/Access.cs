@@ -27,7 +27,7 @@ public sealed class TeamAccess
 public sealed record AccessEntry(string Name, string Kind);
 
 /// <summary>A role as the Berechtigungen tab shows and saves it.</summary>
-public sealed record AccessRole(string Name, List<string> Modules, List<AccessEntry> Members);
+public sealed record AccessRole(string Name, List<string> Modules, List<AccessEntry> Members, string? Key = null, List<string>? HideTools = null);
 
 /// <param name="Version">SHA-256 of team.json as read; saving refuses when the file changed in between.</param>
 /// <param name="Writable">This account may write team.json (and it was not loaded from the offline copy).</param>
@@ -102,7 +102,7 @@ public static class Access
                            .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
                            .ToList();
         var roles = Permissions.Roles(team)
-            .Select(r => new AccessRole(r.Name, (r.Modules ?? new()).ToList(), Entries(r.Users, r.Groups)))
+            .Select(r => new AccessRole(r.Name, (r.Modules ?? new()).ToList(), Entries(r.Users, r.Groups), r.Key, r.HideTools))
             .ToList();
         return new AccessView(roles, team.Access?.Contact, status.Path, writable && problem == null, version, problem,
                               Elevation.AccountName, mine, ModuleIds.Known, Permissions.UsesLegacyFormat(team));
@@ -141,6 +141,9 @@ public static class Access
     internal static void Validate(AccessChange change)
     {
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var role in change.Roles.Where(r => !string.IsNullOrWhiteSpace(r.Key)))
+            if (!keys.Add(StarterKeys.Normalize(role.Key))) throw new EmberException("accessKeyDuplicate", ("role", role.Name.Trim()));
         foreach (var role in change.Roles)
         {
             var name = role.Name.Trim();
@@ -148,6 +151,8 @@ public static class Access
             if (!names.Add(name)) throw new EmberException("accessRoleDuplicate", ("name", name));
             if (role.Modules.FirstOrDefault(m => !ModuleIds.IsKnown(m)) is { } unknown)
                 throw new EmberException("accessModuleUnknown", ("module", unknown), ("role", name));
+            if (!string.IsNullOrWhiteSpace(role.Key) && StarterKeys.Normalize(role.Key).Length != 20)
+                throw new EmberException("accessKeyInvalid", ("role", name));
         }
     }
 
@@ -188,6 +193,13 @@ public static class Access
             ["users"] = Array(Names(r.Members, "user")),
             ["groups"] = Array(Names(r.Members, "group")),
         }).ToArray());
+        // Key and hidden tools only where a role has them, so files without stay as they were.
+        foreach (var (node, role) in ((JsonArray)access["roles"]!).Zip(change.Roles))
+        {
+            var o = (JsonObject)node!;
+            if (!string.IsNullOrWhiteSpace(role.Key)) o["key"] = role.Key.Trim();
+            if (role.HideTools is { Count: > 0 } hide) o["hideTools"] = Array(hide.Select(h => h.Trim()).Where(h => h.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase));
+        }
         if (string.IsNullOrWhiteSpace(change.Contact)) access.Remove("contact");
         else access["contact"] = change.Contact.Trim();
         root["access"] = access;

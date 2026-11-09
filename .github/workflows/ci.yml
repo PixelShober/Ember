@@ -26,9 +26,11 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-          cache-dependency-path: ui/package-lock.json
+          cache-dependency-path: |
+            ui/package-lock.json
+            docs/package-lock.json
       - run: npm ci
       - name: Typprüfung
         run: npm run check
@@ -38,6 +40,12 @@ jobs:
         run: npm run build
       - name: UTF-8, Umlaute und Übersetzungen prüfen
         run: node ../scripts/check-encoding.mjs
+      # The handbook (Ctrl+K in Ember) ships inside the UI, so it works offline.
+      - name: Handbuch bauen und einbetten
+        run: |
+          npm ci --prefix ../docs
+          npm run build --prefix ../docs
+          node ../scripts/embed-docs.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: ui-dist

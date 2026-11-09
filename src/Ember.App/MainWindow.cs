@@ -113,6 +113,13 @@ public sealed class MainWindow : Window, IHostShell
             e.Cancel = true;
             OpenUrl(e.Uri);
         };
+        // The handbook (Ctrl+K) is an iframe: its links to GitHub and elsewhere open in the browser too.
+        core.FrameNavigationStarting += (_, e) =>
+        {
+            if (IsTrusted(e.Uri) || e.Uri.StartsWith("about:", StringComparison.Ordinal)) return;
+            e.Cancel = true;
+            OpenUrl(e.Uri);
+        };
         core.NewWindowRequested += (_, e) =>
         {
             e.Handled = true;

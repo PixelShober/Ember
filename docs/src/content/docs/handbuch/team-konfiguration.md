@@ -112,6 +112,8 @@ Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und 
 | `roles[].name` | Name der Rolle, zum Beispiel „Admins“ oder „Test“ |
 | `roles[].modules` | `proxy`, `git`, `software`, `playwright`, `system`, `power` (Energie), `ai` (KI), `access` (Berechtigungen), `settings` (Einstellungen), `log`. `"*"` steht für alle, auch für Module, die später dazukommen. |
 | `roles[].users`, `roles[].groups` | Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung` oder `Entwicklung`) |
+| `roles[].key` | Schlüssel der Rolle (`EMBER-XXXXX-XXXXX-XXXXX-XXXXX`). Wer ihn eingibt, bekommt die Rolle, auch ohne Mitglied zu sein. Erzeugt und erneuert wird er im Tab Berechtigungen. |
+| `roles[].hideTools` | Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. `["bruno"]` |
 | `contact` | Mailadresse für Zugriffsanfragen. Standard: das Service-Center. |
 
 Die Startseite gibt es, sobald jemand mindestens ein Modul hat. Sie zeigt nur Karten zu den eigenen Modulen. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. Gepflegt werden die Rollen am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
@@ -135,6 +137,8 @@ Gibt es ein passendes Paket im Softwarecenter, nimmt Ember immer das.
 
 `playwright.downloadHost` ist ein interner Spiegel für die Browser-Downloads, etwa ein Artifactory-Remote auf `cdn.playwright.dev`. Ember setzt ihn als `PLAYWRIGHT_DOWNLOAD_HOST`, wenn es Browser installiert.
 
+`playwright.template` ist der Ordner mit der Projektvorlage des Teams, zum Beispiel `\\fs01\entwicklung\vorlagen\playwright`. „Neues Projekt“ kopiert ihn, im Reiter „Vorlage“ lässt er sich aus einem Projekt neu erzeugen. Steht hier nichts, kann jeder seinen eigenen Ordner wählen. Mehr unter [Playwright](/Ember/handbuch/playwright/#die-vorlage).
+
 ### models
 
 `models` ergänzt die Modellliste im KI-Tab. Eingebaut ist Qwen3.8-27B (UD-Q4_K_XL), ein Eintrag mit derselben `id` (`qwen3.8-27b`) ersetzt es.
@@ -153,6 +157,10 @@ Gibt es ein passendes Paket im Softwarecenter, nimmt Ember immer das.
   { "id": "devstral", "name": "Devstral Small", "path": "\\\\server\\ki\\Devstral-Small-Q4_K_M.gguf" }
 ]
 ```
+
+### pi
+
+`pi.packages` ersetzt die Liste der Pi-Erweiterungen im KI-Tab, jeweils mit `id`, `npm` und optional `note`. Ohne Eintrag bietet Ember seine eigene Liste an, siehe [KI-Modul](/Ember/handbuch/ki/#pi). Für die Websuche mit dem lokalen Modell ist `pi-web-access` die beste Wahl: Es sucht ohne Schlüssel und geht über px.
 
 ### update.mirror
 

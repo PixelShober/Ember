@@ -189,7 +189,15 @@
     "llamaNoServerIn": "In {path} liegt keine llama-server.exe.",
     "piMissing": "Pi ist noch nicht installiert.",
     "previewUnknown": "Diese Vorschau gibt es nicht: {target}",
-    "mailNoSupervisor": "Für Adminrechte ist keine direkte Vorgesetzte bzw. kein direkter Vorgesetzter eingetragen (team.json → supervisor)."
+    "mailNoSupervisor": "Für Adminrechte ist keine direkte Vorgesetzte bzw. kein direkter Vorgesetzter eingetragen (team.json → supervisor).",
+    "accessKeyInvalid": "Der Schlüssel der Rolle „{role}“ hat nicht die Form EMBER-XXXXX-XXXXX-XXXXX-XXXXX.",
+    "accessKeyDuplicate": "Zwei Rollen haben denselben Schlüssel („{role}“). Jede Rolle braucht einen eigenen.",
+    "playwrightTemplateFromTeam": "Die Vorlage legt die Team-Konfiguration fest (playwright.template). Ändern lässt sie sich nur dort.",
+    "playwrightTemplateMissing": "Den Vorlagenordner {path} gibt es nicht oder er ist gerade nicht erreichbar.",
+    "playwrightTemplateNoProject": "In {path} liegt keine package.json. Eine Vorlage entsteht aus einem Node-Projekt.",
+    "playwrightTemplateNoTarget": "Wohin soll die Vorlage? Wähl zuerst einen Ordner dafür.",
+    "playwrightTemplateSameFolder": "Projekt und Vorlage dürfen nicht derselbe Ordner sein.",
+    "playwrightTemplateTooBig": "{path} hat {count} Einträge. Das ist kein Projekt für eine Vorlage, eher ein ganzer Laufwerksordner."
   },
   "jobs": {
     "started": "gestartet",
@@ -258,7 +266,7 @@
   },
   "proxy": {
     "title": "Proxy",
-    "subtitle": "px meldet sich per Kerberos mit deinem Windows-Login am Firmenproxy an. Deine Werkzeuge sprechen nur mit {url}.",
+    "subtitle": "Hier installierst du den px-Proxy und legst fest, welche Programme über ihn laufen.",
     "px": {
       "title": "px-Proxy",
       "install": "Installieren / Aktualisieren",
@@ -464,7 +472,6 @@
   },
   "software": {
     "title": "Software",
-    "subtitle": "Entwicklerwerkzeuge und alles, was das Softwarecenter anbietet.",
     "client": "Softwarecenter-Client {version}",
     "noClient": "Kein Softwarecenter-Client gefunden. Installieren geht dann nur über das Service-Center.",
     "empty": "In der Team-Konfiguration stehen noch keine Programme (Abschnitt „software“).",
@@ -497,7 +504,6 @@
       "unknown": "unbekannter Status"
     },
     "center": "Softwarecenter",
-    "centerHint": "Alles, was das Softwarecenter auf diesem Rechner anbietet. Installiert wird über den Configuration-Manager-Client, mit den Freigaben eurer IT.",
     "filter": "Suchen …",
     "more": "Weitere im Softwarecenter",
     "nothingOffered": "Das Softwarecenter bietet diesem Rechner gerade nichts an.",
@@ -565,7 +571,6 @@
   },
   "power": {
     "title": "Energie",
-    "subtitle": "Ember ändert nur Werte im Schema „{scheme}“. Den Energiesparplan selbst wechselt es nie, „Höchstleistung“ oder „Ultimative Leistung“ legt es nicht an.",
     "activeScheme": "Aktiver Plan: {name}",
     "notActive": "Der aktive Plan ist nicht „{scheme}“. Änderungen greifen erst, wenn er aktiv ist.",
     "schemeByPolicy": "Der aktive Plan wird per Gruppenrichtlinie vorgegeben.",
@@ -674,7 +679,6 @@
   },
   "system": {
     "title": "System & Richtlinien",
-    "subtitle": "Gruppenrichtlinien kann Ember nicht ändern. Es zeigt, was gilt, frischt sie auf und richtet die Dinge ein, die du selbst ändern darfst.",
     "run": "Prüfen",
     "status": {
       "ok": "in Ordnung",
@@ -881,23 +885,22 @@
       "updateOne": "Aktualisieren",
       "packages": {
         "mcp": "MCP-Server aus der .mcp.json des Repos",
-        "websearch": "Websuche über den Anbieter des gewählten Modells (Gemini, OpenAI, Anthropic, Copilot …). Mit dem lokalen llama.cpp-Server sucht sie nicht, der hat keine eigene Websuche.",
+        "websearch": "Websuche und Seiten lesen, auch mit dem lokalen Modell. Sucht ohne Schlüssel (Exa, DuckDuckGo); Ember stellt sie auf px.",
         "pretty": "Farbige Ausgabe: Syntaxhervorhebung, Bash-Ausgabe, Verzeichnisbäume",
         "ponytail": "„Fauler Senior“: schreibt nur den Code, der wirklich nötig ist",
         "simplify": "Prüft frisch geänderten Code auf Klarheit und Einfachheit",
         "contextMode": "Spart Kontext: lange Ausgaben laufen in einer Sandbox, nur das Wichtige kommt ins Gespräch",
         "todo": "Aufgabenliste für das Modell, live sichtbar"
-      }
+      },
+      "webSearchProxy": "Websuche geht über px: proxy in {path} = {url}"
     }
   },
   "settings": {
     "title": "Einstellungen",
-    "subtitle": "Gespeichert in {path}",
     "saved": "Einstellungen gespeichert: {path}",
     "loadFailed": "Einstellungen konnten nicht gelesen werden, Ember nimmt die Standardwerte: {detail}",
     "team": {
       "title": "Team-Konfiguration",
-      "description": "Eine gemeinsame team.json auf dem Netzlaufwerk liefert interne Domains, Softwareliste, Admins, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start. Den Firmenproxy erkennt Ember selbst.",
       "path": "Pfad zur team.json",
       "placeholder": "\\\\server\\freigabe\\ember\\team.json",
       "reload": "Neu laden",
@@ -919,16 +922,12 @@
       "pacUrl": "PAC-Adresse",
       "pacAuto": "leer = automatisch aus Windows ({value})",
       "upstream": "Firmenproxy (host:port)",
-      "upstreamHint": "Wird auch für Downloads genutzt, solange px noch nicht läuft. Leer = Windows-Systemproxy.",
       "domains": "Interne Domains (ohne Proxy)",
-      "domainsHint": "Durch Komma getrennt, z. B. firma.local, intranet.firma.de. Ohne eigenen Eintrag und ohne team.json nimmt Ember, was die PAC-Datei ohne Proxy erreicht.",
       "port": "px-Port",
       "detect": "Automatisch erkennen",
       "detected": "Gefunden: {items}. Zum Übernehmen speichern.",
       "notDetected": "Keine Proxy-Einstellungen gefunden. Bitte von Hand eintragen.",
-      "autoHint": "Ember erkennt den Firmenproxy bei jedem Start aus Windows (PAC-Adresse, Proxy aus der PAC-Datei, Systemproxy). Trag nur etwas ein, wenn die Erkennung danebenliegt.",
       "fromPac": "aus PAC-Datei",
-      "upstreamPac": "px nimmt den Firmenproxy aus der PAC-Datei. Ein fester Proxy gilt nur, wenn du oben „Fester Proxy“ wählst.",
       "domainsFound": "{count} interne Ziele aus der PAC-Datei"
     },
     "px": {
@@ -967,9 +966,7 @@
       "title": "Deine Module",
       "roles": "Deine Rollen aus der team.json: {roles}.",
       "byKey": "Freigeschaltet mit dem Schlüssel „{level}“, bis eine team.json eingetragen ist.",
-      "dev": "Entwicklungsversion: Alle Module sind sichtbar.",
-      "toggle": "Mit Strg + E blendest du Energie, KI und Berechtigungen ein und aus.",
-      "none": "Energie, KI und Berechtigungen sind für dich nicht freigeschaltet."
+      "dev": "Entwicklungsversion: Alle Module sind sichtbar."
     },
     "folders": {
       "title": "Ordner",
@@ -1108,7 +1105,6 @@
   },
   "playwright": {
     "title": "Playwright",
-    "subtitle": "Playwright gehört zum Projekt, die Browser liegen in einem gemeinsamen Cache. Ember installiert genau die Browser, die die Playwright-Version deines Projekts braucht, über px und mit den Firmenzertifikaten. Klappt der Download nicht, testest du mit dem Edge, der schon da ist.",
     "project": "Projektordner",
     "pick": "Ordner wählen",
     "noProject": "Wähle den Ordner deines Projekts oder leg ein neues an.",
@@ -1172,7 +1168,70 @@
       "files": "Die Vorlage bringt mit: package.json mit den üblichen Skripten (test, test:ui, report, codegen), playwright.config.ts, einen Beispieltest, .gitignore, eine README und die Empfehlung für die Playwright-Erweiterung in VS Code. Danach installiert npm @playwright/test.",
       "submit": "Projekt anlegen"
     },
-    "helpers": "Dazu legt Playwright zwei Helfer ab: ffmpeg nimmt Videos der Testläufe auf, winldd prüft, ob Windows alles hat, was die Browser brauchen. Die gehören dazu und bleiben liegen."
+    "helpers": "Dazu legt Playwright zwei Helfer ab: ffmpeg nimmt Videos der Testläufe auf, winldd prüft, ob Windows alles hat, was die Browser brauchen. Die gehören dazu und bleiben liegen.",
+    "tabs": {
+      "project": "Projekt",
+      "new": "Neues Projekt",
+      "template": "Vorlage"
+    },
+    "newTab": {
+      "from": "Aus",
+      "what": "Das entsteht",
+      "andMore": "und {count} weitere",
+      "placeholders": "$projectname$ und $year$ in Dateien und Dateinamen werden ersetzt.",
+      "builtinOnce": "Diesmal die Ember-Vorlage nehmen",
+      "done": "Projekt angelegt.",
+      "openProject": "Zum Projekt"
+    },
+    "template": {
+      "sources": {
+        "team": "Team-Vorlage",
+        "user": "Eigene Vorlage",
+        "builtin": "Ember-Vorlage"
+      },
+      "current": "Aktuelle Vorlage",
+      "files": "{count} Dateien",
+      "by": "von {user}, {date}",
+      "builtinText": "Config, Beispieltest, .gitignore und VS-Code-Empfehlung, so wie „npm init playwright“ es anlegt.",
+      "fromTeam": "Festgelegt in der team.json. Wer Schreibrechte auf den Ordner hat, kann sie unten ersetzen.",
+      "problem": "Die Vorlage ist gerade nicht nutzbar ({problem}). Neue Projekte bekommen so lange die Ember-Vorlage.",
+      "choose": "Ordner wählen",
+      "useBuiltin": "Ember-Vorlage nehmen",
+      "open": "Ordner öffnen",
+      "change": "Ändern",
+      "make": "Vorlage aus einem Projekt",
+      "makeHint": "Ember übernimmt die Struktur und den Code, aber keine Tests, Testdaten oder Zugangsdaten. Ordner, deren Inhalt wegfällt, bleiben leer erhalten.",
+      "source": "Projekt",
+      "pickProject": "Projekt wählen",
+      "keep": "Übernehmen",
+      "kept": "{kept} übernommen · {dropped} weggelassen",
+      "always": "Immer weggelassen: {list}",
+      "reasons": {
+        "test": "Test",
+        "data": "Testdaten",
+        "secret": "Zugangsdaten",
+        "generated": "wird neu erzeugt",
+        "report": "Bericht",
+        "dependencies": "Pakete",
+        "git": "git"
+      },
+      "name": "Name der Vorlage",
+      "namePlaceholder": "z. B. Playwright Web-Tests",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Wofür ist die Vorlage gedacht?",
+      "target": "Wird gespeichert in",
+      "targetNone": "Noch kein Vorlagenordner. Wähl einen, dort legt Ember die Vorlage an.",
+      "replace": "Vorlage ersetzen",
+      "create": "Vorlage anlegen",
+      "replaceConfirm": "Die Vorlage in {path} wird ersetzt. Ember sichert die alte vorher unter C:\\Ember\\Config\\template-backups. Neue Projekte entstehen danach aus diesem Projekt.",
+      "savedToast": "Vorlage gespeichert: {count} Dateien",
+      "emptyPreview": "Wähl ein Projekt, dann zeigt Ember, was in die Vorlage kommt.",
+      "scrubbed": "In package.json wird der Name zu $projectname$, ein fester baseURL in der Playwright-Config zu process.env.BASE_URL.",
+      "pickTitle": "Vorlagenordner wählen",
+      "missing": "Ordner fehlt",
+      "saved": "Vorlage gespeichert: {count} Dateien in {path}",
+      "backup": "Alte Vorlage gesichert: {path}"
+    }
   },
   "appearance": {
     "scheme": "Farbschema",
@@ -1190,7 +1249,7 @@
     "saved": "Berechtigungen in {path} gespeichert: {roles} Rollen, {members} Einträge",
     "unlocked": "Mit Schlüssel freigeschaltet: {level}",
     "title": "Berechtigungen",
-    "subtitle": "Wer welche Module sieht. Die Rollen stehen in der team.json, alle anderen bekommen sie beim nächsten Start.",
+    "subtitle": "Wer welche Module sieht. Die Rollen stehen in der team.json, alle anderen bekommen sie spätestens nach zwei Minuten.",
     "roles": "Rollen",
     "rolesHint": "Eine Rolle legt fest, welche Module ihre Mitglieder sehen. Wer in mehreren Rollen ist, sieht alles zusammen. Wer in keiner ist, sieht nur den Sperrbildschirm.",
     "noRoles": "Noch keine Rollen. So sieht niemand etwas, auch du nicht.",
@@ -1228,7 +1287,7 @@
     "file": "Gespeichert wird in {path}",
     "keyLevels": {
       "proxy": "Proxy",
-      "proxyPlaywright": "Proxy und Playwright",
+      "developer": "Entwickler",
       "all": "Vollzugriff"
     },
     "problems": {
@@ -1242,7 +1301,11 @@
       "request": "Zugriff anfragen",
       "contact": "Anfragen gehen an {email}.",
       "retry": "Erneut prüfen",
-      "stillLocked": "Noch nicht freigeschaltet. Steht die Rolle in der team.json, klappt es nach dem nächsten Prüfen."
+      "stillLocked": "Noch nicht freigeschaltet. Steht die Rolle in der team.json, klappt es nach dem nächsten Prüfen.",
+      "keyLabel": "Schlüssel",
+      "keyPlaceholder": "EMBER-XXXXX-XXXXX-XXXXX-XXXXX",
+      "keySubmit": "Freischalten",
+      "stale": "Dein Schlüssel gilt nicht mehr. Die Admins haben ihn erneuert, frag dort nach dem neuen."
     },
     "setup": {
       "title": "Ember einrichten",
@@ -1258,7 +1321,22 @@
       "teamSaved": "Team-Konfiguration übernommen: {path}",
       "teamFailed": "Die team.json unter {path} ist gerade nicht erreichbar: {detail}",
       "account": "Angemeldet als {user}."
-    }
+    },
+    "key": {
+      "title": "Schlüssel",
+      "none": "Kein Schlüssel. Zugang nur über Mitglieder.",
+      "show": "Anzeigen",
+      "hide": "Verbergen",
+      "copy": "Kopieren",
+      "copied": "Schlüssel kopiert",
+      "create": "Schlüssel erzeugen",
+      "rotate": "Neu erzeugen",
+      "remove": "Entfernen",
+      "rotateConfirm": "Alle, die bisher mit dem Schlüssel der Rolle „{role}“ arbeiten, verlieren den Zugang, sobald du speicherst. Sie brauchen dann den neuen Schlüssel.",
+      "rotated": "Neuer Schlüssel für „{role}“. Er gilt, sobald du speicherst.",
+      "hint": "Wer den Schlüssel eingibt, bekommt die Rolle, auch ohne Mitglied zu sein."
+    },
+    "hideBruno": "Bruno anbieten"
   },
   "preview": {
     "title": "Ansehen als",
@@ -1270,5 +1348,11 @@
     "key": "Schlüssel „{level}“",
     "active": "Vorschau: {view}",
     "back": "Zurück zur eigenen Ansicht"
+  },
+  "handbook": {
+    "title": "Handbuch",
+    "hint": "Strg + K schließt, im Handbuch sucht Strg + K",
+    "browser": "Im Browser öffnen",
+    "shortcut": "Strg K"
   }
 }

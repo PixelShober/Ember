@@ -120,6 +120,15 @@ public static class GitIdentity
         return d;
     }
 
+    /// <summary>"louis.mehring" → "Louis Mehring", "jmoessner" → "Jmoessner": a guess until the directory answers.</summary>
+    public static string NameFromAccount(string account)
+    {
+        var parts = account.Split(new[] { '.', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+                           .Select(p => char.ToUpper(p[0], L.Culture) + p[1..]);
+        var name = string.Join(" ", parts);
+        return name.Length > 0 ? name : account;
+    }
+
     static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) || s == "null" ? null : s.Trim();
 
     enum ExtendedNameFormat { Display = 3, UserPrincipal = 8 }

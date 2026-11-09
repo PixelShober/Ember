@@ -85,6 +85,8 @@ Jedes Profil startet mit `-ngl 99` (alle Schichten auf die GPU), `-fa on`, `--ji
 
 Der Server lauscht nur auf `127.0.0.1`. Sobald das Modell geladen ist, zeigt Ember die Prüfung aus der Anleitung:
 
+Unter „Letzte Fehlermeldung“ zeigt Ember nur Fehler. Warnungen wie `common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort` bleiben im Log: llama.cpp passt die Schichten nur selbst an, wenn niemand `-ngl` vorgibt, und Ember gibt `-ngl 99` vor. Der Server läuft trotzdem normal.
+
 - **Grafikkarte**: welche GPU llama.cpp gefunden hat. Findet ein CUDA-Build keine, rechnet er still auf der CPU, oft weil die CUDA-Laufzeit fehlt. Ember warnt dann. Einen CUDA-Build ohne `cudart64_*.dll` und `cublas64_*.dll` startet Ember gar nicht erst. Er steht in der Liste mit dem Hinweis „unvollständig“ und dem Knopf „Neu installieren“. Ist „Server starten“ aus, steht der Grund daneben: kein llama.cpp, ein unvollständiger Build oder noch kein Modell.
 - **Schichten auf der GPU**: steht im Log „offloaded X/Y layers to GPU“, zeigt Ember das an. Sind es nicht alle, rechnet ein Teil auf der CPU.
 - **Tempo**: Token pro Sekunde beim Lesen des Prompts und beim Schreiben der Antwort, aus der letzten Anfrage.
@@ -106,7 +108,7 @@ Unter **Erweiterungen** stehen Pakete für Pi, jeweils mit installierter und neu
 | Erweiterung | Paket | Wofür |
 |---|---|---|
 | MCP | `pi-mcp-adapter` | MCP-Server aus der `.mcp.json` |
-| Websuche | `pi-web-search` | sucht über den Anbieter des gewählten Modells (Gemini, OpenAI, Anthropic, Copilot …). Mit dem lokalen llama.cpp-Server sucht sie nicht, der hat keine eigene Websuche |
+| Websuche | `pi-web-access` | Suchen und Seiten lesen, auch mit dem lokalen llama.cpp-Modell. Sucht ohne Schlüssel (Exa, DuckDuckGo); Ember trägt px als `proxy` in `~/.pi/agent/web-search.json` ein |
 | Pretty | `@heyhuynhgiabuu/pi-pretty` | farbige Ausgabe mit Syntaxhervorhebung |
 | Ponytail | `@dietrichgebert/ponytail` | schreibt nur den nötigen Code |
 | Simplify | `pi-simplify` | prüft geänderten Code auf Einfachheit |
@@ -114,5 +116,7 @@ Unter **Erweiterungen** stehen Pakete für Pi, jeweils mit installierter und neu
 | Todo | `@juicesharp/rpiv-todo` | Aufgabenliste für das Modell |
 
 Die Liste lässt sich in der Team-Konfiguration ersetzen (`pi.packages` mit `id` und `npm`).
+
+Zur Websuche: `pi-web-access` ist ein Werkzeug, das das Modell aufruft. Deshalb sucht es auch mit dem lokalen Modell, anders als Pakete, die die Suche des Cloud-Anbieters nutzen. Ohne Schlüssel sucht es über Exa und DuckDuckGo, mit Schlüssel auch über Brave, Tavily und andere. Node schickt seine Anfragen nicht über `HTTPS_PROXY`, deshalb trägt Ember beim Installieren und bei „Mit llama-server verbinden“ px als `proxy` in `%USERPROFILE%\.pi\agent\web-search.json` ein. Ein eigener Proxy, der nicht auf `localhost` zeigt, bleibt stehen.
 
 Gestartet wird im Projektordner mit `pi --provider llama-cpp --model qwen3.8-27b`. Die MCP-Server liest Pi aus der `.mcp.json` des Repos und aus `%USERPROFILE%\.pi\agent\mcp.json`. Schalte nur die ein, die du gerade brauchst, jede Tool-Beschreibung kostet Kontext.

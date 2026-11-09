@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Ember.Core;
 
@@ -44,20 +45,61 @@ public static class PiAgent
     // ------------------------------------------------------------------ extensions
 
     /// <summary>
-    /// What Ember offers to install into Pi. Websearch: pi-web-search, which asks the selected model's
-    /// provider to search (Gemini, OpenAI, Anthropic, Copilot …). The local llama.cpp server has no
-    /// search of its own, so it only searches with a cloud model; team.json pi.packages can swap it.
+    /// What Ember offers to install into Pi. Websearch: pi-web-access, a tool the model calls, so it
+    /// works with the local llama.cpp server too. It searches without a key (Exa MCP, DuckDuckGo) and
+    /// goes through px via its own "proxy" setting (see <see cref="SetWebSearchProxy"/>), because Node's
+    /// fetch ignores HTTPS_PROXY. team.json pi.packages can swap it.
     /// </summary>
     public static readonly IReadOnlyList<PiPackage> DefaultPackages = new PiPackage[]
     {
         new() { Id = "mcp", Npm = "pi-mcp-adapter" },
-        new() { Id = "websearch", Npm = "pi-web-search" },
+        new() { Id = "websearch", Npm = WebSearchPackage },
         new() { Id = "pretty", Npm = "@heyhuynhgiabuu/pi-pretty" },
         new() { Id = "ponytail", Npm = "@dietrichgebert/ponytail" },
         new() { Id = "simplify", Npm = "pi-simplify" },
         new() { Id = "contextMode", Npm = "context-mode" },
         new() { Id = "todo", Npm = "@juicesharp/rpiv-todo" },
     };
+
+    public const string WebSearchPackage = "pi-web-access";
+
+    /// <summary>~/.pi/agent/web-search.json, the settings of pi-web-access.</summary>
+    public static string WebSearchConfig => Path.Combine(AgentDir, "web-search.json");
+
+    /// <summary>
+    /// Points pi-web-access at px: "proxy" in web-search.json. A proxy the user set to something else
+    /// (not localhost) stays; everything else in the file stays as well.
+    /// </summary>
+    public static bool SetWebSearchProxy(string pxUrl)
+    {
+        var path = WebSearchConfig;
+        var text = File.Exists(path) ? File.ReadAllText(path) : null;
+        var updated = WithWebSearchProxy(text, pxUrl);
+        if (updated == null) return false;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, updated);
+        Log.Info(L.T("ai.pi.webSearchProxy", ("path", path), ("url", pxUrl)), "pi");
+        return true;
+    }
+
+    /// <summary>The new file text, or null if nothing changes (already px, or the user's own proxy).</summary>
+    internal static string? WithWebSearchProxy(string? json, string pxUrl)
+    {
+        JsonObject root;
+        try
+        {
+            root = string.IsNullOrWhiteSpace(json) ? new JsonObject() : JsonNode.Parse(json, documentOptions: new() { CommentHandling = System.Text.Json.JsonCommentHandling.Skip, AllowTrailingCommas = true }) as JsonObject ?? new JsonObject();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;   // never overwrite a file we cannot read
+        }
+        var current = root["proxy"]?.GetValue<string>();
+        if (current == pxUrl) return null;
+        if (!string.IsNullOrWhiteSpace(current) && !Regex.IsMatch(current, @"^https?://(127\.0\.0\.1|localhost)(:\d+)?/?$", RegexOptions.IgnoreCase)) return null;
+        root["proxy"] = pxUrl;
+        return root.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }) + "\n";
+    }
 
     public static IReadOnlyList<PiPackage> Packages(TeamConfig team) =>
         team.Pi?.Packages is { Count: > 0 } own ? own : DefaultPackages;
@@ -88,7 +130,7 @@ public static class PiAgent
     }
 
     /// <summary>The version from the package's package.json, wherever npm or Pi put it.</summary>
-    static string? InstalledVersion(string npm)
+    internal static string? InstalledVersion(string npm)
     {
         var roots = new[]
         {
@@ -169,6 +211,7 @@ public static class PiAgent
                 var r = update ? await Playwright.RunAsync($"\"{pi}\" update npm:{package.Npm}", home, env, step, ct, 10 * 60, "pi") : (Code: 1, Lines: new List<string>());
                 if (r.Code != 0) r = await Playwright.RunAsync($"\"{pi}\" install npm:{package.Npm}", home, env, step, ct, 10 * 60, "pi");
                 if (r.Code != 0) throw Playwright.Explain(r.Lines, "pi install npm:" + package.Npm);
+                if (package.Npm == WebSearchPackage) SetWebSearchProxy(eff.PxUrl);
                 step.Report(package.Npm + (InstalledVersion(package.Npm) is { } v ? " " + v : ""));
             }),
         };

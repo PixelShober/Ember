@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate';
   import { fade, slide } from 'svelte/transition';
-  import { advancedModules, api, app, navigate, run, toast } from '../lib/app.svelte';
+  import { advancedModules, api, app, confirm, copyText, navigate, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import type { AccessEntry, AccessLookup, AccessRole, AccessView, ModuleId } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
@@ -21,11 +21,14 @@
   let target = $state<Record<string, number>>({});
   let groupFilter = $state('');
   let saving = $state(false);
+  /** Roles whose key is shown in plain text (by card id). */
+  let revealed = $state<Record<number, boolean>>({});
   let nextId = 1;
 
   function take(v: AccessView) {
     view = v;
-    roles = v.roles.map((r) => ({ id: nextId++, name: r.name, modules: [...r.modules], members: r.members.map((e) => ({ ...e })) }));
+    roles = v.roles.map((r) => ({ id: nextId++, name: r.name, modules: [...r.modules], members: r.members.map((e) => ({ ...e })), key: r.key ?? null, hideTools: [...(r.hideTools ?? [])] }));
+    revealed = {};
     contact = v.contact ?? '';
     input = {};
     kind = {};
@@ -39,7 +42,7 @@
 
   const key = (e: AccessEntry) => `${e.kind}:${e.name.toLowerCase()}`;
   const plain = (list: AccessRole[]) =>
-    JSON.stringify(list.map((r) => ({ name: r.name.trim(), modules: [...r.modules].sort(), members: r.members.map(key) })));
+    JSON.stringify(list.map((r) => ({ name: r.name.trim(), modules: [...r.modules].sort(), members: r.members.map(key), key: r.key ?? null, hide: [...(r.hideTools ?? [])].sort() })));
   const dirty = $derived(!!view && (view.legacy || contact.trim() !== (view.contact ?? '') || plain(roles) !== plain(view.roles)));
   const editable = $derived(!!view?.writable);
 
@@ -87,6 +90,32 @@
     input[role.id] = '';
   }
 
+  // ---- role keys: whoever enters one gets the role; renewing locks out everyone with the old one.
+  async function newKey(role: Role) {
+    if (role.key && !(await confirm(t('access.key.rotate'), t('access.key.rotateConfirm', { role: role.name }), t('access.key.rotate')))) return;
+    const k = await run(() => api<string>('access.newKey'));
+    if (!k) return;
+    role.key = k;
+    revealed[role.id] = true;
+    toast('info', t('access.key.rotated', { role: role.name }));
+  }
+
+  async function copyKey(role: Role) {
+    if (!role.key) return;
+    await copyText(role.key);
+    toast('ok', t('access.key.copied'));
+  }
+
+  /** EMBER-7QK2M-•••••-•••••-•••••: enough to tell keys apart, not enough to use one. */
+  const masked = (k: string) => k.split('-').map((p, i) => (i < 2 ? p : '•'.repeat(p.length))).join('-');
+
+  const offersSoftware = (role: Role) => all(role) || role.modules.includes('software');
+
+  function toggleBruno(role: Role, on: boolean) {
+    const rest = (role.hideTools ?? []).filter((x) => x !== 'bruno');
+    role.hideTools = on ? rest : [...rest, 'bruno'];
+  }
+
   function remove(role: Role, entry: AccessEntry) {
     role.members = role.members.filter((e) => e !== entry);
   }
@@ -100,7 +129,7 @@
     if (!view?.version) return;
     saving = true;
     const change = {
-      roles: roles.map((r) => ({ name: r.name.trim(), modules: r.modules, members: r.members })),
+      roles: roles.map((r) => ({ name: r.name.trim(), modules: r.modules, members: r.members, key: r.key || null, hideTools: r.hideTools ?? [] })),
       contact: contact.trim() || null,
       version: view.version,
     };
@@ -166,6 +195,26 @@
           </label>
         {/each}
       </fieldset>
+
+      <div class="key-row">
+        <Icon name="key" size={15} />
+        {#if role.key}
+          <code class="key" class:revealed={revealed[role.id]}>{revealed[role.id] ? role.key : masked(role.key)}</code>
+          <button class="btn small ghost icon-only" title={revealed[role.id] ? t('access.key.hide') : t('access.key.show')} aria-label={revealed[role.id] ? t('access.key.hide') : t('access.key.show')} onclick={() => (revealed[role.id] = !revealed[role.id])}><Icon name="eye" size={14} /></button>
+          <button class="btn small ghost icon-only" title={t('access.key.copy')} aria-label={t('access.key.copy')} onclick={() => copyKey(role)}><Icon name="copy" size={14} /></button>
+          <span class="spacer"></span>
+          <button class="btn small" disabled={!editable} onclick={() => newKey(role)}><Icon name="refresh" size={13} />{t('access.key.rotate')}</button>
+          <button class="btn small ghost icon-only" disabled={!editable} title={t('access.key.remove')} aria-label={t('access.key.remove')} onclick={() => (role.key = null)}><Icon name="x" size={14} /></button>
+        {:else}
+          <span class="small muted grow-text">{t('access.key.none')}</span>
+          <button class="btn small" disabled={!editable} onclick={() => newKey(role)}><Icon name="plus" size={13} />{t('access.key.create')}</button>
+        {/if}
+      </div>
+      {#if role.key}<p class="small muted key-hint">{t('access.key.hint')}</p>{/if}
+
+      {#if offersSoftware(role)}
+        <label class="check small"><input type="checkbox" checked={!(role.hideTools ?? []).includes('bruno')} disabled={!editable} onchange={(e) => toggleBruno(role, e.currentTarget.checked)} />{t('access.hideBruno')}</label>
+      {/if}
 
       <div class="members">
         {#if role.members.length}
@@ -261,6 +310,15 @@
   .chip.all { font-weight: 600; }
   .chip .hint { font-weight: 400; color: var(--text-muted); font-size: 12px; }
   .members { display: flex; flex-direction: column; gap: 4px; }
+  .key-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    padding: 6px 8px 6px 10px; border-radius: var(--radius-small); background: var(--surface-2);
+  }
+  .key-row > :global(svg) { color: var(--text-muted); flex: none; }
+  .key { font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--text-muted); user-select: all; }
+  .key.revealed { color: var(--text); }
+  .grow-text { flex: 1; }
+  .key-hint { margin: -6px 0 0 2px; }
   .entries, .groups { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
   .entries li, .groups li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--radius-small); }
   .entries li { background: var(--surface-2); }

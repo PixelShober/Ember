@@ -19,6 +19,8 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/PixelShober/Ember' }],
       editLink: { baseUrl: 'https://github.com/PixelShober/Ember/edit/main/docs/' },
       customCss: ['./src/styles/ember.css'],
+      // Inside Ember (Ctrl+K) the handbook sits in a frame: Ember sets the colours and the links out.
+      head: [{ tag: 'script', content: "if (window.self !== window.top) document.documentElement.classList.add('in-ember');" }],
       lastUpdated: true,
       sidebar: [
         {

@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, PlaywrightTemplateInfo, TemplateEntry, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -27,16 +27,16 @@ export function createMockBridge(): Bridge {
     models: [],
   };
 
-  // ?setup: no team.json and no key; ?locked: no role in team.json; ?key=proxy|proxyPlaywright|all: unlocked by a starter key.
+  // ?setup: no team.json and no key; ?locked: no role in team.json; ?key=proxy|developer|all: unlocked by a starter key.
   const params = new URLSearchParams(location.search);
   const allModules: ModuleId[] = ['proxy', 'git', 'software', 'playwright', 'system', 'power', 'ai', 'access', 'settings', 'log'];
-  const keyModules: Record<KeyLevel, ModuleId[]> = { proxy: ['proxy'], proxyPlaywright: ['proxy', 'playwright'], all: allModules };
-  const keyLevel = (['proxy', 'proxyPlaywright', 'all'] as const).find((k) => k === params.get('key')) ?? null;
+  const keyModules: Record<KeyLevel, ModuleId[]> = { proxy: ['proxy'], developer: ['proxy', 'playwright', 'git', 'software'], all: allModules };
+  const keyLevel = (['proxy', 'developer', 'all'] as const).find((k) => k === params.get('key')) ?? null;
   const setup = params.has('setup');
   const ownModules: ModuleId[] = setup || params.has('locked') ? [] : keyLevel ? keyModules[keyLevel] : allModules;
   const withTeam = !setup && !keyLevel;
   // ?preview=role:Test|key:proxy|none: an admin looks at Ember through another role (app.preview).
-  const mockRoles: Record<string, ModuleId[]> = { Admins: allModules, Entwicklung: ['proxy', 'git', 'software', 'playwright', 'system', 'settings', 'log'], Test: ['proxy', 'playwright'] };
+  const mockRoles: Record<string, ModuleId[]> = { Admins: allModules, Entwickler: ['proxy', 'playwright', 'git', 'software'], Test: ['proxy', 'playwright'] };
   const preview = ownModules.includes('access') ? params.get('preview') : null;
   const modules: ModuleId[] = !preview ? ownModules
     : preview === 'none' ? []
@@ -50,10 +50,10 @@ export function createMockBridge(): Bridge {
 
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
-    languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', computer: 'NB-ENT-0427', elevated: false,
+    languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', displayName: 'Jürgen Mößner', computer: 'NB-ENT-0427', elevated: false,
     modules, grant: { source: setup ? 'none' : keyLevel ? 'key' : 'team', roles: withTeam && modules.length ? ['Admins'] : [], keyLevel },
     locked: setup ? 'setup' : modules.length ? null : 'notListed',
-    preview: ownModules.includes('access') ? { current: preview, roles: withTeam ? Object.keys(mockRoles) : [], keys: ['proxy', 'proxyPlaywright', 'all'] } : null,
+    preview: ownModules.includes('access') ? { current: preview, roles: withTeam ? Object.keys(mockRoles) : [], keys: ['proxy', 'developer', 'all'] } : null,
     admin: modules.includes('access'), advanced: modules.some((m) => ['power', 'ai', 'access'].includes(m)), showAdvanced: true, access: modules.length > 0,
     accessContact: withTeam ? 'ember-admins@firma.example' : null, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: withTeam ? 'Team Entwicklung' : null,
     serviceCenter: withTeam ? 'servicecenter@firma.example' : null,
@@ -251,7 +251,7 @@ export function createMockBridge(): Bridge {
   const accessView: AccessView = {
     roles: [
       { name: 'Admins', modules: ['*'], members: [{ name: 'FIRMA\\jmoessner', kind: 'user' }, { name: 'FIRMA\\GG-Ember-Admins', kind: 'group' }] },
-      { name: 'Entwicklung', modules: ['proxy', 'git', 'software', 'playwright', 'system', 'settings', 'log'], members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }] },
+      { name: 'Entwickler', modules: ['proxy', 'playwright', 'git', 'software'], members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }], key: 'EMBER-7QK2M-H4RTA-9VXCE-1BN5D', hideTools: ['bruno'] },
       { name: 'Test', modules: ['proxy', 'playwright'], members: [{ name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }] },
     ],
     contact: 'ember-admins@firma.example',
@@ -268,6 +268,20 @@ export function createMockBridge(): Bridge {
     defaultParent: 'C:\\Users\\jmoessner\\source\\repos',
     project: { dir: 'C:\\Users\\jmoessner\\source\\repos\\kundenportal', hasPackageJson: true, package: '@playwright/test', version: '1.56.1', wanted: '^1.56.0', hasLockFile: true, config: 'playwright.config.ts', usesEdge: false },
   };
+
+  let pwTemplate: PlaywrightTemplateInfo = {
+    source: 'team', path: '\\\\fs01\\entwicklung\\vorlagen\\playwright', name: 'Playwright Web-Tests',
+    description: 'Page Objects, Login-Fixture und Edge-Profil, wie im Team üblich.', created: '2026-10-21T09:14:00', createdBy: 'FIRMA\\akaya',
+    files: 14, sample: ['package.json', 'playwright.config.ts', 'tsconfig.json', '.gitignore', '.env.example', 'tests/pages/login.page.ts', 'tests/fixtures/auth.ts', 'tests/smoke/', '.vscode/extensions.json', 'README.md'],
+    problem: null, writable: true,
+  };
+  const templateEntries: TemplateEntry[] = [
+    ['.vscode', 1, 'keep'], ['.vscode/extensions.json', 0, 'keep'], ['playwright', 1, 'keep'], ['playwright/.auth', 1, 'drop', 'secret'], ['playwright/.auth/user.json', 0, 'drop', 'secret'],
+    ['tests', 1, 'keep'], ['tests/data', 1, 'drop', 'data'], ['tests/data/kunden.csv', 0, 'drop', 'data'], ['tests/fixtures', 1, 'keep'], ['tests/fixtures/auth.ts', 0, 'keep'],
+    ['tests/pages', 1, 'keep'], ['tests/pages/login.page.ts', 0, 'keep'], ['tests/pages/vertrag.page.ts', 0, 'keep'], ['tests/login.spec.ts', 0, 'drop', 'test'], ['tests/vertrag.spec.ts', 0, 'drop', 'test'],
+    ['.env', 0, 'drop', 'secret'], ['.env.example', 0, 'keep'], ['.gitignore', 0, 'keep'], ['package.json', 0, 'keep'], ['playwright.config.ts', 0, 'keep'], ['README.md', 0, 'keep'], ['tsconfig.json', 0, 'keep'],
+    ['node_modules', 1, 'skip', 'dependencies'], ['.git', 1, 'skip', 'git'], ['playwright-report', 1, 'skip', 'report'], ['package-lock.json', 0, 'skip', 'generated'],
+  ].map(([path, dir, action, reason]) => ({ path: path as string, dir: !!dir, action: action as TemplateEntry['action'], reason: (reason ?? null) as TemplateEntry['reason'], size: 0 }));
 
   const git: GitIdentityInfo = { gitFound: true, name: null, email: null, suggestedName: 'Jürgen Mößner', suggestedEmail: 'juergen.moessner@firma.example', source: 'ad' };
 
@@ -291,7 +305,6 @@ export function createMockBridge(): Bridge {
   const handlers: Record<string, (p: any) => unknown | Promise<unknown>> = {
     'app.info': () => info,
     'app.ready': () => null,
-    'app.me': () => ({ name: 'Jürgen Mößner' }),
     'app.openExternal': (p) => { window.open(p.url, '_blank'); return null; },
     'app.openFolder': () => null,
     'app.pickFolder': () => 'D:\\Werkzeuge\\px',
@@ -312,6 +325,11 @@ export function createMockBridge(): Bridge {
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'], pacDirect: ['firma.local', 'intranet.firma.example', '10.0.0.0/8'] }),
     'proxy.diagnose': () => proxyRows,
     'access.get': () => structuredClone(accessView),
+    'access.newKey': () => {
+      const a = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+      const part = () => Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => a[b % 32]).join('');
+      return `EMBER-${part()}-${part()}-${part()}-${part()}`;
+    },
     'access.lookup': (p) => {
       const name = String(p.name).trim();
       if (/^x/i.test(name)) return { name, kind: null, found: false };
@@ -326,7 +344,7 @@ export function createMockBridge(): Bridge {
     'app.unlock': (p) => {
       const key = String(p.key).toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^EMBER(?=.{20}$)/, '');
       if (key.length !== 20) throw new BridgeError('keyInvalid', t('errors.keyInvalid'));
-      restartWith('lang=' + lang + '&clean&key=proxyPlaywright');
+      restartWith('lang=' + lang + '&clean&key=developer');
       return info;
     },
     'team.setPath': (p) => {
@@ -357,6 +375,18 @@ export function createMockBridge(): Bridge {
     'software.list': () => software,
     'software.open': () => null,
     'playwright.state': () => playwright,
+    'playwright.template': () => pwTemplate,
+    'playwright.template.use': (p) => {
+      pwTemplate = p.path
+        ? { source: 'user', path: p.path, name: 'Eigene Vorlage', description: null, created: null, createdBy: null, files: 0, sample: [], problem: null, writable: true }
+        : { source: 'builtin', path: null, name: null, description: null, created: null, createdBy: null, files: 0, sample: [], problem: null, writable: false };
+      return pwTemplate;
+    },
+    'playwright.template.preview': () => templateEntries,
+    'playwright.template.save': (p) => {
+      pwTemplate = { ...pwTemplate, name: p.name ?? pwTemplate.name, description: p.description, files: p.keep.length, created: new Date().toISOString(), createdBy: info.user };
+      return { count: p.keep.length, template: pwTemplate };
+    },
     'playwright.inspect': (p) => { playwright.project = { dir: p.dir, hasPackageJson: true, package: null, version: null, wanted: null, hasLockFile: false, config: null, usesEdge: false }; return playwright; },
     'playwright.install': (p) => {
       const edge = p.browsers === 'msedge';
@@ -423,7 +453,7 @@ export function createMockBridge(): Bridge {
       const pkg = (id: string, npm: string, installed: string | null, latest: string) => ({ id, npm, note: null, installed, latest, updateAvailable: !!installed && installed !== latest });
       return {
         pi: pkg('pi', '@earendil-works/pi-coding-agent', ai.pi.installed ? '1.4.2' : null, '1.5.0'),
-        packages: [pkg('mcp', 'pi-mcp-adapter', '0.9.1', '0.9.1'), pkg('websearch', 'pi-web-search', null, '1.7.0'), pkg('pretty', '@heyhuynhgiabuu/pi-pretty', '0.9.0', '0.10.0'),
+        packages: [pkg('mcp', 'pi-mcp-adapter', '0.9.1', '0.9.1'), pkg('websearch', 'pi-web-access', null, '0.47.0'), pkg('pretty', '@heyhuynhgiabuu/pi-pretty', '0.9.0', '0.10.0'),
           pkg('ponytail', '@dietrichgebert/ponytail', null, '5.3.3'), pkg('simplify', 'pi-simplify', null, '0.2.3'), pkg('contextMode', 'context-mode', null, '2.1.7'), pkg('todo', '@juicesharp/rpiv-todo', '2.15.0', '2.15.0')],
       };
     },

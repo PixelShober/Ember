@@ -7,6 +7,12 @@ description: Was sich einstellen lässt und welcher Wert gewinnt, wenn Team und 
 
 Die Einstellungen liegen in `C:\Ember\Config\settings.json`. Änderungen gelten erst nach „Speichern“. Solange etwas offen ist, steht unten eine Leiste mit „Ungespeicherte Änderungen“.
 
+Die Seite selbst zeigt nur die Felder. Was sie bedeuten, steht hier. Dieses Handbuch öffnest du in Ember jederzeit mit <kbd>Strg</kbd> + <kbd>K</kbd>, und zwar auf der Seite zum gerade offenen Tab.
+
+## Team-Konfiguration
+
+Eine gemeinsame `team.json` auf dem Netzlaufwerk liefert interne Domains, Softwareliste, Rollen, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start, Rollen und Schlüssel sogar nach spätestens zwei Minuten. „Neu laden“ holt die Datei sofort. Den Firmenproxy erkennt Ember selbst, der gehört nicht in die Datei.
+
 ## Woher die Proxy-Werte kommen
 
 Den Firmenproxy erkennt Ember bei jedem Start selbst: die PAC-Adresse aus Windows, den ersten Proxy aus der PAC-Datei oder den Systemproxy. Für PAC-Datei und Firmenproxy nimmt Ember:
@@ -17,7 +23,11 @@ Den Firmenproxy erkennt Ember bei jedem Start selbst: die PAC-Adresse aus Window
 
 Interne Domains und px-Port kann die Team-Konfiguration vorgeben. Hier gilt: dein eigener Wert, sonst der aus der `team.json`, sonst der Standard. Bei den internen Domains kommt vor dem Standard noch die PAC-Datei: Ember nimmt die Ziele, die sie ohne Proxy (`DIRECT`) erreicht.
 
-Arbeitet Ember mit der PAC-Datei, ist das Feld für den festen Firmenproxy ausgegraut. px nimmt den Proxy dann aus der PAC-Datei. Umgekehrt ist bei „Fester Proxy“ das Feld für die PAC-Adresse aus.
+Trag nur dann selbst etwas ein, wenn die Erkennung danebenliegt.
+
+Arbeitet Ember mit der PAC-Datei, ist das Feld für den festen Firmenproxy ausgegraut. px nimmt den Proxy dann aus der PAC-Datei. Umgekehrt ist bei „Fester Proxy“ das Feld für die PAC-Adresse aus. Der feste Proxy dient auch für Downloads, solange px noch nicht läuft. Leer heißt: Windows-Systemproxy.
+
+Interne Domains trägst du durch Komma getrennt ein, zum Beispiel `firma.local, intranet.firma.de`. Ohne eigenen Eintrag und ohne `team.json` nimmt Ember, was die PAC-Datei ohne Proxy erreicht.
 
 Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“, „aus Team-Konfiguration“, „automatisch erkannt“, „aus PAC-Datei“ oder „Ember-Standard“. Bei eigenen Werten stellt der Knopf daneben den Team- oder den erkannten Wert wieder her.
 
@@ -33,7 +43,7 @@ Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“
 | Werkzeuge | welche Werkzeuge die px-Installation umstellt (Umgebungsvariablen, PowerShell, git, npm, NuGet, pip, VS Code) |
 | Sprache | Deutsch oder English, vorausgewählt ist die Windows-Sprache |
 | Updates | automatisch suchen, „Jetzt prüfen“, Stand und Quelle |
-| Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist; Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein |
+| Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist. Hast du Energie, KI oder Berechtigungen, blendest du sie mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. |
 | Ordner | öffnet Logs, Einstellungen, px, px-Konfiguration und Berichte im Explorer |
 
 Die Erkennung läuft bei jedem Start von selbst. „Automatisch erkennen“ macht dasselbe auf Knopfdruck und trägt das Ergebnis als eigenen Wert ein. Gespeichert wird auch das erst nach deiner Bestätigung.

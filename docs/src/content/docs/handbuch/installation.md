@@ -33,7 +33,7 @@ Was du siehst, bestimmt die `team.json` deines Teams: Ihre [Rollen](/Ember/handb
 
 Sonst erscheint **Ember einrichten** mit zwei Wegen:
 
-- **Schlüssel**: Den bekommst du von deinem Team. Je nach Schlüssel siehst du Proxy, Proxy und Playwright oder alles. Er gilt, bis eine `team.json` eingetragen ist.
+- **Schlüssel**: Den bekommst du von deinem Team. Je nach Schlüssel siehst du nur den Proxy, die Entwickler-Tabs (Proxy, Playwright, Git, Software) oder alles. Er gilt, bis eine `team.json` eingetragen ist.
 - **Team-Konfiguration**: den Pfad zur `team.json` eintragen, etwa `\\server\entwicklung\ember\team.json`, oder über „Durchsuchen“ auswählen.
 
 Mit einem Schlüssel kannst du die `team.json` später nachtragen, über die Karte „Team-Konfiguration“ auf der Startseite. Details stehen unter [Berechtigungen](/Ember/handbuch/berechtigungen/#ohne-teamjson-die-schlüssel) und [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#so-findet-ember-die-datei).

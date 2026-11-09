@@ -64,12 +64,16 @@ public sealed class UserSettings
 
     /// <summary>Starter key entered on the setup screen; only counts while there is no team.json.</summary>
     public string? UnlockKey { get; set; }
+    /// <summary>Full name from the directory at the last start, so the greeting is right from the first frame.</summary>
+    public string? DisplayName { get; set; }
 
     /// <summary>UNC path of team.json; empty = ember-team.txt next to the exe or EMBER_TEAM_CONFIG.</summary>
     public string TeamConfigPath { get; set; } = "";
     public bool AutoUpdate { get; set; } = true;
     /// <summary>Last project folder used for "Install Playwright browsers".</summary>
     public string PlaywrightProject { get; set; } = "";
+    /// <summary>Own template folder, used while team.json names none.</summary>
+    public string PlaywrightTemplate { get; set; } = "";
 
     // --- AI module ------------------------------------------------------------------
     public string ModelsDir { get; set; } = "";

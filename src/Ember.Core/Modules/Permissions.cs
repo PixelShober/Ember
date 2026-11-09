@@ -25,14 +25,25 @@ public sealed class TeamRole
     public List<string>? Modules { get; set; }
     public List<string>? Users { get; set; }
     public List<string>? Groups { get; set; }
+    /// <summary>
+    /// Unlocks the role for anyone who enters it, also without being listed (EMBER-XXXXX-…). Stored
+    /// in plain text so admins can look it up; like the roles themselves it is no security boundary.
+    /// </summary>
+    public string? Key { get; set; }
+    /// <summary>Developer tools the role does not offer, e.g. ["bruno"].</summary>
+    public List<string>? HideTools { get; set; }
 }
 
 /// <param name="Source">"team" (roles in team.json), "key" (starter key, no team.json), "dev" (development build), "preview" (an admin looks through another role) or "none".</param>
 /// <param name="Locked">null, "setup" (no team.json and no key) or "notListed" (team.json has no role for this account).</param>
-public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? Locked, IReadOnlyList<string> Roles, string? KeyLevel)
+/// <param name="HiddenTools">Developer tools none of the account's roles offers.</param>
+/// <param name="StaleKey">The account had a key that no longer opens anything (rotated or removed).</param>
+public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? Locked, IReadOnlyList<string> Roles, string? KeyLevel,
+                          IReadOnlySet<string>? HiddenTools = null, bool StaleKey = false)
 {
     public bool Has(string module) => Modules.Contains(module);
     public bool Any => Modules.Count > 0;
+    public bool Hides(string tool) => HiddenTools?.Contains(tool) == true;
 }
 
 /// <summary>
@@ -49,15 +60,30 @@ public static class Permissions
 
         if (status.Path != null && status.LoadedAt != null)
         {
-            var mine = Roles(team).Where(r => Access.Listed(r.Users, r.Groups, account, groups)).ToList();
+            var all = Roles(team);
+            var byKey = all.Where(r => StarterKeys.Same(r.Key, key)).ToList();
+            var mine = all.Where(r => Access.Listed(r.Users, r.Groups, account, groups)).Union(byKey).ToList();
             var modules = Expand(mine.SelectMany(r => r.Modules ?? new List<string>()));
-            return new Grant(modules, "team", modules.Count == 0 ? "notListed" : null, mine.Select(r => r.Name).ToList(), null);
+            // A key was entered but opens no role (any more): the admin rotated it.
+            bool stale = !string.IsNullOrWhiteSpace(key) && byKey.Count == 0;
+            return new Grant(modules, "team", modules.Count == 0 ? "notListed" : null, mine.Select(r => r.Name).ToList(), null,
+                             Hidden(mine), stale && modules.Count == 0);
         }
 
         if (StarterKeys.Level(key) is { } level)
-            return new Grant(Expand(StarterKeys.LevelModules[level]), "key", null, Array.Empty<string>(), level);
+            return new Grant(Expand(StarterKeys.LevelModules[level]), "key", null, Array.Empty<string>(), level,
+                             StarterKeys.LevelHiddenTools.TryGetValue(level, out var hide) ? hide.ToHashSet() : null);
 
         return new Grant(new HashSet<string>(), "none", "setup", Array.Empty<string>(), null);
+    }
+
+    /// <summary>A tool is hidden only if every one of the roles hides it.</summary>
+    static IReadOnlySet<string>? Hidden(IReadOnlyList<TeamRole> roles)
+    {
+        if (roles.Count == 0) return null;
+        var hidden = new HashSet<string>(roles[0].HideTools ?? new List<string>(), StringComparer.OrdinalIgnoreCase);
+        foreach (var r in roles.Skip(1)) hidden.IntersectWith(r.HideTools ?? new List<string>());
+        return hidden;
     }
 
     /// <summary>
@@ -72,14 +98,15 @@ public static class Permissions
         {
             var level = target[4..];
             return StarterKeys.LevelModules.TryGetValue(level, out var keyModules)
-                ? new Grant(Expand(keyModules), "preview", null, Array.Empty<string>(), level) : null;
+                ? new Grant(Expand(keyModules), "preview", null, Array.Empty<string>(), level,
+                            StarterKeys.LevelHiddenTools.TryGetValue(level, out var hide) ? hide.ToHashSet() : null) : null;
         }
         if (target.StartsWith("role:", StringComparison.Ordinal))
         {
             var role = Roles(team).FirstOrDefault(r => r.Name == target[5..]);
             if (role == null) return null;
             var modules = Expand(role.Modules ?? new List<string>());
-            return new Grant(modules, "preview", modules.Count == 0 ? "notListed" : null, new[] { role.Name }, null);
+            return new Grant(modules, "preview", modules.Count == 0 ? "notListed" : null, new[] { role.Name }, null, Hidden(new[] { role }));
         }
         return null;
     }

@@ -350,8 +350,7 @@ public static class LlamaCpp
             if (Device(line) is { } device) _device ??= device;
             if (line.Contains("model loaded", StringComparison.OrdinalIgnoreCase) || line.Contains("listening on", StringComparison.OrdinalIgnoreCase)) _loaded = true;
             if (Speed(line) is { } speed) { if (speed.Prompt) _promptTps = speed.Tps; else _genTps = speed.Tps; }
-            if (line.Contains("out of memory", StringComparison.OrdinalIgnoreCase) || line.Contains("failed to", StringComparison.OrdinalIgnoreCase))
-                _lastError = line.Trim();
+            if (IsError(line)) _lastError = line.Trim();
         }
         p.OutputDataReceived += (_, e) => OnLine(e.Data);
         p.ErrorDataReceived += (_, e) => OnLine(e.Data);
@@ -370,6 +369,20 @@ public static class LlamaCpp
     /// <summary>The CUDA runtime (cudart64_*.dll) next to llama-server.exe; without it the CUDA build silently runs on the CPU.</summary>
     internal static bool HasCudaRuntime(string dir) =>
         Directory.Exists(dir) && Directory.EnumerateFiles(dir, "cudart64_*.dll").Any() && Directory.EnumerateFiles(dir, "cublas64_*.dll").Any();
+
+    /// <summary>
+    /// A line worth showing as "Letzte Fehlermeldung". llama.cpp marks each line with I, W or E after
+    /// the time stamp. Warnings stay in the log: "common_fit_params: failed to fit params … n_gpu_layers
+    /// already set by user" only says the automatic fitting stepped aside because Ember sets -ngl 99.
+    /// </summary>
+    internal static bool IsError(string line)
+    {
+        var level = Regex.Match(line, @"^\s*[\d.:]+\s+([IWED])\s");
+        if (level.Success) return level.Groups[1].Value == "E";
+        return line.Contains("out of memory", StringComparison.OrdinalIgnoreCase)
+               || line.Contains("error:", StringComparison.OrdinalIgnoreCase)
+               || (line.Contains("failed to", StringComparison.OrdinalIgnoreCase) && !line.Contains("common_fit_params", StringComparison.Ordinal));
+    }
 
     /// <summary>"load_tensors: offloaded 65/65 layers to GPU" → "65/65".</summary>
     internal static string? Offloaded(string line)
