@@ -57,9 +57,62 @@ export function canOpen(route: Route): boolean {
 
 export const advancedModules: ModuleId[] = ['power', 'ai', 'access'];
 
+// ------------------------------------------------------------------ page data cache
+// What the tabs show (diagnosis, software list, checks …) changes rarely, but reading it can take
+// seconds (PowerShell, WMI, npm). So the answers stay for a while: a tab opened again shows at once.
+// Anything that changes something clears it, as does a finished job, a px start or stop, a new team
+// file and the refresh buttons. Answers are copied, so a form bound to one never changes the cache.
+
+const CACHE_MS = 10 * 60_000;
+
+/** Reads whose answers may be kept. */
+const cachedMethods = new Set([
+  'proxy.diagnose', 'git.get', 'git.proxy', 'software.list', 'devtools.latest', 'system.list', 'system.check',
+  'power.state', 'playwright.state', 'playwright.template', 'ai.llama.latest', 'ai.pi.packages', 'wol.local',
+]);
+/** Calls that change nothing, so they leave the cache alone. Everything else clears it. */
+const pureMethods = new Set([
+  'app.info', 'app.ready', 'app.pickFolder', 'app.pickFile', 'px.status', 'jobs.list', 'log.recent', 'log.save', 'update.status',
+  'settings.get', 'ai.status', 'access.search', 'access.lookup', 'mail.preview', 'playwright.template.preview', 'playwright.inspect',
+  'system.adminCommands', 'diagnostics.report', 'team.admin', 'mail.compose', 'app.openExternal', 'app.openFolder', 'app.setAppearance',
+]);
+const cache = new Map<string, { at: number; value: Promise<unknown> }>();
+
+/** Forget kept answers: all, or those of methods starting with one of the prefixes. */
+export function forget(...prefixes: string[]): void {
+  if (!prefixes.length) cache.clear();
+  else for (const key of [...cache.keys()]) if (prefixes.some((p) => key.startsWith(p))) cache.delete(key);
+}
+
 export async function api<T = unknown>(method: string, params: Record<string, unknown> = {}): Promise<T> {
   bridge ??= await getBridge();
-  return bridge.call<T>(method, params);
+  if (cachedMethods.has(method)) {
+    const key = method + ' ' + JSON.stringify(params);
+    let hit = cache.get(key);
+    if (!hit || Date.now() - hit.at > CACHE_MS) {
+      const value = bridge.call<T>(method, params);
+      hit = { at: Date.now(), value };
+      cache.set(key, hit);
+      // A failed read is not kept: the next visit asks again.
+      value.catch(() => cache.get(key)?.value === value && cache.delete(key));
+    }
+    return hit.value.then((v) => structuredClone(v) as T);
+  }
+  if (pureMethods.has(method)) return bridge.call<T>(method, params);
+  // A change: what was kept may be outdated now, and again once the change is done.
+  forget();
+  return bridge.call<T>(method, params).finally(() => forget());
+}
+
+/** Fill the cache in the background, so the first visit of a tab is quick too. One at a time. */
+async function warmUp(modules: ModuleId[]): Promise<void> {
+  const reads: [ModuleId, string][] = [
+    ['git', 'git.get'], ['proxy', 'proxy.diagnose'], ['git', 'git.proxy'], ['software', 'software.list'],
+    ['playwright', 'playwright.state'], ['playwright', 'playwright.template'], ['power', 'power.state'], ['system', 'system.list'],
+  ];
+  for (const [module, method] of reads) {
+    if (modules.includes(module)) await api(method).catch(() => {});
+  }
 }
 
 function routeFromHash(): Route {
@@ -74,7 +127,7 @@ export function navigate(route: Route): void {
 
 /**
  * Page change as in CakeSender: the page fades out and the new one rises in, the sidebar stays and
- * the marker of the active tab glides to its new place (CSS in app.css and App.svelte).
+ * the marker of the new tab grows in place (CSS in app.css and App.svelte).
  */
 function changeRoute(next: Route): void {
   if (next === app.route) return;
@@ -98,8 +151,16 @@ export async function init(): Promise<void> {
     app.logs.push(...entries);
     if (app.logs.length > MAX_LOG) app.logs.splice(0, app.logs.length - MAX_LOG);
   });
-  bridge.on('job', (job: JobSnapshot) => (app.jobs[job.id] = job));
-  bridge.on('px.status', (s: PxStatus) => (app.px = s));
+  bridge.on('job', (job: JobSnapshot) => {
+    // Finished: whatever it installed or changed is not in the kept answers yet.
+    const before = app.jobs[job.id]?.state;
+    if (before !== job.state && (job.state === 'done' || job.state === 'failed')) forget();
+    app.jobs[job.id] = job;
+  });
+  bridge.on('px.status', (s: PxStatus) => {
+    if (app.px && (s.portOpen !== app.px.portOpen || s.installed !== app.px.installed)) forget('proxy.', 'git.proxy', 'ai.pi.');
+    app.px = s;
+  });
   bridge.on('update', (s: UpdateStatus) => (app.update = s));
   // Inactive and see-through (like the other windows under GlazeWM/WinMarchy): Ember.exe made the
   // window transparent behind the page, the page now lets the desktop through.
@@ -111,6 +172,8 @@ export async function init(): Promise<void> {
   bridge.on('app.info', (info: AppInfo) => {
     // Just got access (key, team.json changed): start over, so everything loads that the lock screen skipped.
     if (app.info && !app.info.access && info.access) location.reload();
+    // New team file, other roles or a role preview: the pages may show something else now.
+    forget();
     app.info = info;
     setLanguage(info.language);
   });
@@ -140,6 +203,7 @@ export async function init(): Promise<void> {
   // Tell the host we started; a downloaded UI that never says this is rolled back.
   const manifest = await fetch('./ui-manifest.json').then((r) => r.json()).catch(() => ({ version: '?' }));
   void bridge.call('app.ready', { version: manifest.version });
+  void warmUp(info.modules);
 }
 
 export function toast(kind: Toast['kind'], text: string, action?: Toast['action']): void {

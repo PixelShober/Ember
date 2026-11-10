@@ -29,6 +29,10 @@ Die Seitenleiste zeigt nur die Tabs, die deine Rollen freigeben. Unten links sie
 
 Energie, KI und Berechtigungen sind erweiterte Module. <kbd>Strg</kbd> + <kbd>E</kbd> blendet sie aus und wieder ein, wenn eine deiner Rollen sie hat.
 
+## Ladezeiten
+
+Was die Seiten zeigen, also Proxy-Diagnose, Software, Systemprüfungen, Energie und Playwright, liest Ember gleich nach dem Start im Hintergrund ein und merkt es sich zehn Minuten lang. Ein Tab öffnet deshalb meist sofort. Sobald du etwas änderst, eine Installation fertig ist oder px startet oder stoppt, liest Ember neu ein. **Aktualisieren** auf einer Seite holt den Stand sofort frisch.
+
 ## Sprache
 
 Ember richtet sich nach der Anzeigesprache von Windows: Deutsch für alle deutschsprachigen Einstellungen, sonst Englisch. Unter **Einstellungen → Sprache** wählst du Deutsch oder English. Auf einem Schweizer Windows schreibt Ember „ss“ statt „ß“.

@@ -8,14 +8,14 @@
   import Calcifer from '../lib/components/Calcifer.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
+  let gitLoaded = $state(false);
   let rows = $state<ProxyRow[] | null>(null);
 
-  // Only what this account's modules cover.
-  onMount(async () => {
-    [git, rows] = await Promise.all([
-      can('git') ? api<GitIdentityInfo>('git.get').catch(() => null) : null,
-      can('proxy') ? api<ProxyRow[]>('proxy.diagnose').catch(() => null) : null,
-    ]);
+  // Only what this account's modules cover. Each card fills in as soon as its answer is there;
+  // until then it says "loading", not "not set up".
+  onMount(() => {
+    if (can('git')) void api<GitIdentityInfo>('git.get').then((g) => (git = g)).catch(() => {}).finally(() => (gitLoaded = true));
+    if (can('proxy')) void api<ProxyRow[]>('proxy.diagnose').then((r) => (rows = r)).catch(() => {});
   });
 
 
@@ -46,8 +46,8 @@
     {
       show: can('git'),
       route: 'git', icon: 'git', title: t('start.cards.git'),
-      text: git?.name && git?.email ? t('start.gitSet', { name: git.name, email: git.email }) : t('start.gitMissing'),
-      tone: git?.name && git?.email ? 'ok' : 'warn',
+      text: !gitLoaded ? t('common.loading') : git?.name && git?.email ? t('start.gitSet', { name: git.name, email: git.email }) : t('start.gitMissing'),
+      tone: !gitLoaded ? 'muted' : git?.name && git?.email ? 'ok' : 'warn',
       todo: !!git && !(git.name && git.email),
     },
     {

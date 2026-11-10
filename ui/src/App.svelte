@@ -194,7 +194,7 @@
 
   .shell { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
   /* The sidebar is the hearth: a soft glow behind Calcifer, fading out further down. */
-  /* Own layers for the page change: the sidebar stays put, the active tab's marker glides (app.css). */
+  /* Own layer for the page change: the sidebar stays put and animates live (app.css). */
   .sidebar {
     view-transition-name: sidebar;
     background: radial-gradient(ellipse 150% 38% at 12% 0%, var(--hearth), transparent 72%), var(--sidebar);
@@ -214,17 +214,23 @@
   .brand strong { font-family: var(--font-display); font-size: 17px; }
   .brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   nav { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+  /* Like the tabs on a page (Tabs.svelte), turned upright: the marker of the new tab grows out of its
+     middle, the old one shrinks back, the background and the icon colour follow. */
   nav a {
     display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius-small);
     color: var(--text); text-decoration: none; font-weight: 500; position: relative;
+    transition: background-color 150ms ease-out;
   }
   nav a:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-  nav a.active { background: var(--accent-soft); view-transition-name: active-nav; }
-  nav a.active::before {
+  nav a.active { background: var(--accent-soft); }
+  nav a::before {
     content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; border-radius: 2px; background: var(--ember-up);
+    transform: scaleY(0); transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
-  nav a :global(svg) { color: var(--text-muted); }
+  nav a.active::before { transform: scaleY(1); }
+  nav a :global(svg) { color: var(--text-muted); transition: color 150ms ease-out; }
   nav a.active :global(svg) { color: var(--accent-fg); }
+  @media (prefers-reduced-motion: reduce) { nav a, nav a::before, nav a :global(svg) { transition: none; } }
   .sep { height: 1px; background: var(--border); margin: 8px 6px; }
   .foot { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 0 34px 0 6px; }
   .px-pill {

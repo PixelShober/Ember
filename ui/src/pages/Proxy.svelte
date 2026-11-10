@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, app, confirm, run } from '../lib/app.svelte';
+  import { api, forget, app, confirm, run } from '../lib/app.svelte';
   import { host, t } from '../lib/i18n.svelte';
   import type { ProxyRow } from '../lib/types';
   import ChipList from '../lib/components/ChipList.svelte';
@@ -93,7 +93,7 @@
         <h2>{t('proxy.diag.title')}</h2>
       </div>
       <span class="spacer"></span>
-      <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
+      <button class="btn small" disabled={loading} onclick={() => { forget('proxy.'); void load(); }}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
     </div>
     <div class="note kerberos"><Icon name="info" /><p class="small">{t('proxy.diag.kerberosNote')}</p></div>
 

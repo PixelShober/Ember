@@ -366,7 +366,7 @@ export function createMockBridge(): Bridge {
     'jobs.cancel': () => null,
     'jobs.retry': (p) => { const j = jobs.get(p.id); if (j) void simulate(j.id, j.kind, j.title, j.steps.map((s) => s.title)); return null; },
     'jobs.dismiss': (p) => { jobs.delete(p.id); return null; },
-    'git.get': () => git,
+    'git.get': async () => { await wait(600); return git; },
     'git.set': (p) => { git.name = p.name; git.email = p.email; return git; },
     'software.list': () => software,
     'software.open': () => null,

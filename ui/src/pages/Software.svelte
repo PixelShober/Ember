@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, app, confirm, openMail, run } from '../lib/app.svelte';
+  import { api, forget, app, confirm, openMail, run } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { isNewer } from '../lib/format';
   import type { DevToolState, SoftwareItem, SoftwareList } from '../lib/types';
@@ -87,7 +87,7 @@
       <div class="note warn"><Calcifer /><p>{t('software.noClient')}</p></div>
     {/if}
     <span class="spacer"></span>
-    <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
+    <button class="btn small" disabled={loading} onclick={() => { forget('software.', 'devtools.'); void load(); }}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
   </div>
 
   <!-- Developer tools -->

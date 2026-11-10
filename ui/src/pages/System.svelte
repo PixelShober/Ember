@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { api, run } from '../lib/app.svelte';
+  import { api, forget, run } from '../lib/app.svelte';
   import { host, t } from '../lib/i18n.svelte';
   import type { CheckAction, CheckResult } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
@@ -50,7 +50,7 @@
 
 <div class="row head">
   <span class="spacer"></span>
-  <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('system.run')}</button>
+  <button class="btn small" disabled={loading} onclick={() => { forget('system.'); void load(); }}><Icon name="refresh" size={14} />{t('system.run')}</button>
 </div>
 
 {#if checks}

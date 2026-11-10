@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { api, confirm, run, toast } from '../lib/app.svelte';
+  import { api, forget, confirm, run, toast } from '../lib/app.svelte';
   import { host, t } from '../lib/i18n.svelte';
   import { formatPowerValue } from '../lib/format';
   import type { PowerApplyResult, PowerProfileState, PowerSettingState, PowerState, PowerValue } from '../lib/types';
@@ -61,7 +61,7 @@
     <span class="badge {power.activeIsTarget ? 'ok' : 'warn'}"><Icon name="power" size={13} />{t('power.activeScheme', { name: power.activeName || '–' })}</span>
     {#if power.activeSchemeByPolicy}<span class="badge info">{t('power.schemeByPolicy')}</span>{/if}
     <span class="spacer"></span>
-    <button class="btn small" onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
+    <button class="btn small" onclick={() => { forget('power.'); void load(); }}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
   </div>
   {#if !power.activeIsTarget}
     <div class="note warn"><Calcifer /><p>{t('power.notActive', { scheme: power.schemeName })}</p></div>

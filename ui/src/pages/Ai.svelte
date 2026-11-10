@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api, app, confirm, copyText, run, toast } from '../lib/app.svelte';
+  import { api, forget, app, confirm, copyText, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { formatBytes } from '../lib/format';
   import type { AiStatus, LlamaProfile, ModelState, PiPackageState, SettingsView, UserSettings } from '../lib/types';
@@ -283,7 +283,7 @@
           {#if vramFree != null}<span class="badge {vramFree < 512 ? 'warn' : 'ok'}">{t('ai.server.vramFree', { free: vramFree.toLocaleString() })}</span>{/if}
           {#if status.llama.generationTps != null}<span class="badge info">{t('ai.server.generation', { tps: status.llama.generationTps.toLocaleString() })}</span>{/if}
           {#if status.llama.promptTps != null}<span class="badge">{t('ai.server.prompt', { tps: status.llama.promptTps.toLocaleString() })}</span>{/if}
-          <button class="btn ghost small" onclick={load}><Icon name="refresh" size={13} />{t('common.refresh')}</button>
+          <button class="btn ghost small" onclick={() => { forget('ai.'); void load(); }}><Icon name="refresh" size={13} />{t('common.refresh')}</button>
         </div>
         {#if onCpu}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.onCpu')}</p></div>{/if}
         {#if partial}<div class="note warn"><Calcifer /><p class="small">{t('ai.server.offloadedPartial', { layers: status.llama.offloaded ?? '' })}</p></div>{/if}
