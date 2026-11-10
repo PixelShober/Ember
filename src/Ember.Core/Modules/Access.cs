@@ -35,6 +35,10 @@ public sealed record AccessEntry(string Name, string Kind);
 /// <summary>A role as the Berechtigungen tab shows and saves it.</summary>
 public sealed record AccessRole(string Name, List<string> Modules, List<AccessEntry> Members, List<string>? HideTools = null);
 
+/// <param name="Name">"DOMAIN\\sAMAccountName", as roles store it.</param>
+/// <param name="Detail">Mail address (users) or description (groups), to tell similar names apart.</param>
+public sealed record DirectoryHit(string Name, string Kind, string? Display, string? Detail);
+
 /// <param name="Found">true: exists in the directory; false: does not exist; null: could not be checked (e.g. no VPN).</param>
 public sealed record AccessLookup(string Name, string? Kind, bool? Found);
 
@@ -102,6 +106,53 @@ public static class Access
         {
             Log.Warn("team file backup: " + Net.Describe(ex));
         }
+    }
+
+    // ------------------------------------------------------------------ directory search
+
+    /// <summary>
+    /// Users and groups in the Active Directory whose name, display name, mail or group name starts
+    /// with (or contains) the text, at most 20. Runs with the user's own login (LDAP via ADSI),
+    /// like every directory query in Ember; without domain or VPN the list stays empty.
+    /// </summary>
+    public static async Task<IReadOnlyList<DirectoryHit>> SearchAsync(string query, CancellationToken ct)
+    {
+        var q = LdapEscape(query.Trim());
+        if (q.Length < 2 || !OperatingSystem.IsWindows()) return Array.Empty<DirectoryHit>();
+        var filter = $"(|(&(objectCategory=person)(objectClass=user)(|(sAMAccountName={q}*)(displayName=*{q}*)(givenName={q}*)(sn={q}*)(mail={q}*)))" +
+                     $"(&(objectCategory=group)(|(sAMAccountName=*{q}*)(cn=*{q}*))))";
+        var json = await PowerShell.RunJsonAsync($$"""
+            $s = New-Object System.DirectoryServices.DirectorySearcher
+            $s.Filter = {{PowerShell.Quote(filter)}}
+            $s.SizeLimit = 20
+            foreach ($p in 'sAMAccountName','displayName','mail','description','objectClass') { [void]$s.PropertiesToLoad.Add($p) }
+            @($s.FindAll() | ForEach-Object {
+              $o = $_.Properties
+              @{ sam = "$($o['samaccountname'])"; display = "$($o['displayname'])"; mail = "$($o['mail'])";
+                 description = "$($o['description'])"; group = [bool]($o['objectclass'] -contains 'group') }
+            }) | ConvertTo-Json -Compress -Depth 3
+            """, ct, 15);
+        var domain = Environment.UserDomainName;
+        var hits = new List<DirectoryHit>();
+        foreach (var e in json.ValueKind == System.Text.Json.JsonValueKind.Array ? json.EnumerateArray() : json.ValueKind == System.Text.Json.JsonValueKind.Object ? new[] { json }.AsEnumerable() : Enumerable.Empty<System.Text.Json.JsonElement>())
+        {
+            var sam = e.Str("sam");
+            if (string.IsNullOrWhiteSpace(sam)) continue;
+            bool group = e.Bool("group") ?? false;
+            string? Empty(string? v) => string.IsNullOrWhiteSpace(v) ? null : v;
+            hits.Add(new DirectoryHit($"{domain}\\{sam}", group ? "group" : "user", Empty(e.Str("display")), group ? Empty(e.Str("description")) : Empty(e.Str("mail"))));
+        }
+        // Users first, then groups, each alphabetically: the order people expect when they type a name.
+        return hits.OrderBy(h => h.Kind == "user" ? 0 : 1).ThenBy(h => h.Display ?? h.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>RFC 4515: * ( ) \ and NUL lose their meaning in an LDAP filter.</summary>
+    internal static string LdapEscape(string value)
+    {
+        var sb = new StringBuilder();
+        foreach (var c in value)
+            sb.Append(c switch { '*' => @"\2a", '(' => @"\28", ')' => @"\29", '\\' => @"\5c", '\0' => @"\00", _ => c.ToString() });
+        return sb.ToString();
     }
 
     // ------------------------------------------------------------------ directory lookup

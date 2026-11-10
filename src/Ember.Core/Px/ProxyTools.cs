@@ -13,8 +13,11 @@ public enum ProxyState
     Info,
 }
 
+/// <param name="Hint">Background for the handbook and the log; the window no longer shows it.</param>
 /// <param name="Pac">Only on the Windows row: what the PAC file says and which exceptions every tool gets (shown once, there).</param>
-public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint, PacInfo? Pac = null);
+/// <param name="Warning">Something to fix on this row (shown in the window).</param>
+public sealed record ProxyRow(string Tool, string Label, string Value, ProxyState State, bool CanSet, bool CanRemove, string? Hint, PacInfo? Pac = null,
+                              string? Warning = null);
 
 /// <param name="Exceptions">The internal domains every tool gets as exception.</param>
 /// <param name="Source">Where they come from: "user", "team", "pac" or "none".</param>
@@ -96,8 +99,8 @@ public static class ProxyTools
                 var state = url == null ? ProxyState.Unset : url.Length == 0 ? ProxyState.Other : StateOf(s, url);
                 var value = url is { Length: > 0 } ? $"DefaultWebProxy = {url}" : url == null ? "–" : L.T("proxy.powershell.partial");
                 var hint = L.T("proxy.hints.powershell", ("files", string.Join(" · ", PowerShellProfile.Files)));
-                if (PowerShellProfile.BlockingPolicy() is { } policy) hint += " " + L.T("proxy.hints.powershellPolicy", ("policy", policy));
-                return new ProxyRow(id, label, value, state, state != ProxyState.Px, url != null, hint);
+                var warning = PowerShellProfile.BlockingPolicy() is { } policy ? L.T("proxy.hints.powershellPolicy", ("policy", policy)) : null;
+                return new ProxyRow(id, label, value, state, state != ProxyState.Px, url != null, hint, Warning: warning);
             }
             case "git":
             {
@@ -107,8 +110,8 @@ public static class ProxyTools
                 var state = StateOf(s, value);
                 var missing = await GitMissingExceptionsAsync(Tools.Git, s, ct);
                 var shown = $"http.proxy={Shown(value)}";
-                string? hint = missing.Count > 0 && state == ProxyState.Px ? L.T("proxy.hints.gitExceptionsMissing", ("list", string.Join(", ", missing))) : L.T("proxy.hints.git");
-                return new ProxyRow(id, label, shown, state, state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px, hint);
+                var warning = missing.Count > 0 && state == ProxyState.Px ? L.T("proxy.hints.gitExceptionsMissing", ("list", string.Join(", ", missing))) : null;
+                return new ProxyRow(id, label, shown, state, state != ProxyState.Px || missing.Count > 0, state == ProxyState.Px, L.T("proxy.hints.git"), Warning: warning);
             }
             case "npm":
             {

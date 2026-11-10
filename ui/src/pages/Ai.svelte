@@ -37,6 +37,13 @@
   }
   onMount(load);
 
+  // Newest llama.cpp build for this machine: green when it is the active one, orange when newer.
+  let latest = $state<string | null>(null);
+  onMount(() => { void api<{ tag: string | null }>('ai.llama.latest').then((r) => (latest = r.tag)).catch(() => {}); });
+  const active = $derived(status?.llama.installed.find((l) => l.current && l.complete && l.tag !== 'custom') ?? null);
+  const upToDate = $derived(!!latest && active?.tag === latest);
+  const updateAvailable = $derived(!!latest && !!active && active.tag !== latest);
+
   /** Models the server can start: downloaded, or a local file that exists. */
   const ready = $derived(status?.models.filter((m) => m.downloaded) ?? []);
 
@@ -164,7 +171,13 @@
         </select>
       {/if}
       <button class="btn small" onclick={useFolder}><Icon name="folder" size={14} />{t('ai.llama.useFolder')}</button>
-      <button class="btn primary small" disabled={app.jobs['llama']?.state === 'running'} onclick={() => run(() => api('ai.llama.install'))}><Icon name="download" size={14} />{t('ai.llama.install')}</button>
+      {#if upToDate}
+        <span class="btn small current" title={t('ai.llama.upToDateHint', { tag: latest ?? '' })}><Icon name="check" size={14} />{t('ai.llama.upToDate')}</span>
+      {:else}
+        <button class="btn primary small" disabled={app.jobs['llama']?.state === 'running'} onclick={() => run(() => api('ai.llama.install'))}>
+          <Icon name="download" size={14} />{updateAvailable ? t('ai.llama.update', { tag: latest ?? '' }) : t('ai.llama.install')}
+        </button>
+      {/if}
     </div>
     {#if status?.llama.recommendedVariant === 'cuda'}<p class="small muted hint">{t('ai.llama.cudaHint')}</p>{/if}
     {#if status?.llama.installed.length}
@@ -367,4 +380,5 @@
   @media (max-width: 1100px) {
     .server, .add { grid-template-columns: 1fr; }
   }
+  .current { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 40%, transparent); color: var(--ok); cursor: default; }
 </style>

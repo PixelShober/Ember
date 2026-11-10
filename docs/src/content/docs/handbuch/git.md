@@ -38,4 +38,4 @@ Dasselbe gibt es für `http://`. Ein leerer Proxy heißt für git: direkt verbin
 
 Ein paar Dinge braucht git dagegen nicht: Einen Abschnitt `[https]` liest git gar nicht, `http.proxy` gilt für beide Protokolle. `http.noProxy` gibt es als Einstellung nicht, die Ausnahmen kommen aus den URL-Abschnitten und aus `NO_PROXY`. Das klappt auch, wenn px gerade nicht läuft. Der Stern deckt bei git nur eine Ebene ab (`git.firma.local`, nicht `gitlab.dev.firma.local`). Für tiefere Subdomains sorgt `NO_PROXY` in den Umgebungsvariablen, das git ebenfalls auswertet. Fehlt dort etwas, weist die Karte darauf hin.
 
-Die internen Domains kommen aus den Einstellungen, aus der Team-Konfiguration (`proxy.internalDomains`) oder aus der PAC-Datei. „Entfernen“ unter Proxy nimmt `http.proxy` und Embers Ausnahmen wieder heraus.
+Die Liste der Domains ohne Proxy ist anfangs eingeklappt und zeigt nur die ersten drei. Die internen Domains kommen aus den Einstellungen, aus der Team-Konfiguration (`proxy.internalDomains`) oder aus der PAC-Datei. „Entfernen“ unter Proxy nimmt `http.proxy` und Embers Ausnahmen wieder heraus.

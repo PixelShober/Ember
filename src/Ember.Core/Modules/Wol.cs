@@ -69,7 +69,9 @@ public static class WolTarget
                         var keyword = p.Str("keyword") ?? "";
                         if (!Targets.TryGetValue(keyword, out var t)) continue;
                         var value = p.Str("value");
-                        props.Add(new WolProp(keyword, p.Str("name") ?? keyword, value, p.Str("display"), t.Value, t.Required, value == t.Value));
+                        // Some drivers report a property without display name (and without value): show its keyword then.
+                        var name = p.Str("name") is { Length: > 0 } n ? n : keyword.TrimStart('*');
+                        props.Add(new WolProp(keyword, name, value, p.Str("display"), t.Value, t.Required, value == t.Value));
                     }
                 }
                 bool armed = a.Bool("armed") ?? false;

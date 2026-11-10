@@ -39,7 +39,9 @@ Die Tabelle zeigt pro Werkzeug den aktuellen Proxy und einen Status:
 - **nicht gesetzt**: das Werkzeug geht ohne Proxy raus, was im Firmennetz meist scheitert.
 - **Firmenvorgabe**: die Windows-Einstellung (PAC-Datei). Die bleibt, wie sie ist, denn px liest genau sie.
 
-Nach jeder Installation, Deinstallation oder Reparatur von px liest Ember die Tabelle von selbst neu.
+Nach jeder Installation, Deinstallation oder Reparatur von px liest Ember die Tabelle von selbst neu. Die Tabelle zeigt nur Werte und Status. Was hinter jeder Zeile steckt, steht hier. Muss an einer Zeile etwas getan werden, etwa weil für git noch Ausnahmen fehlen oder die Ausführungsrichtlinie das PowerShell-Profil blockiert, steht das als gelber Hinweis direkt darunter.
+
+In der Windows-Zeile stehen der Firmenproxy laut PAC-Datei und die Ziele ohne Proxy. Die Liste der Ausnahmen ist anfangs eingeklappt; „weitere“ zeigt alle.
 
 „Auf px setzen“ geht nur, solange px installiert ist und läuft. Sonst ist der Knopf ausgegraut, denn ein Werkzeug, das auf ein fehlendes px zeigt, kommt gar nicht mehr ins Netz. Dasselbe gilt für den Knopf auf der Git-Seite.
 
@@ -47,13 +49,14 @@ Folgende Werkzeuge kennt Ember:
 
 | Werkzeug | Wo Ember liest und schreibt |
 |---|---|
-| Umgebungsvariablen | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` für dein Benutzerkonto |
+| Windows (PAC/Systemproxy) | nur lesen: px nimmt genau diese Einstellung, um den Firmenproxy zu finden |
+| Umgebungsvariablen | `HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY` für dein Benutzerkonto. `NO_PROXY` enthält die internen Domains, damit gehen git, npm, pip, Python und Node.js direkt zu internen Servern |
 | PowerShell (irm, iwr) | ein Block in `Dokumente\WindowsPowerShell\profile.ps1` und `Dokumente\PowerShell\profile.ps1`, siehe unten |
 | git | `git config --global http.proxy`, dazu für jede interne Domain `http.<url>.proxy` leer und `http.<url>.allowNTLMAuth true` |
 | npm | `npm config` (`proxy`, `https-proxy`, `noproxy`) |
 | Node.js-Zertifikate | `NODE_EXTRA_CA_CERTS` für dein Benutzerkonto, zeigt auf `C:\Ember\Certs\windows-ca.pem` |
-| NuGet / .NET | `http_proxy` und `no_proxy` in `%APPDATA%\NuGet\NuGet.Config` |
-| pip | `proxy` in `%APPDATA%\pip\pip.ini` |
+| NuGet / .NET | `http_proxy` und `no_proxy` in `%APPDATA%\NuGet\NuGet.Config`, gelesen von `dotnet restore` und Visual Studio |
+| pip | `proxy` in `%APPDATA%\pip\pip.ini`. pip kennt dort keine Ausnahmeliste, interne Server erreicht es über `NO_PROXY` |
 | VS Code | `"http.proxy"` und `"http.noProxy"` in `settings.json`, Kommentare bleiben erhalten; dazu beide in `"settingsSync.ignoredSettings"`, siehe unten |
 
 ### PowerShell

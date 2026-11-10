@@ -152,12 +152,11 @@
           <dt>{t('access.teamfile.signedBy')}</dt><dd>{view.signedBy ? `${view.signedBy}, ${formatDate(view.signedAt)}` : '–'}</dd>
           <dt>{t('access.teamfile.key')}</dt><dd><code>{view.keyId ?? '–'}</code> {#if view.trusted}<span class="badge ok"><Icon name="check" size={12} />{t('access.teamfile.trusted')}</span>{/if}</dd>
         </dl>
-        <p class="small muted">{t('access.teamfile.hint')}</p>
         {#if unsigned}<div class="note info"><Icon name="info" /><p class="small">{t('access.teamfile.convert')}</p></div>{/if}
         {#if !view.signatureRequired}<div class="note warn"><Calcifer /><p class="small">{t('access.teamfile.noCheck')}</p></div>{/if}
       </section>
       <section class="card stack tight">
-        <div class="card-head"><Icon name="key" /><div class="grow"><h2>{t('access.newKey.title')}</h2><p class="small muted">{t('access.newKey.hint')}</p></div></div>
+        <div class="card-head"><Icon name="key" /><div class="grow"><h2>{t('access.newKey.title')}</h2></div></div>
         {#if keyFile}<p class="small">{t('access.newKey.current')} <code>{keyFile}</code></p>{/if}
         {#if created}
           <div class="created stack tight">
@@ -187,7 +186,7 @@
         {/if}
       </section>
       <section class="card stack tight">
-        <div class="card-head"><Icon name="settings" /><div class="grow"><h2>{t('access.teamfile.extra')}</h2><p class="small muted">{t('access.teamfile.extraHint')}</p></div></div>
+        <div class="card-head"><Icon name="settings" /><div class="grow"><h2>{t('access.teamfile.extra')}</h2></div></div>
         <textarea class="json" rows="14" bind:value={extra} disabled={!editable} spellcheck="false"></textarea>
         {#if extraError}<p class="small error">{extraError}</p>{/if}
       </section>

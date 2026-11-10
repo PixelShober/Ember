@@ -27,7 +27,6 @@
 
   <section class="card stack tight">
     <div class="card-head"><Icon name="user" /><h2>{t('access.team.supervisor')}</h2></div>
-    <p class="small muted">{t('access.team.supervisorHint')}</p>
     <label class="field"><span>{t('access.team.name')}</span><input bind:value={doc.supervisor.name} disabled={!editable} placeholder="Petra Lindner" /></label>
     <label class="field"><span>{t('access.team.firstName')}</span><input bind:value={doc.supervisor.firstName} disabled={!editable} placeholder={doc.supervisor.name.split(/[ ,]+/)[0] || 'Petra'} /></label>
     <label class="field"><span>{t('access.team.email')}</span><input type="email" bind:value={doc.supervisor.email} disabled={!editable} placeholder="petra.lindner@firma.de" /></label>
@@ -42,7 +41,6 @@
   <section class="card stack tight">
     <div class="card-head"><Icon name="sparkle" /><h2>{t('access.team.update')}</h2></div>
     <label class="field"><span>{t('access.team.mirror')}</span><input class="mono" bind:value={doc.update.mirror} disabled={!editable} placeholder="\\fs01\entwicklung\ember\releases" spellcheck="false" /></label>
-    <p class="small muted">{t('access.team.mirrorHint')}</p>
   </section>
 
   <section class="card stack tight wide">
@@ -66,7 +64,6 @@
         </li>
       {/each}
     </ul>
-    <p class="small muted">{t('access.team.mailsHint')}</p>
   </section>
 </div>
 

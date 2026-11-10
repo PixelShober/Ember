@@ -66,7 +66,7 @@
               <li>
                 <span class="state" class:ok={prop.ok}><Icon name={prop.ok ? 'check' : 'x'} size={13} /></span>
                 <span>{prop.name}</span>
-                <span class="small muted">{prop.display ?? prop.value}</span>
+                <span class="small muted">{prop.display || prop.value || t('wol.notSet')}</span>
                 <span class="badge {prop.required ? 'accent' : ''}">{prop.required ? t('wol.required') : t('wol.optional')}</span>
               </li>
             {/each}
@@ -74,7 +74,7 @@
         </div>
       {/each}
     </div>
-    <p class="row small">
+    <p class="row small fast">
       <span class="badge {wol.fastStartupOff ? 'ok' : 'warn'}">{t('wol.fastStartup')}</span>
       {wol.fastStartupOff ? t('wol.fastStartupOff') : t('wol.fastStartupOn')}
     </p>
@@ -91,6 +91,7 @@
 </section>
 
 <style>
+  .fast { margin: 4px 0 14px; }
   .bios ul { margin: 4px 0 0; padding-left: 18px; }
   .bios li + li { margin-top: 2px; }
   .desc { margin-bottom: 8px; max-width: 820px; }

@@ -76,7 +76,9 @@
     "saved": "Saved",
     "cancelled": "Cancelled",
     "resetToDetected": "Use detected value",
-    "admin": "Admin"
+    "admin": "Admin",
+    "showMore": "{count} more",
+    "showLess": "less"
   },
   "errors": {
     "internal": "Internal error: {message}",
@@ -296,7 +298,6 @@
     },
     "diag": {
       "title": "Diagnosis",
-      "subtitle": "Which tool uses which proxy?",
       "tool": "Tool",
       "value": "Current value",
       "state": "Status",
@@ -461,7 +462,6 @@
     "identity": "Identity",
     "proxy": {
       "title": "Proxy for git",
-      "subtitle": "External repositories (GitHub, npm registries, …) go through px. git reaches internal servers directly and with your Windows sign-in, since they are often not reachable through the company proxy.",
       "httpProxy": "http.proxy",
       "direct": "Without proxy",
       "noDomains": "No internal domains entered yet, so git reaches internal servers through the proxy too.",
@@ -679,7 +679,8 @@
         "mac": "turn on “MAC Address Pass-Through” if you wake through the dock",
         "deepSleep": "turn off “Deep Sleep Control”"
       }
-    }
+    },
+    "notSet": "not present"
   },
   "system": {
     "title": "System & policies",
@@ -780,7 +781,10 @@
       "usedFolder": "Ember now starts llama-server from {path}.",
       "incomplete": "incomplete",
       "incompleteHint": "This CUDA build lacks the CUDA runtime (cudart64, cublas64) and would run on the CPU. Reinstall it or use a complete folder.",
-      "reinstall": "Reinstall"
+      "reinstall": "Reinstall",
+      "upToDate": "Newest version installed",
+      "upToDateHint": "{tag} is the newest version for this machine.",
+      "update": "Update to {tag}"
     },
     "models": {
       "title": "Models",
@@ -1262,7 +1266,7 @@
     "modules": "Modules",
     "allModules": "All modules",
     "membersEmpty": "Nobody in this role yet.",
-    "addPlaceholder": "Name or COMPANY\\Name",
+    "addPlaceholder": "Search name, group or email …",
     "add": "Add",
     "user": "User",
     "group": "Group",
@@ -1297,7 +1301,6 @@
       "teamFailed": "The team file at {path} cannot be used: {detail}",
       "account": "Signed in as {user}."
     },
-    "hideBruno": "Offer Bruno",
     "tabs": {
       "roles": "Roles",
       "blocked": "Block list",
@@ -1318,9 +1321,7 @@
       "signedBy": "Signed",
       "key": "Key",
       "trusted": "known to Ember",
-      "hint": "Ember loads the file only if the signature matches, it is at this path and its version is not older than the last one seen. A home-made or old copy gets nobody further.",
       "extra": "More settings",
-      "extraHint": "Everything optional: internal domains, software list, power profiles, developer tools. As JSON, signed along.",
       "extraObject": "This needs to be a JSON object: { … }",
       "convert": "This team file is still an unsigned team.json. On the first “Sign and save” Ember creates team.ember next to it and uses only that from then on.",
       "noCheck": "This Ember version checks no signature yet, because no public key is built in. As soon as config/team-signing.pub has one, Ember only accepts signed team files."
@@ -1340,7 +1341,6 @@
     "savedVersion": "Team file version {version}",
     "blocked": {
       "title": "Block list",
-      "hint": "Whoever is on it does not get into Ember, even if a role or group names them.",
       "empty": "Nobody is blocked.",
       "unblock": "Unblock",
       "add": "Block"
@@ -1352,19 +1352,16 @@
       "subjectPrefix": "Before every subject",
       "problemIntro": "First sentence of “Report a problem”",
       "supervisor": "Supervisor",
-      "supervisorHint": "Gets the request for admin rights and asks the service center for them.",
       "firstName": "First name for “Hello …”",
       "template": "Project template folder",
       "downloadHost": "Mirror for browser downloads",
       "update": "Updates",
       "mirror": "Mirror folder for releases",
-      "mirrorHint": "Empty: Ember gets updates from GitHub. With a folder they come from the network drive, e.g. when GitHub is blocked.",
       "mails": "Mail texts",
       "custom": "own text",
       "subject": "Subject",
       "body": "Text",
-      "placeholders": "Placeholders:",
-      "mailsHint": "Empty means Ember's own text. Every mail ends with the closing and the name."
+      "placeholders": "Placeholders:"
     },
     "moduleGroups": {
       "daily": "Everyday",
@@ -1377,7 +1374,6 @@
     "myGroups": "Your groups ({count})",
     "newKey": {
       "title": "Signing key",
-      "hint": "The admins sign the team file with this key. It is created once and protected with a password; its public half goes into Ember.",
       "current": "Last used:",
       "start": "Create a new key",
       "folder": "Folder for the key",
@@ -1391,7 +1387,9 @@
       "copy": "Copy public key",
       "id": "ID {id}"
     },
-    "roles": "Roles"
+    "roles": "Roles",
+    "tools": "Installers",
+    "searchEmpty": "Nothing in the directory for “{query}”. Enter takes the name as typed."
   },
   "preview": {
     "title": "View as",

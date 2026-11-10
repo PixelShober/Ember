@@ -76,7 +76,9 @@
     "saved": "Gespeichert",
     "cancelled": "Abgebrochen",
     "resetToDetected": "Erkannten Wert nutzen",
-    "admin": "Admin"
+    "admin": "Admin",
+    "showMore": "{count} weitere",
+    "showLess": "weniger"
   },
   "errors": {
     "internal": "Interner Fehler: {message}",
@@ -296,7 +298,6 @@
     },
     "diag": {
       "title": "Diagnose",
-      "subtitle": "Welches Werkzeug nutzt welchen Proxy?",
       "tool": "Werkzeug",
       "value": "Aktueller Wert",
       "state": "Status",
@@ -461,7 +462,6 @@
     "identity": "Identität",
     "proxy": {
       "title": "Proxy für git",
-      "subtitle": "Externe Repositories (GitHub, npm-Registries, …) laufen über px. Interne Server erreicht git direkt und mit deiner Windows-Anmeldung, denn über den Firmenproxy sind sie oft gar nicht erreichbar.",
       "httpProxy": "http.proxy",
       "direct": "Ohne Proxy",
       "noDomains": "Noch keine internen Domains eingetragen. Dann geht auch git zu internen Servern über den Proxy.",
@@ -679,7 +679,8 @@
         "mac": "„MAC Address Pass-Through“ einschalten, wenn du über das Dock weckst",
         "deepSleep": "„Deep Sleep Control“ ausschalten"
       }
-    }
+    },
+    "notSet": "nicht vorhanden"
   },
   "system": {
     "title": "System & Richtlinien",
@@ -780,7 +781,10 @@
       "usedFolder": "Ember startet jetzt llama-server aus {path}.",
       "incomplete": "unvollständig",
       "incompleteHint": "Der CUDA-Build hat keine CUDA-Laufzeit (cudart64, cublas64) und würde auf der CPU laufen. Neu installieren oder einen vollständigen Ordner verwenden.",
-      "reinstall": "Neu installieren"
+      "reinstall": "Neu installieren",
+      "upToDate": "Neueste Version installiert",
+      "upToDateHint": "{tag} ist die neueste Version für diesen Rechner.",
+      "update": "Update auf {tag}"
     },
     "models": {
       "title": "Modelle",
@@ -1262,7 +1266,7 @@
     "modules": "Module",
     "allModules": "Alle Module",
     "membersEmpty": "Noch niemand in dieser Rolle.",
-    "addPlaceholder": "Name oder FIRMA\\Name",
+    "addPlaceholder": "Name, Gruppe oder E-Mail suchen …",
     "add": "Hinzufügen",
     "user": "Benutzer",
     "group": "Gruppe",
@@ -1297,7 +1301,6 @@
       "teamFailed": "Die Teamdatei unter {path} lässt sich nicht nutzen: {detail}",
       "account": "Angemeldet als {user}."
     },
-    "hideBruno": "Bruno anbieten",
     "tabs": {
       "roles": "Rollen",
       "blocked": "Sperrliste",
@@ -1318,9 +1321,7 @@
       "signedBy": "Signiert",
       "key": "Schlüssel",
       "trusted": "in Ember hinterlegt",
-      "hint": "Ember lädt die Datei nur, wenn die Signatur passt, sie unter diesem Pfad liegt und ihre Version nicht älter ist als die zuletzt gesehene. Eine selbst gebaute oder alte Kopie hilft also nicht weiter.",
       "extra": "Weitere Einstellungen",
-      "extraHint": "Alles, was keine Pflicht ist: interne Domains, Softwareliste, Energieprofile, Entwicklerwerkzeuge. Als JSON, wird mit signiert.",
       "extraObject": "Hier muss ein JSON-Objekt stehen: { … }",
       "convert": "Diese Teamdatei ist noch eine unsignierte team.json. Beim ersten „Signieren und speichern“ legt Ember daneben team.ember an und nutzt ab dann nur noch diese.",
       "noCheck": "Diese Ember-Version prüft noch keine Signatur, weil kein öffentlicher Schlüssel eingebaut ist. Sobald einer in config/team-signing.pub steht, nimmt Ember nur noch signierte Teamdateien."
@@ -1340,7 +1341,6 @@
     "savedVersion": "Teamdatei Version {version}",
     "blocked": {
       "title": "Sperrliste",
-      "hint": "Wer hier steht, kommt nicht in Ember, auch wenn eine Rolle oder Gruppe ihn nennt.",
       "empty": "Niemand gesperrt.",
       "unblock": "Entsperren",
       "add": "Sperren"
@@ -1352,19 +1352,16 @@
       "subjectPrefix": "Vor jedem Betreff",
       "problemIntro": "Erster Satz bei „Problem melden“",
       "supervisor": "Vorgesetzte bzw. Vorgesetzter",
-      "supervisorHint": "Bekommt die Bitte um Adminrechte und beantragt sie beim Service-Center.",
       "firstName": "Vorname für „Hallo …“",
       "template": "Ordner der Projektvorlage",
       "downloadHost": "Spiegel für Browser-Downloads",
       "update": "Updates",
       "mirror": "Spiegelordner für Releases",
-      "mirrorHint": "Leer: Ember holt Updates von GitHub. Mit Ordner kommen sie vom Netzlaufwerk, etwa wenn GitHub gesperrt ist.",
       "mails": "Mailtexte",
       "custom": "eigener Text",
       "subject": "Betreff",
       "body": "Text",
-      "placeholders": "Platzhalter:",
-      "mailsHint": "Leer heißt: Embers eigener Text. Jede Mail endet mit dem Gruß und dem Namen."
+      "placeholders": "Platzhalter:"
     },
     "moduleGroups": {
       "daily": "Alltag",
@@ -1377,7 +1374,6 @@
     "myGroups": "Deine Gruppen ({count})",
     "newKey": {
       "title": "Signaturschlüssel",
-      "hint": "Mit diesem Schlüssel unterschreiben die Admins die Teamdatei. Er wird einmal erzeugt und mit einem Passwort geschützt; der öffentliche Teil kommt in Ember.",
       "current": "Zuletzt benutzt:",
       "start": "Neuen Schlüssel erzeugen",
       "folder": "Ordner für den Schlüssel",
@@ -1391,7 +1387,9 @@
       "copy": "Öffentlichen Schlüssel kopieren",
       "id": "Kennung {id}"
     },
-    "roles": "Rollen"
+    "roles": "Rollen",
+    "tools": "Installationen",
+    "searchEmpty": "Nichts im Verzeichnis zu „{query}“. Mit Enter übernimmst du den Namen so, wie er dasteht."
   },
   "preview": {
     "title": "Ansehen als",

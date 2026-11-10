@@ -14,8 +14,8 @@ Den Tab **Berechtigungen** sieht nur, wer eine Rolle mit dem Modul Berechtigunge
 Links stehen die Rollen, rechts die gerade gewählte. Eine Rolle hat einen Namen, Module und Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller seiner Rollen zusammen.
 
 - **Module** klickst du als Kacheln an, gruppiert nach Alltag, Erweitert und Sonstiges. „Alle Module“ gibt auch die, die in späteren Versionen dazukommen.
-- **Bruno anbieten** erscheint bei Rollen mit dem Modul Software. Ohne Häkchen bietet Ember der Rolle Bruno nicht an. Wer in mehreren Rollen ist, bekommt ein Werkzeug, sobald eine davon es anbietet.
-- **Mitglieder** fügst du per Name hinzu, mit oder ohne Domäne (`jmoessner` oder `FIRMA\jmoessner`). Ember schlägt den Namen im Verzeichnis nach und erkennt selbst, ob es ein Benutzer oder eine Gruppe ist. Unter „Deine Gruppen“ stehen deine eigenen Domänengruppen zum schnellen Hinzufügen.
+- **Installationen** erscheint bei Rollen mit dem Modul Software: Node.js, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7 und Bruno, also alles, was Ember direkt beim Hersteller holt. Was nicht markiert ist, bietet Ember der Rolle nicht an und installiert es auch nicht. Pakete aus dem Softwarecenter sind davon nicht betroffen, die stehen immer da. Wer in mehreren Rollen ist, bekommt ein Werkzeug, sobald eine davon es anbietet.
+- **Mitglieder** suchst du direkt im Active Directory: zwei Buchstaben eintippen, und Ember schlägt passende Benutzer und Gruppen vor, mit Anzeigename, Konto und E-Mail bzw. Beschreibung. Mit den Pfeiltasten und Enter oder per Klick übernehmen. Die Suche läuft mit deinem Windows-Login über LDAP, wie jede Abfrage im Verzeichnis; extra Rechte braucht es nicht, nur Domäne oder VPN. Ohne Verbindung tippst du den Namen aus und drückst Enter; Ember prüft ihn dann, sobald es kann. Unter „Deine Gruppen“ stehen deine eigenen Domänengruppen zum schnellen Hinzufügen.
 
 Am einfachsten sind AD-Gruppen, die es ohnehin gibt. Nimmt die IT jemanden in die Gruppe auf, hat er die Rolle, ohne dass sich an der Teamdatei etwas ändert. Leute ohne passende Gruppe, etwa Externe, trägst du als Benutzer ein.
 
@@ -24,7 +24,7 @@ Typisch sind drei Rollen:
 | Rolle | Module | Mitglieder |
 |---|---|---|
 | Admins | alle | die Leute, die Ember betreuen |
-| Entwickler | Proxy, Playwright, Git, Software (ohne Bruno) | die AD-Gruppe der Entwicklung |
+| Entwickler | Proxy, Playwright, Git, Software (Installationen ohne Bruno) | die AD-Gruppe der Entwicklung |
 | Test | Proxy, Playwright | die Testgruppe |
 
 ## Sperrliste

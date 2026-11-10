@@ -130,6 +130,8 @@ export interface ProxyRow {
   hint: string | null;
   /** Windows row only: what the PAC file says and the exceptions every tool gets. */
   pac?: { proxies: string[]; direct: string[]; exceptions: string[]; source: 'user' | 'team' | 'pac' | 'none' } | null;
+  /** Something to fix on this row. */
+  warning?: string | null;
 }
 
 export interface AccessEntry {

@@ -58,6 +58,8 @@ Vor jedem Start fragt Ember `llama-server --list-devices` ab. Hat der Rechner ei
 
 Du kannst die Variante auch fest einstellen. Jede Version landet in einem eigenen Ordner unter `C:\Ember\llama.cpp`. Die zwei neuesten bleiben liegen, zwischen ihnen schaltest du mit „Verwenden“ um.
 
+Der Knopf rechts zeigt den Stand: **grün** („Neueste Version installiert“), wenn die aktive Version die neueste für diesen Rechner ist, **orange** („Update auf b…“), wenn es eine neuere gibt. Welche die neueste ist, fragt Ember höchstens einmal pro Stunde bei GitHub nach, passend zu Variante und CUDA-Version. Ohne Netz bleibt der Knopf beim normalen „Neueste Version installieren“.
+
 ## Modelle
 
 Eingebaut ist das Modell aus der Anleitung für 24 GB VRAM: **Qwen3.8-27B** als `Qwen3.8-27B-UD-Q4_K_XL.gguf` von Unsloth (etwa 17,6 GB). Es bringt Tool-Call-Parser für MCP mit und einen MTP-Kopf, der das Generieren beschleunigt.

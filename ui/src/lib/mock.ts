@@ -429,6 +429,18 @@ export function createMockBridge(): Bridge {
     'system.action': (p) => { if (p.check === 'winLongPaths') throw new BridgeError('elevationCancelled', t('errors.elevationCancelled')); return 'OK'; },
     'system.adminCommands': () => 'reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f',
     'ai.status': () => ai,
+    'access.search': (p) => {
+      const all = [
+        { name: 'FIRMA\\jmoessner', kind: 'user', display: 'Mößner, Jürgen', detail: 'juergen.moessner@firma.example' },
+        { name: 'FIRMA\\jmeyer', kind: 'user', display: 'Meyer, Julia', detail: 'julia.meyer@firma.example' },
+        { name: 'FIRMA\\GG-Entwicklung', kind: 'group', display: null, detail: 'Alle Entwicklerinnen und Entwickler' },
+        { name: 'FIRMA\\GG-Ember-Admins', kind: 'group', display: null, detail: 'Admins für Ember' },
+        { name: 'FIRMA\\GG-Test', kind: 'group', display: null, detail: 'Testteam' },
+      ];
+      const q = String(p.query).toLowerCase();
+      return all.filter((h) => (h.name + (h.display ?? '') + (h.detail ?? '')).toLowerCase().includes(q));
+    },
+    'ai.llama.latest': () => ({ tag: 'b12110' }),
     'ai.llama.install': () => { void simulate('llama', 'llama', t('ai.llama.jobs.install'), ['detect', 'release', 'download', 'extract', 'devices', 'cleanup'].map((k) => t(`ai.llama.steps.${k}`))); return null; },
     'ai.llama.select': () => null,
     'ai.server.start': (p) => {

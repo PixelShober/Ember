@@ -140,4 +140,11 @@ public class AccessTests
         if (OperatingSystem.IsWindows()) return;
         Assert.Null(Access.Lookup("jmoessner").Found);
     }
+
+    [Fact]
+    public void Directory_search_cannot_be_turned_into_another_filter()
+    {
+        Assert.Equal(@"m\2a\29\28x\5c", Access.LdapEscape("m*)(x\\"));
+        Assert.Equal("müller", Access.LdapEscape("müller"));
+    }
 }

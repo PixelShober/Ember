@@ -3,6 +3,7 @@
   import { api, app, confirm, navigate, run } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import type { GitIdentityInfo, GitProxyInfo } from '../lib/types';
+  import ChipList from '../lib/components/ChipList.svelte';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
 
@@ -96,7 +97,7 @@
     <section class="card stack tight proxy">
       <div class="card-head">
         <Icon name="proxy" />
-        <div class="grow"><h2>{t('git.proxy.title')}</h2><p class="small muted">{t('git.proxy.subtitle')}</p></div>
+        <div class="grow"><h2>{t('git.proxy.title')}</h2></div>
         <span class="badge {proxy.state === 'px' ? 'ok' : proxy.state === 'other' ? 'warn' : ''}">{t(`proxy.states.${proxy.state}`)}</span>
       </div>
       <dl>
@@ -104,7 +105,7 @@
         <dt>{t('git.proxy.direct')}</dt>
         <dd>
           {#if proxy.domains.length}
-            <span class="row">{#each proxy.domains as d (d)}<span class="badge">{d}</span>{/each}</span>
+            <ChipList items={proxy.domains} />
           {:else}
             <span class="small muted">{t('git.proxy.noDomains')}</span>
           {/if}

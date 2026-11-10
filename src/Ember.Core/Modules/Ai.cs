@@ -114,6 +114,28 @@ public static class LlamaCpp
             .ToList();
     }
 
+    static (string Key, DateTime At, string Tag)? _latest;
+
+    /// <summary>
+    /// The newest llama.cpp build with assets for this machine (variant and CUDA version), for the
+    /// "up to date / update" state of the install button. Asked at most once an hour.
+    /// </summary>
+    public static async Task<string?> LatestAsync(UserSettings s, EffectiveSettings eff, CancellationToken ct)
+    {
+        var variant = await RecommendVariantAsync(s, ct);
+        var cuda = (await Gpu.NvidiaAsync(ct)).FirstOrDefault()?.Cuda;
+        var key = variant + "/" + cuda;
+        if (_latest is { } cached && cached.Key == key && DateTime.Now - cached.At < TimeSpan.FromHours(1)) return cached.Tag;
+        var (http, _) = await Net.SmartClientAsync(eff, TimeSpan.FromSeconds(30));
+        using (http)
+        {
+            var release = await Net.FindReleaseAsync(http, Repo, r => TryPickAssets(r.AssetUrls, variant, cuda) != null, 15, ct);
+            if (release == null) return null;
+            _latest = (key, DateTime.Now, release.Tag);
+            return release.Tag;
+        }
+    }
+
     public static async Task<string> RecommendVariantAsync(UserSettings s, CancellationToken ct)
     {
         if (s.LlamaVariant is "cuda" or "vulkan" or "cpu") return s.LlamaVariant;

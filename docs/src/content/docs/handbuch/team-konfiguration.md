@@ -123,7 +123,7 @@ Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und 
 | `roles[].name` | Name der Rolle, zum Beispiel „Admins“ oder „Test“ |
 | `roles[].modules` | `proxy`, `git`, `software`, `playwright`, `system`, `power` (Energie), `ai` (KI), `access` (Berechtigungen), `settings` (Einstellungen), `log`. `"*"` steht für alle, auch für Module, die später dazukommen. |
 | `roles[].users`, `roles[].groups` | Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung` oder `Entwicklung`) |
-| `roles[].hideTools` | Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. `["bruno"]` |
+| `roles[].hideTools` | Installationen, die die Rolle nicht angeboten bekommt: `nodejs`, `git`, `vscode`, `python`, `visualstudio`, `dotnet`, `pwsh`, `bruno` |
 | `blocked.users`, `blocked.groups` | Sperrliste: wer hier steht, kommt nicht in Ember, egal was eine Rolle sagt |
 
 Die Startseite gibt es, sobald jemand mindestens ein Modul hat. Sie zeigt nur Karten zu den eigenen Modulen. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. Gepflegt werden die Rollen am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).

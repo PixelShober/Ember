@@ -398,6 +398,18 @@ public sealed class EmberHost : IDisposable
 
         // ------------------------------------------------------------------ access (admins)
         b.Register("access.lookup", (args, _) => Task.FromResult<object?>(Access.Lookup(args.Req("name"))));
+        b.Register("access.search", async (args, ct) =>
+        {
+            try
+            {
+                return await Access.SearchAsync(args.Req("query"), ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Log.Debug("directory search: " + ex.Message);   // no domain, no VPN: no suggestions, typing still works
+                return Array.Empty<DirectoryHit>();
+            }
+        });
         // The team file: only here can it change, and only signed with the admins' key.
         b.Register("team.admin", async ct => await TeamAdmin.ViewAsync(Team, Settings, ct));
         b.Register("team.save", async (args, ct) =>
@@ -684,6 +696,18 @@ public sealed class EmberHost : IDisposable
                 profile = profile.Id,
                 pi = PiAgent.State(alias, llama.ServerContext ?? profile.Context, Settings.LlamaPort, model?.MmprojPresent ?? false),
             };
+        });
+        b.Register("ai.llama.latest", async ct =>
+        {
+            try
+            {
+                return new { tag = await LlamaCpp.LatestAsync(Settings, Effective, ct) };
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Log.Debug("llama latest: " + Net.Describe(ex));
+                return new { tag = (string?)null };   // offline: the button stays neutral
+            }
         });
         b.Register("ai.llama.install", () =>
         {

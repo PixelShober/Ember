@@ -3,6 +3,7 @@
   import { api, app, confirm, run } from '../lib/app.svelte';
   import { host, t } from '../lib/i18n.svelte';
   import type { ProxyRow } from '../lib/types';
+  import ChipList from '../lib/components/ChipList.svelte';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import JobView from '../lib/components/JobView.svelte';
@@ -90,7 +91,6 @@
     <div class="card-head">
       <div>
         <h2>{t('proxy.diag.title')}</h2>
-        <p class="small muted">{t('proxy.diag.subtitle')}</p>
       </div>
       <span class="spacer"></span>
       <button class="btn small" disabled={loading} onclick={load}><Icon name="refresh" size={14} />{t('common.refresh')}</button>
@@ -98,12 +98,12 @@
     <div class="note kerberos"><Icon name="info" /><p class="small">{t('proxy.diag.kerberosNote')}</p></div>
 
     {#if rows}
-      <table class="table">
+      <div class="scroll"><table class="table">
         <thead><tr><th>{t('proxy.diag.tool')}</th><th>{t('proxy.diag.value')}</th><th>{t('proxy.diag.state')}</th><th></th></tr></thead>
         <tbody>
           {#each rows as row (row.tool)}
             <tr>
-              <td class="nowrap"><strong>{host(row.label)}</strong></td>
+              <td class="tool"><strong>{host(row.label)}</strong></td>
               <td>
                 <code class="break">{row.value}</code>
                 {#if row.pac}
@@ -114,16 +114,16 @@
                     {/if}
                     {#if row.pac.direct.length && row.pac.source !== 'pac'}
                       <dt>{t('proxy.pac.direct')}</dt>
-                      <dd>{#each row.pac.direct as d (d)}<span class="badge">{d}</span>{/each}</dd>
+                      <dd><ChipList items={row.pac.direct} /></dd>
                     {/if}
                     <dt>{t('proxy.pac.exceptions')}</dt>
                     <dd>
-                      {#each row.pac.exceptions as d (d)}<span class="badge info">{d}</span>{:else}<span class="small muted">{t('proxy.pac.none')}</span>{/each}
+                      {#if row.pac.exceptions.length}<ChipList items={row.pac.exceptions} tone="info" />{:else}<span class="small muted">{t('proxy.pac.none')}</span>{/if}
                       <span class="small muted">· {t(`proxy.pac.sources.${row.pac.source}`)}</span>
                     </dd>
                   </dl>
                 {/if}
-                {#if row.hint}<p class="hint">{host(row.hint)}</p>{/if}
+                {#if row.warning}<p class="small warn-text">{host(row.warning)}</p>{/if}
               </td>
               <td><span class="badge {stateTone[row.state]}">{row.tool === 'nodeCerts' ? t(`proxy.nodeCerts.states.${row.state}`) : t(`proxy.states.${row.state}`)}</span></td>
               <td class="nowrap right">
@@ -136,7 +136,7 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+      </table></div>
     {:else}
       <p class="muted">{t('common.loading')}</p>
     {/if}
@@ -148,6 +148,9 @@
   .pac dt { color: var(--text-muted); font-size: 12.5px; }
   .pac dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .kerberos { margin-bottom: 12px; }
+  .scroll { overflow-x: auto; }
+  .tool { width: 22%; min-width: 150px; overflow-wrap: anywhere; }
+  .warn-text { color: var(--warn); margin: 6px 0 0; }
   .actions { margin-bottom: 8px; }
   .right { text-align: right; }
   .note { margin-top: 14px; }

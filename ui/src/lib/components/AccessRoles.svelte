@@ -8,6 +8,7 @@
   import type { AccessEntry, AccessLookup, AccessRole, ModuleId } from '../types';
   import Icon from './Icon.svelte';
   import Calcifer from './Calcifer.svelte';
+  import DirectoryPicker from './DirectoryPicker.svelte';
 
   let { roles = $bindable(), modules, myGroups, editable }: {
     roles: AccessRole[];
@@ -17,8 +18,6 @@
   } = $props();
 
   let selected = $state(0);
-  let input = $state('');
-  let kind = $state<AccessEntry['kind']>('group');
   let groupFilter = $state('');
 
   const role = $derived(roles[Math.min(selected, roles.length - 1)] ?? null);
@@ -54,7 +53,18 @@
     selected = Math.max(0, selected - 1);
   }
 
-  async function add(name = input.trim(), as: AccessEntry['kind'] = kind) {
+  /** A member from the directory picker. */
+  function addEntry(entry: AccessEntry) {
+    if (!role) return;
+    if (role.members.some((e) => e.name.toLowerCase() === entry.name.toLowerCase())) {
+      toast('info', t('access.duplicate', { name: entry.name }));
+      return;
+    }
+    role.members = [...role.members, entry];
+  }
+
+  /** One of the own groups, by name (checked in the directory). */
+  async function add(name: string, as: AccessEntry['kind'] = 'group') {
     if (!role || !name) return;
     const found = await run(() => api<AccessLookup>('access.lookup', { name }));
     if (!found) return;
@@ -69,14 +79,18 @@
     }
     if (found.found === null) toast('info', t('access.unchecked', { name: entry.name, kind: t(`access.${entry.kind}`) }));
     role.members = [...role.members, entry];
-    if (name === input.trim()) input = '';
   }
 
-  const bruno = $derived(!!role && !(role.hideTools ?? []).includes('bruno'));
-  function toggleBruno() {
+  // Developer tools Ember installs straight from the vendor; Software Center packages are always there.
+  const tools = [
+    ['nodejs', 'Node.js'], ['git', 'Git'], ['vscode', 'VS Code'], ['python', 'Python'],
+    ['visualstudio', 'Visual Studio'], ['dotnet', '.NET SDK'], ['pwsh', 'PowerShell 7'], ['bruno', 'Bruno'],
+  ] as const;
+  const offers = (id: string) => !!role && !(role.hideTools ?? []).includes(id);
+  function toggleTool(id: string) {
     if (!role) return;
-    const rest = (role.hideTools ?? []).filter((x) => x !== 'bruno');
-    role.hideTools = bruno ? [...rest, 'bruno'] : rest;
+    const rest = (role.hideTools ?? []).filter((x) => x !== id);
+    role.hideTools = offers(id) ? [...rest, id] : rest;
   }
 
   const mine = $derived.by(() => {
@@ -125,7 +139,16 @@
           </div>
         {/each}
         {#if has(role, 'software')}
-          <label class="check small"><input type="checkbox" checked={bruno} disabled={!editable} onchange={toggleBruno} />{t('access.hideBruno')}</label>
+          <div class="group">
+            <span class="small muted label">{t('access.tools')}</span>
+            <div class="tool-row">
+              {#each tools as [id, label] (id)}
+                <button class="tool" class:on={offers(id)} disabled={!editable} aria-pressed={offers(id)} onclick={() => toggleTool(id)}>
+                  <span class="tick"><Icon name="check" size={11} /></span>{label}
+                </button>
+              {/each}
+            </div>
+          </div>
         {/if}
       </div>
 
@@ -145,14 +168,7 @@
         {:else}
           <div class="note"><Calcifer /><p class="small">{t('access.membersEmpty')}</p></div>
         {/if}
-        <form class="row add" onsubmit={(ev) => { ev.preventDefault(); void add(); }}>
-          <input type="text" bind:value={input} placeholder={t('access.addPlaceholder')} disabled={!editable} spellcheck="false" autocomplete="off" aria-label={t('access.addPlaceholder')} />
-          <select bind:value={kind} disabled={!editable} aria-label={t('access.group')}>
-            <option value="group">{t('access.group')}</option>
-            <option value="user">{t('access.user')}</option>
-          </select>
-          <button class="btn small" type="submit" disabled={!editable || !input.trim()}><Icon name="plus" size={14} />{t('access.add')}</button>
-        </form>
+        <DirectoryPicker onpick={addEntry} disabled={!editable} label={t('access.addPlaceholder')} actionLabel={t('access.add')} />
         {#if myGroups.length}
           <details class="mine">
             <summary class="small">{t('access.myGroups', { count: myGroups.length })}</summary>
@@ -210,14 +226,22 @@
     transition: opacity 150ms ease-out, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .tile.on .tick { opacity: 1; transform: scale(1); }
+  .tool-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tool {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 6px; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 13px; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border-strong);
+    transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+  }
+  .tool .tick { display: grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border-strong); color: transparent; }
+  .tool.on { color: var(--text); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--border-strong)); }
+  .tool.on .tick { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .tool:hover:not(:disabled) { color: var(--text); }
+  .tool:disabled { cursor: default; }
   .members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
   .members li { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-small); background: var(--surface-2); }
   .members li :global(svg) { color: var(--text-muted); flex: none; }
   .mono-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-family: var(--mono); font-size: 12.5px; }
   .icon-only { padding: 3px 7px; }
-  .add { flex-wrap: nowrap; }
-  .add input { flex: 1; min-width: 0; }
-  .add select { width: auto; }
   .mine summary { cursor: pointer; color: var(--text-muted); }
   .mine ul { list-style: none; margin: 8px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
   .mine li { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 6px; }
