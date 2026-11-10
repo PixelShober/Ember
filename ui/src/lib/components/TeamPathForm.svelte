@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The way to team.json: type or browse to the path. Ember reads the file once before it keeps the
+  // The way to the team file: type or browse to the path. Ember reads and checks the file once before it keeps the
   // path, so a typo shows up here and not at the next start.
   import { api, app, run, toast } from '../app.svelte';
   import { t } from '../i18n.svelte';
@@ -11,7 +11,7 @@
   let busy = $state(false);
 
   async function browse() {
-    const r = await api<string | null>('app.pickFile', { title: t('access.setup.team'), filter: 'team.json (*.json)|*.json' }).catch(() => null);
+    const r = await api<string | null>('app.pickFile', { title: t('access.setup.team'), filter: 'Teamdatei (*.ember;*.json)|*.ember;*.json' }).catch(() => null);
     if (r) path = r;
   }
 

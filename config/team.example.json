@@ -1,56 +1,19 @@
 {
   "$schema": "https://pixelshober.github.io/Ember/team.schema.json",
   "version": 1,
-  "name": "Team Entwicklung",
-
-  "proxy": {
-    "internalDomains": ["firma.local", "intranet.firma.example"],
-    "port": 3128
-  },
 
   "serviceCenter": {
     "email": "servicecenter@firma.example",
     "name": "IT-Service-Center",
     "subjectPrefix": "[Ember]"
   },
+
   "supervisor": {
     "name": "Petra Lindner",
     "email": "petra.lindner@firma.example"
   },
 
-  "mailTemplates": {
-    "softwareRequest": {
-      "subject": { "de": "Softwarebereitstellung: {app} für {user}", "en": "Software request: {app} for {user}" },
-      "body": {
-        "de": "Sehr geehrte Kolleginnen und Kollegen,\n\nbitte stellen Sie mir die Software {app} über das Software Center bereit.\n\nBenutzer: {user}\nRechner: {computer}",
-        "en": "Dear colleagues,\n\nplease make the software {app} available to me through the Software Center.\n\nUser: {user}\nComputer: {computer}"
-      }
-    }
-  },
-
-  "software": [
-    { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE", "note": { "de": "Lizenz läuft über das Team", "en": "Licensed through the team" } },
-    { "name": "Windows Terminal", "category": "Werkzeuge" },
-    { "name": "Alfaview", "sccmName": "alfaview*", "displayName": "alfaview*", "category": "Kommunikation" },
-    { "name": "Stackfield", "category": "Kommunikation", "softwareCenterLink": "softwarecenter:SoftwareID=ScopeId_00000000-0000-0000-0000-000000000000/Application_00000000-0000-0000-0000-000000000000" }
-  ],
-
-  "power": {
-    "allowedSchemes": ["SCHEME_BALANCED"],
-    "profiles": [
-      {
-        "id": "sleep-ac",
-        "name": { "de": "Kein Standby am Netzteil", "en": "No sleep when plugged in" },
-        "settings": [
-          { "sub": "SUB_SLEEP", "setting": "STANDBYIDLE", "ac": 0 },
-          { "sub": "SUB_VIDEO", "setting": "VIDEOIDLE", "ac": 1200 }
-        ]
-      }
-    ]
-  },
-
   "access": {
-    "contact": "ember-admins@firma.example",
     "roles": [
       {
         "name": "Admins",
@@ -62,7 +25,6 @@
         "name": "Entwickler",
         "modules": ["proxy", "playwright", "git", "software"],
         "groups": ["FIRMA\\Entwicklung"],
-        "key": "EMBER-7QK2M-H4RTA-9VXCE-1BN5D",
         "hideTools": ["bruno"]
       },
       {
@@ -71,43 +33,26 @@
         "users": ["FIRMA\\erika.musterfrau"],
         "groups": ["FIRMA\\Test"]
       }
-    ]
-  },
-
-  "devTools": {
-    "allowDirect": true,
-    "visualStudio": {
-      "workloads": ["Microsoft.VisualStudio.Workload.ManagedDesktop", "Microsoft.VisualStudio.Workload.NetWeb"]
+    ],
+    "blocked": {
+      "users": ["FIRMA\\ehemalig.mitarbeiter"],
+      "groups": []
     }
-  },
-
-  "playwright": {
-    "downloadHost": "https://artifactory.firma.example/playwright",
-    "template": "\\\\fs01\\entwicklung\\vorlagen\\playwright"
-  },
-
-  "models": [
-    {
-      "id": "qwen3-coder-30b-q4",
-      "name": "Qwen3 Coder 30B A3B (Q4_K_M)",
-      "url": "https://huggingface.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf",
-      "note": "Gut für Code, passt in 24 GB VRAM"
-    }
-  ],
-
-  "pi": {
-    "packages": [
-      { "id": "mcp", "npm": "pi-mcp-adapter" },
-      { "id": "websearch", "npm": "pi-web-access", "note": { "de": "Websuche auch mit dem lokalen Modell, ohne Schlüssel; Ember stellt sie auf px.", "en": "Web search also with the local model, no key; Ember points it at px." } },
-      { "id": "pretty", "npm": "@heyhuynhgiabuu/pi-pretty" },
-      { "id": "ponytail", "npm": "@dietrichgebert/ponytail" },
-      { "id": "simplify", "npm": "pi-simplify" },
-      { "id": "contextMode", "npm": "context-mode" },
-      { "id": "todo", "npm": "@juicesharp/rpiv-todo" }
-    ]
   },
 
   "update": {
-    "mirror": ""
+    "mirror": "\\\\fs01\\entwicklung\\ember\\releases"
+  },
+
+  "playwright": {
+    "template": "\\\\fs01\\entwicklung\\vorlagen\\playwright",
+    "downloadHost": "https://artifactory.firma.example/playwright"
+  },
+
+  "mailTemplates": {
+    "softwareRequest": {
+      "subject": "Softwarebereitstellung: {app} für {user}",
+      "body": "Sehr geehrte Kolleginnen und Kollegen,\n\nbitte stellen Sie mir die Software {app} über das Software Center bereit.\n\nBenutzer: {user}\nRechner: {computer}"
+    }
   }
 }

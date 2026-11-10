@@ -102,7 +102,7 @@ public static class PiAgent
     }
 
     public static IReadOnlyList<PiPackage> Packages(TeamConfig team) =>
-        team.Pi?.Packages is { Count: > 0 } own ? own : DefaultPackages;
+        DefaultPackages;
 
     static string AgentDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".pi", "agent");
 

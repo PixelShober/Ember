@@ -1,52 +1,63 @@
 ---
 title: Team-Konfiguration
-description: Eine team.json auf dem Netzlaufwerk für interne Domains, Software, Mailvorlagen, Energieprofile und Rollen.
+description: "Die signierte Teamdatei auf dem Netzlaufwerk: Rollen, Sperrliste, Service-Center, Vorgesetzte, Updates, Playwright, Mailtexte."
 ---
 
-Die Team-Konfiguration ist eine JSON-Datei, die alle Ember-Installationen eines Teams lesen. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.json`. Darin steht alles, was für alle gleich ist und nicht ins öffentliche Repository gehört: interne Domains, Softwareliste, Entwicklerwerkzeuge, Service-Center-Adresse, Mailvorlagen, Energieprofile und die Rollen, also wer welche Module sieht.
+Die Teamdatei lesen alle Ember-Installationen eines Teams. Sie liegt auf einem Netzlaufwerk, zum Beispiel `\\server\entwicklung\ember\team.ember`. Darin steht, was für alle gleich ist und nicht ins öffentliche Repository gehört.
 
-Pflegen sollte sie eine Person oder ein kleines Team mit Schreibrechten auf dem Ordner. Alle anderen brauchen nur Leserechte. Ember schreibt nur an einer Stelle hinein: Im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/) ändert, wer Schreibrechte hat, den Abschnitt `access`. Alles andere bleibt Handarbeit.
+Im Betrieb ist sie **signiert**: Ember lädt sie nur, wenn die Unterschrift der Admins passt, sie an ihrem Ort liegt und nicht älter ist als die zuletzt gesehene Fassung. Bearbeitet wird sie deshalb nur im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/), nicht im Editor. Wie das Signieren funktioniert und wie ihr anfangt, steht dort unter [Einrichten](/Ember/handbuch/berechtigungen/#einrichten-schlüssel-und-erste-teamdatei).
 
 ## So findet Ember die Datei
 
 In dieser Reihenfolge, der erste Treffer gilt:
 
 1. der Pfad unter **Einstellungen → Team-Konfiguration** (oder den jemand beim ersten Start eingetragen hat),
-2. eine Gruppenrichtlinie: der Zeichenfolgenwert `TeamConfig` unter `HKEY_CURRENT_USER\Software\Policies\Ember` oder `HKEY_LOCAL_MACHINE\Software\Policies\Ember`,
-3. eine Datei `ember-team.txt` neben `Ember.exe` oder in `C:\Ember\App`, in der der Pfad steht,
-4. eine `team.json` direkt neben `Ember.exe`,
-5. die Umgebungsvariable `EMBER_TEAM_CONFIG`.
+2. eine Datei `ember-team.txt` neben `Ember.exe` oder in `C:\Ember\App`, in der der Pfad steht,
+3. eine `team.ember` oder `team.json` direkt neben `Ember.exe`,
+4. die Umgebungsvariable `EMBER_TEAM_CONFIG`.
 
-Am einfachsten verteilt ihr Ember über das Netzlaufwerk: `Ember.exe` neben die `team.json` legen. Wer Ember von dort startet, ist sofort verbunden. Ember kopiert sich nach `C:\Ember\App` und merkt sich dabei in `C:\Ember\App\ember-team.txt`, wo die `team.json` liegt. Ab dann startet es aus dem Startmenü und findet die Datei trotzdem. Wer Ember von GitHub lädt, trägt den Pfad beim ersten Start ein oder schaltet Ember mit einem [Schlüssel](/Ember/handbuch/berechtigungen/#ohne-teamjson-die-schlüssel) frei.
+Am einfachsten verteilt ihr Ember über das Netzlaufwerk: `Ember.exe` neben die `team.ember` legen. Wer Ember von dort startet, ist sofort verbunden. Ember kopiert sich nach `C:\Ember\App` und merkt sich dabei in `C:\Ember\App\ember-team.txt`, wo die Teamdatei liegt. Wer Ember anders bekommt, trägt beim ersten Start den Pfad ein. Ohne Teamdatei bleibt Ember gesperrt.
 
-Ember liest die Datei bei jedem Start mit deinem Windows-Login, wie jede andere Datei auf dem Laufwerk. Die letzte erfolgreich gelesene Fassung speichert es in `C:\Ember\Config\team.cache.json`. Ohne VPN arbeitet Ember mit dieser Kopie weiter und zeigt in den Einstellungen, von wann sie ist. Hängt das Laufwerk, wartet Ember höchstens zehn Sekunden.
+Ember liest die Datei bei jedem Start und danach alle zwei Minuten, mit deinem Windows-Login wie jede andere Datei auf dem Laufwerk. Die letzte gültige Fassung speichert es in `C:\Ember\Config\team.cache.json`. Ohne VPN arbeitet Ember mit dieser Kopie weiter, höchstens 14 Tage lang. Hängt das Laufwerk, wartet Ember höchstens zehn Sekunden.
+
+## Pflicht und optional
+
+| Abschnitt | Pflicht | Bearbeitet im Tab Berechtigungen unter |
+|---|---|---|
+| `serviceCenter` | ja | Team |
+| `supervisor` | ja | Team |
+| `access` | ja | Rollen, Sperrliste |
+| `update` | ja | Team |
+| `playwright` | ja | Team |
+| `mailTemplates` | ja | Team |
+| `proxy`, `software`, `power`, `devTools`, `name` | nein | Teamdatei → Weitere Einstellungen (JSON) |
+
+`version`, `location`, `signedBy` und `signedAt` setzt Ember beim Signieren selbst.
 
 ## Beispiel
 
+So sieht der Inhalt aus, bevor er signiert wird. Mit einer Ember-Version ohne eingebauten Schlüssel lässt sich genau diese Datei als `team.json` laden und dann im Tab Berechtigungen signieren.
+
 ```json
 {
-  "$schema": "https://pixelshober.github.io/Ember/team.schema.json",
-  "version": 3,
-  "name": "Team Entwicklung",
-  "proxy": { "internalDomains": ["firma.local", "intranet.firma.example"] },
-  "serviceCenter": { "email": "servicecenter@firma.example", "subjectPrefix": "[Ember]" },
-  "software": [
-    { "name": "Visual Studio Professional 2022", "sccmName": "Visual Studio Professional*", "category": "IDE" },
-    { "name": "Alfaview", "sccmName": "alfaview*", "category": "Kommunikation" }
-  ],
+  "version": 1,
+  "serviceCenter": { "email": "servicecenter@firma.example", "name": "IT-Service-Center", "subjectPrefix": "[Ember]" },
+  "supervisor": { "name": "Petra Lindner", "email": "petra.lindner@firma.example" },
   "access": {
-    "contact": "ember-admins@firma.example",
     "roles": [
       { "name": "Admins", "modules": ["*"], "users": ["FIRMA\\max.mustermann"] },
+      { "name": "Entwickler", "modules": ["proxy", "playwright", "git", "software"], "groups": ["FIRMA\\Entwicklung"], "hideTools": ["bruno"] },
       { "name": "Test", "modules": ["proxy", "playwright"], "groups": ["FIRMA\\Test"] }
-    ]
-  }
+    ],
+    "blocked": { "users": ["FIRMA\\ehemalig.mitarbeiter"] }
+  },
+  "update": { "mirror": "\\\\fs01\\entwicklung\\ember\\releases" },
+  "playwright": { "template": "\\\\fs01\\entwicklung\\vorlagen\\playwright" },
+  "mailTemplates": {}
 }
 ```
 
-Mit der `$schema`-Zeile schlägt VS Code beim Bearbeiten alle Felder vor und markiert Tippfehler. Das vollständige Beispiel liegt im Repository unter [`config/team.example.json`](https://github.com/PixelShober/Ember/blob/main/config/team.example.json).
-
-Texte wie Notizen, Mailvorlagen und Profilnamen dürfen ein einfacher String sein oder pro Sprache angegeben werden: `{ "de": "…", "en": "…" }`.
+Das Beispiel liegt im Repository unter [`config/team.example.json`](https://github.com/PixelShober/Ember/blob/main/config/team.example.json), das Schema unter [`team.schema.json`](/Ember/team.schema.json).
 
 ## Die Abschnitte
 
@@ -105,20 +116,19 @@ Die Kacheln zeigen ohnehin alles, was das Softwarecenter anbietet. Ein Eintrag h
 
 ### access
 
-Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und ihre Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller dieser Rollen. Wer in keiner ist, sieht nur einen Sperrbildschirm mit „Zugriff anfragen“. Ohne Rollen sieht also niemand etwas.
+Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und ihre Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller dieser Rollen. Wer in keiner ist, sieht nur einen Sperrbildschirm. Ohne Rollen sieht also niemand etwas.
 
 | Feld | Bedeutung |
 |---|---|
 | `roles[].name` | Name der Rolle, zum Beispiel „Admins“ oder „Test“ |
 | `roles[].modules` | `proxy`, `git`, `software`, `playwright`, `system`, `power` (Energie), `ai` (KI), `access` (Berechtigungen), `settings` (Einstellungen), `log`. `"*"` steht für alle, auch für Module, die später dazukommen. |
 | `roles[].users`, `roles[].groups` | Konten und AD-Gruppen, mit oder ohne Domäne (`FIRMA\Entwicklung` oder `Entwicklung`) |
-| `roles[].key` | Schlüssel der Rolle (`EMBER-XXXXX-XXXXX-XXXXX-XXXXX`). Wer ihn eingibt, bekommt die Rolle, auch ohne Mitglied zu sein. Erzeugt und erneuert wird er im Tab Berechtigungen. |
 | `roles[].hideTools` | Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. `["bruno"]` |
-| `contact` | Mailadresse für Zugriffsanfragen. Standard: das Service-Center. |
+| `blocked.users`, `blocked.groups` | Sperrliste: wer hier steht, kommt nicht in Ember, egal was eine Rolle sagt |
 
 Die Startseite gibt es, sobald jemand mindestens ein Modul hat. Sie zeigt nur Karten zu den eigenen Modulen. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. Gepflegt werden die Rollen am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
 
-Ältere Dateien mit `admins` und einer Zugriffsliste (`access.users`, `access.groups`) funktionieren weiter. Aus `admins` macht Ember die Rolle „Admins“ mit allen Modulen. Die alte Zugriffsliste wird zur Rolle „Ember“ mit allem außer Energie, KI und Berechtigungen. Speichert jemand im Tab Berechtigungen, schreibt Ember das neue Format.
+Ältere Dateien mit `admins` und einer Zugriffsliste (`access.users`, `access.groups`) liest Ember noch. Aus `admins` wird die Rolle „Admins“ mit allen Modulen, aus der alten Zugriffsliste die Rolle „Ember“ mit allem außer Energie, KI und Berechtigungen. Beim Signieren schreibt Ember das neue Format.
 
 ### devTools
 
@@ -138,29 +148,6 @@ Gibt es ein passendes Paket im Softwarecenter, nimmt Ember immer das.
 `playwright.downloadHost` ist ein interner Spiegel für die Browser-Downloads, etwa ein Artifactory-Remote auf `cdn.playwright.dev`. Ember setzt ihn als `PLAYWRIGHT_DOWNLOAD_HOST`, wenn es Browser installiert.
 
 `playwright.template` ist der Ordner mit der Projektvorlage des Teams, zum Beispiel `\\fs01\entwicklung\vorlagen\playwright`. „Neues Projekt“ kopiert ihn, im Reiter „Vorlage“ lässt er sich aus einem Projekt neu erzeugen. Steht hier nichts, kann jeder seinen eigenen Ordner wählen. Mehr unter [Playwright](/Ember/handbuch/playwright/#die-vorlage).
-
-### models
-
-`models` ergänzt die Modellliste im KI-Tab. Eingebaut ist Qwen3.8-27B (UD-Q4_K_XL), ein Eintrag mit derselben `id` (`qwen3.8-27b`) ersetzt es.
-
-| Feld | Bedeutung |
-|---|---|
-| `url` | direkte Download-Adresse der GGUF-Datei |
-| `path` | statt `url`: eine GGUF-Datei, die schon liegt, etwa auf einem Netzlaufwerk. Ember lädt nichts herunter und löscht nichts. |
-| `id`, `name`, `note`, `sha256` | Kennung, Anzeigename, kurze Notiz, Prüfsumme für den Download |
-| `alias` | Name für `--alias` und für Pi, Standard: der Dateiname |
-| `mtp` | `true`, wenn das Modell einen MTP-Kopf hat |
-| `args` | llama-server-Argumente des Modells, eines pro Eintrag, etwa `["--temp", "1.0", "--top-k", "20"]` |
-
-```json
-"models": [
-  { "id": "devstral", "name": "Devstral Small", "path": "\\\\server\\ki\\Devstral-Small-Q4_K_M.gguf" }
-]
-```
-
-### pi
-
-`pi.packages` ersetzt die Liste der Pi-Erweiterungen im KI-Tab, jeweils mit `id`, `npm` und optional `note`. Ohne Eintrag bietet Ember seine eigene Liste an, siehe [KI-Modul](/Ember/handbuch/ki/#pi). Für die Websuche mit dem lokalen Modell ist `pi-web-access` die beste Wahl: Es sucht ohne Schlüssel und geht über px.
 
 ### update.mirror
 

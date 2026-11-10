@@ -60,14 +60,6 @@
 
   /** Lock screen: check team.json again (an admin may just have added this account). */
   let checking = $state(false);
-  /** Lock screen: a role key from the admins (Berechtigungen → Schlüssel). */
-  let lockKey = $state('');
-  async function unlockWithKey() {
-    checking = true;
-    const ok = await run(() => api('app.unlock', { key: lockKey.trim() }));
-    checking = false;
-    if (ok) location.reload();
-  }
   async function recheck() {
     checking = true;
     await run(() => api('team.reload'));
@@ -115,16 +107,8 @@
       <Calcifer size={72} />
       <h1>{t('access.locked.title')}</h1>
       <p>{t('access.locked.text', { user: app.info.user })}</p>
-      {#if app.info.grant.staleKey}<div class="note warn"><Icon name="key" /><p class="small">{t('access.locked.stale')}</p></div>{/if}
-      {#if app.info.team.loadedAt && app.info.grant.source !== 'preview'}
-        <form class="row key-form" onsubmit={(e) => { e.preventDefault(); void unlockWithKey(); }}>
-          <input bind:value={lockKey} placeholder={t('access.locked.keyPlaceholder')} aria-label={t('access.locked.keyLabel')} spellcheck="false" autocomplete="off" class="mono" />
-          <button class="btn" type="submit" disabled={checking || !lockKey.trim()}><Icon name="key" size={16} />{t('access.locked.keySubmit')}</button>
-        </form>
-      {/if}
-      {#if app.info.accessContact}<p class="small muted">{t('access.locked.contact', { email: app.info.accessContact })}</p>{/if}
+      {#if app.info.locked === 'blocked'}<div class="note warn"><Icon name="shield" /><p class="small">{t('access.locked.blocked')}</p></div>{/if}
       <div class="row">
-        <button class="btn primary" onclick={() => openMail('accessRequest')}><Icon name="mail" size={16} />{t('access.locked.request')}</button>
         <button class="btn" disabled={checking} onclick={recheck}><Icon name="refresh" size={16} />{t('access.locked.retry')}</button>
       </div>
     </div>
@@ -203,8 +187,6 @@
   .locked h1 { margin: 6px 0 0; font-family: var(--font-display); font-size: 22px; }
   .locked p { margin: 0; }
   .locked .row { margin-top: 10px; justify-content: center; }
-  .locked .key-form { width: 100%; flex-wrap: nowrap; }
-  .locked .key-form input { flex: 1; min-width: 0; text-align: center; letter-spacing: 0.04em; }
   .locked .note { text-align: left; }
   .loading img { animation: glow 1.6s ease-in-out infinite; transform-origin: 50% 90%; }
   @keyframes glow { 50% { opacity: 0.7; transform: scale(0.94, 1.04); } }

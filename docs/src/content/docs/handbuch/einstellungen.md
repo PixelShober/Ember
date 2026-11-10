@@ -11,7 +11,7 @@ Die Seite selbst zeigt nur die Felder. Was sie bedeuten, steht hier. Dieses Hand
 
 ## Team-Konfiguration
 
-Eine gemeinsame `team.json` auf dem Netzlaufwerk liefert interne Domains, Softwareliste, Rollen, Service-Center-Adresse und Mailvorlagen. Ändert sich dort etwas, übernimmt Ember es beim nächsten Start, Rollen und Schlüssel sogar nach spätestens zwei Minuten. „Neu laden“ holt die Datei sofort. Den Firmenproxy erkennt Ember selbst, der gehört nicht in die Datei.
+Die gemeinsame, signierte Teamdatei auf dem Netzlaufwerk liefert Rollen, Service-Center-Adresse, Mailvorlagen und was das Team sonst vorgibt. Ändert sich dort etwas, übernimmt Ember es nach spätestens zwei Minuten. „Neu laden“ holt die Datei sofort. Den Firmenproxy erkennt Ember selbst, der gehört nicht in die Datei.
 
 ## Woher die Proxy-Werte kommen
 
@@ -37,13 +37,13 @@ Neben jedem dieser Felder steht, woher der Wert gerade kommt: „eigener Wert“
 
 | Bereich | Inhalt |
 |---|---|
-| Team-Konfiguration | Pfad zur `team.json`, Stand und Quelle, „Neu laden“ |
+| Team-Konfiguration | Pfad zur Teamdatei, Stand und Quelle, „Neu laden“ |
 | Firmenproxy | PAC-Datei oder fester Proxy, PAC-Adresse (leer = aus Windows), Firmenproxy als `host:port`, interne Domains, px-Port, „Automatisch erkennen“ |
 | px | Installationsordner, Autostart |
 | Werkzeuge | welche Werkzeuge die px-Installation umstellt (Umgebungsvariablen, PowerShell, git, npm, NuGet, pip, VS Code) |
 | Sprache | Deutsch oder English, vorausgewählt ist die Windows-Sprache |
 | Updates | automatisch suchen, „Jetzt prüfen“, Stand und Quelle |
-| Deine Module | deine Rollen aus der `team.json` oder der Schlüssel, mit dem Ember freigeschaltet ist. Hast du Energie, KI oder Berechtigungen, blendest du sie mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. |
+| Deine Module | deine Rollen aus der Teamdatei. Hast du Energie, KI oder Berechtigungen, blendest du sie mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. |
 | Ordner | öffnet Logs, Einstellungen, px, px-Konfiguration und Berichte im Explorer |
 
 Die Erkennung läuft bei jedem Start von selbst. „Automatisch erkennen“ macht dasselbe auf Knopfdruck und trägt das Ergebnis als eigenen Wert ein. Gespeichert wird auch das erst nach deiner Bestätigung.

@@ -2,18 +2,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pixelshober.github.io/Ember/team.schema.json",
   "title": "Ember-Team-Konfiguration",
-  "description": "Gemeinsame Einstellungen für alle Ember-Installationen eines Teams (team.json auf dem Netzlaufwerk). Alles ist optional.",
+  "description": "Teamdatei für Ember. Pflicht sind serviceCenter, supervisor, access, update, playwright und mailTemplates, alles andere ist optional. Im Betrieb liegt sie signiert als team.ember vor und wird nur im Tab Berechtigungen bearbeitet.",
   "type": "object",
   "additionalProperties": false,
   "$defs": {
     "text": {
       "description": "Text in einer Sprache oder je Sprache.",
       "oneOf": [
-        { "type": "string" },
+        {
+          "type": "string"
+        },
         {
           "type": "object",
-          "properties": { "de": { "type": "string" }, "en": { "type": "string" } },
-          "additionalProperties": { "type": "string" }
+          "properties": {
+            "de": {
+              "type": "string"
+            },
+            "en": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       ]
     },
@@ -23,26 +34,57 @@
     }
   },
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "type": "integer", "minimum": 1, "description": "Wird nur angezeigt, hilft beim Nachvollziehen von Änderungen." },
-    "name": { "type": "string", "description": "Name des Teams, erscheint in der Seitenleiste." },
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Zählt bei jedem signierten Speichern hoch. Ember nimmt nie eine ältere Fassung als die zuletzt gesehene."
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Teams, erscheint in der Seitenleiste."
+    },
     "proxy": {
       "type": "object",
       "additionalProperties": false,
       "description": "Den Firmenproxy selbst (PAC-Adresse, Proxy) erkennt Ember bei jedem Start aus Windows.",
       "properties": {
-        "internalDomains": { "type": "array", "items": { "type": "string" }, "description": "Domains, die nicht über den Proxy laufen." },
-        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Port von px (Standard 3128)." }
+        "internalDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Domains, die nicht über den Proxy laufen."
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port von px (Standard 3128)."
+        }
       }
     },
     "serviceCenter": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "email": { "type": "string", "format": "email" },
-        "name": { "type": "string" },
-        "subjectPrefix": { "type": "string", "description": "Wird jedem Betreff vorangestellt, z. B. [Ember]." },
-        "problemIntro": { "$ref": "#/$defs/text", "description": "Erster Satz der Mail „Problem melden“. Leer: Embers eigener Text." }
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "name": {
+          "type": "string"
+        },
+        "subjectPrefix": {
+          "type": "string",
+          "description": "Wird jedem Betreff vorangestellt, z. B. [Ember]."
+        },
+        "problemIntro": {
+          "$ref": "#/$defs/text",
+          "description": "Erster Satz der Mail „Problem melden“. Leer: Embers eigener Text."
+        }
       }
     },
     "supervisor": {
@@ -50,19 +92,41 @@
       "description": "Direkte Vorgesetzte bzw. direkter Vorgesetzter. Anfragen nach Adminrechten gehen hierhin, nicht ans Service-Center.",
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string", "description": "Vor- und Nachname, auch „Nachname, Vorname“." },
-        "firstName": { "type": "string", "description": "Für „Hallo …“. Standard: das erste Wort von name." },
-        "email": { "type": "string", "format": "email" }
+        "name": {
+          "type": "string",
+          "description": "Vor- und Nachname, auch „Nachname, Vorname“."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "Für „Hallo …“. Standard: das erste Wort von name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
       }
     },
     "mailTemplates": {
       "type": "object",
       "description": "Eigene Vorlagen. Platzhalter: {user}, {computer}, {app}, {details}, {date}, {ember}, {sender} (Vor- und Nachname), {supervisor} (Vorname der bzw. des Vorgesetzten), {problemIntro}. Fehlt {sender}, hängt Ember den Gruß mit Namen an.",
-      "propertyNames": { "enum": ["softwareRequest", "adminAction", "problem", "accessRequest"] },
+      "propertyNames": {
+        "enum": [
+          "softwareRequest",
+          "adminAction",
+          "problem"
+        ]
+      },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "properties": { "subject": { "$ref": "#/$defs/text" }, "body": { "$ref": "#/$defs/text" } }
+        "properties": {
+          "subject": {
+            "$ref": "#/$defs/text"
+          },
+          "body": {
+            "$ref": "#/$defs/text"
+          }
+        }
       }
     },
     "software": {
@@ -70,15 +134,35 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "sccmName": { "type": "string", "description": "Name im Softwarecenter (Platzhalter * und ?), Standard: name." },
-          "displayName": { "type": "string", "description": "Name unter „Programme und Features“ (Platzhalter), Standard: name + *." },
-          "category": { "type": "string" },
-          "note": { "$ref": "#/$defs/text" },
-          "softwareCenterLink": { "type": "string", "pattern": "^softwarecenter:", "description": "Direktlink, z. B. über „Teilen“ im Softwarecenter kopiert." }
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sccmName": {
+            "type": "string",
+            "description": "Name im Softwarecenter (Platzhalter * und ?), Standard: name."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Name unter „Programme und Features“ (Platzhalter), Standard: name + *."
+          },
+          "category": {
+            "type": "string"
+          },
+          "note": {
+            "$ref": "#/$defs/text"
+          },
+          "softwareCenterLink": {
+            "type": "string",
+            "pattern": "^softwarecenter:",
+            "description": "Direktlink, z. B. über „Teilen“ im Softwarecenter kopiert."
+          }
         }
       }
     },
@@ -86,28 +170,61 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "allowedSchemes": { "type": "array", "items": { "type": "string" }, "description": "Schemas, die Ember ändern darf. Standard: SCHEME_BALANCED." },
+        "allowedSchemes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Schemas, die Ember ändern darf. Standard: SCHEME_BALANCED."
+        },
         "profiles": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["id", "settings"],
+            "required": [
+              "id",
+              "settings"
+            ],
             "properties": {
-              "id": { "type": "string", "description": "Gleiche id wie ein eingebautes Profil (ai-performance, sleep-ac, lid-ac) ersetzt dieses." },
-              "name": { "$ref": "#/$defs/text" },
-              "description": { "$ref": "#/$defs/text" },
+              "id": {
+                "type": "string",
+                "description": "Gleiche id wie ein eingebautes Profil (ai-performance, sleep-ac, lid-ac) ersetzt dieses."
+              },
+              "name": {
+                "$ref": "#/$defs/text"
+              },
+              "description": {
+                "$ref": "#/$defs/text"
+              },
               "settings": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["sub", "setting"],
+                  "required": [
+                    "sub",
+                    "setting"
+                  ],
                   "properties": {
-                    "sub": { "type": "string", "description": "Untergruppe als Alias (SUB_PROCESSOR) oder GUID." },
-                    "setting": { "type": "string", "description": "Einstellung als Alias (PERFEPP) oder GUID." },
-                    "ac": { "type": "integer", "minimum": 0, "description": "Zielwert am Netzteil." },
-                    "dc": { "type": "integer", "minimum": 0, "description": "Zielwert im Akkubetrieb." }
+                    "sub": {
+                      "type": "string",
+                      "description": "Untergruppe als Alias (SUB_PROCESSOR) oder GUID."
+                    },
+                    "setting": {
+                      "type": "string",
+                      "description": "Einstellung als Alias (PERFEPP) oder GUID."
+                    },
+                    "ac": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Zielwert am Netzteil."
+                    },
+                    "dc": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Zielwert im Akkubetrieb."
+                    }
                   }
                 }
               }
@@ -127,25 +244,105 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name", "modules"],
+            "required": [
+              "name",
+              "modules"
+            ],
             "properties": {
-              "name": { "type": "string", "minLength": 1 },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
               "modules": {
                 "type": "array",
                 "description": "Module der Rolle; \"*\" steht für alle, auch für Module, die später dazukommen. Die Startseite gibt es, sobald es ein Modul gibt.",
-                "items": { "enum": ["*", "proxy", "git", "software", "playwright", "system", "power", "ai", "access", "settings", "log"] }
+                "items": {
+                  "enum": [
+                    "*",
+                    "proxy",
+                    "git",
+                    "software",
+                    "playwright",
+                    "system",
+                    "power",
+                    "ai",
+                    "access",
+                    "settings",
+                    "log"
+                  ]
+                }
               },
-              "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-              "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-              "key": { "type": "string", "pattern": "^(?i)(ember-?)?[0-9a-z]{5}-?[0-9a-z]{5}-?[0-9a-z]{5}-?[0-9a-z]{5}$", "description": "Wer diesen Schlüssel eingibt, bekommt die Rolle, auch ohne Mitglied zu sein. Im Tab „Berechtigungen“ erzeugen, anzeigen und erneuern; ein erneuerter Schlüssel sperrt den alten aus." },
-              "hideTools": { "type": "array", "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh", "bruno"] }, "description": "Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. [\"bruno\"]." }
+              "users": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/account"
+                }
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/account"
+                }
+              },
+              "hideTools": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "nodejs",
+                    "git",
+                    "vscode",
+                    "python",
+                    "visualstudio",
+                    "dotnet",
+                    "pwsh",
+                    "bruno"
+                  ]
+                },
+                "description": "Entwicklerwerkzeuge, die die Rolle nicht angeboten bekommt, z. B. [\"bruno\"]."
+              }
             }
           }
         },
-        "contact": { "type": "string", "format": "email", "description": "Wohin Zugriffsanfragen gehen. Standard: die Mailadresse des Service-Centers." },
-        "enabled": { "type": "boolean", "deprecated": true, "description": "Altes Format vor den Rollen. Ember liest es noch, beim Speichern im Tab „Berechtigungen“ fällt es weg." },
-        "users": { "type": "array", "deprecated": true, "items": { "$ref": "#/$defs/account" }, "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen." },
-        "groups": { "type": "array", "deprecated": true, "items": { "$ref": "#/$defs/account" }, "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen." }
+        "enabled": {
+          "type": "boolean",
+          "deprecated": true,
+          "description": "Altes Format vor den Rollen. Ember liest es noch, beim Speichern im Tab „Berechtigungen“ fällt es weg."
+        },
+        "users": {
+          "type": "array",
+          "deprecated": true,
+          "items": {
+            "$ref": "#/$defs/account"
+          },
+          "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen."
+        },
+        "groups": {
+          "type": "array",
+          "deprecated": true,
+          "items": {
+            "$ref": "#/$defs/account"
+          },
+          "description": "Altes Format: wird zur Rolle „Ember“ mit den Alltagsmodulen."
+        },
+        "blocked": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Sperrliste: wer hier steht, kommt nicht in Ember, egal was eine Rolle sagt.",
+          "properties": {
+            "users": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/account"
+              }
+            },
+            "groups": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/account"
+              }
+            }
+          }
+        }
       }
     },
     "admins": {
@@ -154,8 +351,18 @@
       "deprecated": true,
       "description": "Altes Format vor den Rollen: Ember macht daraus eine Rolle „Admins“ mit allen Modulen. Beim Speichern im Tab „Berechtigungen“ fällt der Abschnitt weg.",
       "properties": {
-        "users": { "type": "array", "items": { "$ref": "#/$defs/account" } },
-        "groups": { "type": "array", "items": { "$ref": "#/$defs/account" } }
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/account"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/account"
+          }
+        }
       }
     },
     "devTools": {
@@ -166,15 +373,39 @@
         "tools": {
           "type": "array",
           "description": "Welche Werkzeuge erscheinen. Standard: alle.",
-          "items": { "enum": ["nodejs", "git", "vscode", "python", "visualstudio", "dotnet", "pwsh", "bruno"] }
+          "items": {
+            "enum": [
+              "nodejs",
+              "git",
+              "vscode",
+              "python",
+              "visualstudio",
+              "dotnet",
+              "pwsh",
+              "bruno"
+            ]
+          }
         },
-        "allowDirect": { "type": "boolean", "description": "false: nie direkt vom Hersteller installieren, nur über das Softwarecenter oder das Service-Center. Standard: true." },
+        "allowDirect": {
+          "type": "boolean",
+          "description": "false: nie direkt vom Hersteller installieren, nur über das Softwarecenter oder das Service-Center. Standard: true."
+        },
         "visualStudio": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "bootstrapperUrl": { "type": "string", "format": "uri", "description": "Standard: https://aka.ms/vs/17/release/vs_professional.exe" },
-            "workloads": { "type": "array", "items": { "type": "string" }, "description": "Workload-IDs für --add. Standard: ManagedDesktop und NetWeb." }
+            "bootstrapperUrl": {
+              "type": "string",
+              "format": "uri",
+              "description": "Standard: https://aka.ms/vs/17/release/vs_professional.exe"
+            },
+            "workloads": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Workload-IDs für --add. Standard: ManagedDesktop und NetWeb."
+            }
           }
         }
       }
@@ -183,49 +414,14 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "downloadHost": { "type": "string", "format": "uri", "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist." },
-        "template": { "type": "string", "description": "Ordner mit der Projektvorlage des Teams (UNC-Pfad). „Neues Projekt“ kopiert ihn und ersetzt $projectname$ und $year$; im Tab „Vorlage“ lässt er sich aus einem Projekt neu erzeugen." }
-      }
-    },
-    "models": {
-      "type": "array",
-      "description": "Modelle im KI-Tab, zusätzlich zum eingebauten Qwen3.8-27B. Entweder mit Download-Adresse (url) oder mit Pfad zu einer GGUF-Datei, die schon da ist (path).",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "anyOf": [{ "required": ["url"] }, { "required": ["path"] }],
-        "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
-          "url": { "type": "string", "format": "uri", "description": "Direkte Download-Adresse, z. B. https://huggingface.co/…/resolve/main/modell.gguf" },
-          "path": { "type": "string", "description": "GGUF-Datei auf dem PC oder einem Netzlaufwerk; Ember lädt dann nichts herunter. Umgebungsvariablen wie %USERPROFILE% gehen." },
-          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
-          "note": { "type": "string" },
-          "alias": { "type": "string", "description": "Name, unter dem llama-server das Modell anbietet (--alias) und Pi es anspricht. Standard: der Dateiname." },
-          "mtp": { "type": "boolean", "description": "Das Modell hat einen MTP-Kopf; die Profile standard und lang starten dann mit --spec-type draft-mtp." },
-          "args": { "type": "array", "items": { "type": "string" }, "description": "Weitere llama-server-Argumente, die das Modell braucht, eines pro Eintrag, z. B. [\"--temp\", \"1.0\"]." },
-          "mmproj": { "type": "string", "description": "Bild-Modell (Vision-Projektor, mmproj-….gguf) als Download-Adresse oder Pfad. Ember startet llama-server dann mit --mmproj, und Pi darf Bilder schicken. Ohne Angabe nimmt Ember eine mmproj*.gguf aus dem Ordner des Modells." }
-        }
-      }
-    },
-    "pi": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Pi im KI-Tab.",
-      "properties": {
-        "packages": {
-          "type": "array",
-          "description": "Welche Pi-Erweiterungen Ember anbietet; ersetzt die eingebaute Liste.",
-          "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["id", "npm"],
-            "properties": {
-              "id": { "type": "string" },
-              "npm": { "type": "string", "description": "npm-Paket, installiert mit pi install npm:<name>" },
-              "note": { "$ref": "#/$defs/text" }
-            }
-          }
+        "downloadHost": {
+          "type": "string",
+          "format": "uri",
+          "description": "Interner Spiegel für die Browser-Downloads (setzt PLAYWRIGHT_DOWNLOAD_HOST), falls cdn.playwright.dev gesperrt ist."
+        },
+        "template": {
+          "type": "string",
+          "description": "Ordner mit der Projektvorlage des Teams (UNC-Pfad). „Neues Projekt“ kopiert ihn und ersetzt $projectname$ und $year$; im Tab „Vorlage“ lässt er sich aus einem Projekt neu erzeugen."
         }
       }
     },
@@ -233,9 +429,28 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "mirror": { "type": "string", "description": "Optionaler UNC-Ordner mit latest.json und den Release-Dateien, falls GitHub gesperrt ist." }
+        "mirror": {
+          "type": "string",
+          "description": "Optionaler UNC-Ordner mit latest.json und den Release-Dateien, falls GitHub gesperrt ist."
+        }
       }
     },
-    "webView2InstallerUrl": { "type": "string", "format": "uri", "description": "Eigene Download-Adresse für den WebView2-Installer." }
+    "webView2InstallerUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Eigene Download-Adresse für den WebView2-Installer."
+    },
+    "location": {
+      "type": "string",
+      "description": "Setzt Ember beim Signieren: der Pfad, an dem die Teamdatei gilt. Eine Kopie an anderer Stelle lehnt Ember ab."
+    },
+    "signedBy": {
+      "type": "string",
+      "description": "Setzt Ember beim Signieren."
+    },
+    "signedAt": {
+      "type": "string",
+      "description": "Setzt Ember beim Signieren."
+    }
   }
 }

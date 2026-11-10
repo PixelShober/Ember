@@ -29,16 +29,16 @@ export interface AppInfo {
   displayName: string;
   computer: string;
   elevated: boolean;
-  /** Modules this account sees: from its roles in team.json, or from a starter key while there is none. */
+  /** Modules this account sees: from its roles in the signed team file. */
   modules: ModuleId[];
-  grant: { source: 'team' | 'key' | 'dev' | 'preview' | 'none'; roles: string[]; keyLevel: KeyLevel | null; staleKey?: boolean };
+  grant: { source: 'team' | 'dev' | 'preview' | 'none'; roles: string[] };
   /** setup: no team.json and no key; notListed: team.json has no role for this account. */
-  locked: 'setup' | 'notListed' | null;
+  locked: 'setup' | 'notListed' | 'blocked' | null;
   /**
    * Admins only: look at Ember through a role, a key level or nobody's role. current is
    * "role:<name>", "key:<level>", "none" or null (own view).
    */
-  preview: { current: string | null; roles: string[]; keys: KeyLevel[] } | null;
+  preview: { current: string | null; roles: string[] } | null;
   /** Has the Berechtigungen tab. */
   admin: boolean;
   /** Has one of the advanced tabs (KI, Energie, Berechtigungen): Ctrl+E shows or hides them. */
@@ -47,8 +47,6 @@ export interface AppInfo {
   showAdvanced: boolean;
   /** At least one module. */
   access: boolean;
-  /** Where access requests go: access.contact, else the service center. */
-  accessContact: string | null;
   /** Colour scheme and design as Ember.exe stored them. */
   appearance?: { scheme: 'light' | 'dark'; design: 'efeu' | 'glut' };
   /** C:\\Ember (or the fallback under %LOCALAPPDATA%). */
@@ -139,32 +137,14 @@ export interface AccessEntry {
   kind: 'user' | 'group';
 }
 
-export type KeyLevel = 'proxy' | 'developer' | 'all';
 
 export interface AccessRole {
   name: string;
   /** Module ids or "*" for all. */
   modules: string[];
   members: AccessEntry[];
-  /** Whoever enters it gets the role (EMBER-XXXXX-…); null: no key. */
-  key?: string | null;
   /** Developer tools the role does not offer, e.g. ["bruno"]. */
   hideTools?: string[] | null;
-}
-
-export interface AccessView {
-  roles: AccessRole[];
-  contact: string | null;
-  teamPath: string | null;
-  writable: boolean;
-  version: string | null;
-  problem: 'noTeamFile' | 'teamOffline' | 'teamReadOnly' | null;
-  account: string;
-  myGroups: string[];
-  /** Every module a role can contain. */
-  modules: ModuleId[];
-  /** team.json still has "admins" or the old access list; saving writes roles. */
-  legacy: boolean;
 }
 
 /** What the Berechtigungen page edits: the required parts of the team file. Everything else is "extra". */
@@ -176,6 +156,13 @@ export interface TeamDoc {
   playwright: { template: string; downloadHost: string };
   /** Per template: subject and body (German; other languages stay as they are in the file). */
   mailTemplates: Record<'softwareRequest' | 'adminAction' | 'problem', { subject: string; body: string }>;
+}
+
+export interface TeamKeyCreated {
+  path: string;
+  /** PEM, for config/team-signing.pub. */
+  publicKey: string;
+  keyId: string;
 }
 
 export interface TeamFileView {

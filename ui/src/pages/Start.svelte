@@ -1,13 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { slide } from 'svelte/transition';
   import { api, app, can, canOpen, copyText, navigate, openMail, run, toast } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
   import { firstName, formatDate } from '../lib/format';
   import type { GitIdentityInfo, ProxyRow, Route } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
-  import TeamPathForm from '../lib/components/TeamPathForm.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
   let rows = $state<ProxyRow[] | null>(null);
@@ -20,9 +18,6 @@
     ]);
   });
 
-  // Unlocked with a starter key: the team.json can follow at any time.
-  const byKey = $derived(app.info?.grant.source === 'key');
-  let settingUp = $state(false);
 
   // From Ember.exe (directory name, remembered from the last start), so it is right from the first frame.
   const name = $derived(firstName(app.info?.displayName, app.info?.user ?? ''));
@@ -95,22 +90,7 @@
       {#if open}<span class="go small">{t('start.goTo')} <Icon name="chevron" size={14} /></span>{/if}
     </svelte:element>
   {/each}
-  {#if byKey}
-    <div class="card status warn static">
-      <div class="row"><span class="icon"><Icon name="shield" /></span><h3>{t('start.cards.team')}</h3></div>
-      <p>{t('start.byKey', { level: t(`access.keyLevels.${app.info?.grant.keyLevel ?? 'proxy'}`) })}</p>
-      {#if !settingUp}<button class="btn small set-up" onclick={() => (settingUp = true)}><Icon name="folder" size={14} />{t('start.setUpTeam')}</button>{/if}
-    </div>
-  {/if}
 </section>
-
-{#if settingUp}
-  <section class="card stack tight team" transition:slide={{ duration: 180 }}>
-    <div class="row between"><h2>{t('access.setup.team')}</h2><button class="btn ghost small" onclick={() => (settingUp = false)}>{t('common.cancel')}</button></div>
-    <p class="small muted">{t('access.setup.teamHint')}</p>
-    <TeamPathForm onDone={() => (settingUp = false)} />
-  </section>
-{/if}
 
 <section class="stack quick">
   <h2>{t('start.quick')}</h2>

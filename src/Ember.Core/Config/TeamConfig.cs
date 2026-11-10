@@ -146,11 +146,6 @@ public sealed class TeamAdmins
 }
 
 /// <summary>Pi in the KI tab: which extensions Ember offers (replaces the built-in list).</summary>
-public sealed class TeamPi
-{
-    public List<PiPackage>? Packages { get; set; }
-}
-
 public sealed class TeamUpdate
 {
     /// <summary>Optional UNC folder with latest.json and the release files (if GitHub is blocked).</summary>
@@ -163,7 +158,12 @@ public sealed class TeamUpdate
 /// </summary>
 public sealed class TeamConfig
 {
+    /// <summary>Counts up with every signed save; Ember never accepts an older one than it has seen.</summary>
     public int Version { get; set; } = 1;
+    /// <summary>Where the signed file belongs (UNC path); a copy elsewhere is refused.</summary>
+    public string? Location { get; set; }
+    public string? SignedBy { get; set; }
+    public DateTime? SignedAt { get; set; }
     public string? Name { get; set; }
     public TeamProxy? Proxy { get; set; }
     public TeamServiceCenter? ServiceCenter { get; set; }
@@ -177,8 +177,6 @@ public sealed class TeamConfig
     public TeamAdmins? Admins { get; set; }
     /// <summary>Roles: who sees which module. Without roles nobody sees anything.</summary>
     public TeamAccess? Access { get; set; }
-    public List<ModelEntry>? Models { get; set; }
-    public TeamPi? Pi { get; set; }
     public TeamUpdate? Update { get; set; }
     /// <summary>Overrides the download URL of the WebView2 standalone installer.</summary>
     public string? WebView2InstallerUrl { get; set; }
@@ -187,8 +185,10 @@ public sealed class TeamConfig
         Json.Deserialize<TeamConfig>(json) ?? throw new JsonException("empty");
 }
 
+/// <param name="Trusted">Signed with a key this Ember build knows.</param>
 public sealed record TeamStatus(
-    string? Path, string? Source, DateTime? LoadedAt, bool FromCache, string? Error, int Version, string? Name)
+    string? Path, string? Source, DateTime? LoadedAt, bool FromCache, string? Error, int Version, string? Name,
+    bool Trusted = false, string? KeyId = null, string? SignedBy = null, DateTime? SignedAt = null)
 {
     public static readonly TeamStatus None = new(null, null, null, false, null, 0, null);
 }
@@ -199,12 +199,16 @@ public sealed class TeamConfigService
     public const string PointerFileName = "ember-team.txt";
     public const string FileName = "team.json";
     public const string EnvVariable = "EMBER_TEAM_CONFIG";
-    /// <summary>Group policy (HKCU or HKLM): string value "TeamConfig" with the path.</summary>
-    public const string PolicyKey = @"Software\Policies\Ember";
 
-    sealed record Cache(string Path, DateTime LoadedAt, TeamConfig Config);
+    /// <summary>How long the local copy counts while the share cannot be reached.</summary>
+    public static readonly TimeSpan OfflineLimit = TimeSpan.FromDays(14);
+
+    /// <param name="Text">The team file as it was read (envelope included), verified again on use.</param>
+    sealed record Cache(string Path, DateTime LoadedAt, string? Text);
 
     public TeamConfig Config { get; private set; } = new();
+    /// <summary>The configuration JSON as signed (for the Berechtigungen page).</summary>
+    public string? Payload { get; private set; }
     DateTime? _writeTime;
 
     /// <summary>The loaded team.json was changed since (time stamp on the share); false when unreachable.</summary>
@@ -225,14 +229,13 @@ public sealed class TeamConfigService
     public TeamStatus Status { get; private set; } = TeamStatus.None;
 
     /// <summary>
-    /// Where team.json is, first match wins: the settings (chosen by the user) → group policy
-    /// (HKCU, then HKLM) → ember-team.txt next to the exe or in C:\Ember\App → team.json next to the
-    /// exe (Ember started from the team share) → %EMBER_TEAM_CONFIG%.
+    /// Where the team file is, first match wins: the settings (chosen by the user) → ember-team.txt
+    /// next to the exe or in C:\Ember\App → team.ember or team.json next to the exe (Ember started from
+    /// the team share) → %EMBER_TEAM_CONFIG%.
     /// </summary>
     public static (string? Path, string? Source) ResolvePath(UserSettings s)
     {
         if (!string.IsNullOrWhiteSpace(s.TeamConfigPath)) return (s.TeamConfigPath.Trim(), "settings");
-        if (PolicyPath() is { } policy) return (policy, "policy");
         foreach (var dir in new[] { AppContext.BaseDirectory, Paths.AppDir })
         {
             try
@@ -249,28 +252,13 @@ public sealed class TeamConfigService
                 // unreadable pointer file: ignore
             }
         }
-        var beside = System.IO.Path.Combine(AppContext.BaseDirectory, FileName);
-        if (File.Exists(beside)) return (beside, "beside");
+        foreach (var name in new[] { "team" + TeamFile.Extension, FileName })
+        {
+            var beside = System.IO.Path.Combine(AppContext.BaseDirectory, name);
+            if (File.Exists(beside)) return (beside, "beside");
+        }
         var env = Environment.GetEnvironmentVariable(EnvVariable);
         return string.IsNullOrWhiteSpace(env) ? (null, null) : (env.Trim(), "env");
-    }
-
-    static string? PolicyPath()
-    {
-        if (!OperatingSystem.IsWindows()) return null;
-        foreach (var hive in new[] { Microsoft.Win32.Registry.CurrentUser, Microsoft.Win32.Registry.LocalMachine })
-        {
-            try
-            {
-                using var key = hive.OpenSubKey(PolicyKey);
-                if (key?.GetValue("TeamConfig") is string value && value.Trim().Length > 0) return value.Trim();
-            }
-            catch
-            {
-                // no read access to the policy key: ignore
-            }
-        }
-        return null;
     }
 
     /// <summary>Reads and parses a team.json without using it; throws with the reason (setup screen).</summary>
@@ -280,7 +268,11 @@ public sealed class TeamConfigService
         try
         {
             var text = await Task.Run(() => File.ReadAllText(path), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
-            return TeamConfig.Parse(text);
+            var content = TeamFile.Open(text);
+            var config = TeamConfig.Parse(content.Payload);
+            if (TeamFile.Problem(content, config, path, 0, TeamFile.SignatureRequired) is { } problem)
+                throw new EmberException(problem, ("path", path));
+            return config;
         }
         catch (Exception ex) when (ex is not OperationCanceledException and not EmberException)
         {
@@ -303,30 +295,56 @@ public sealed class TeamConfigService
         {
             // Network shares can hang for a long time when the VPN is down.
             var (text, written) = await Task.Run(() => (File.ReadAllText(path), File.GetLastWriteTimeUtc(path)), ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
-            var config = TeamConfig.Parse(text);
-            Config = config;
+            if (!Use(text, path, source, DateTime.Now, false, null, settings)) return;
             _writeTime = written;
-            Status = new TeamStatus(path, source, DateTime.Now, false, null, config.Version, config.Name);
-            SaveCache(new Cache(path, DateTime.Now, config));
+            SaveCache(new Cache(path, DateTime.Now, text));
             Log.Info(L.T("team.loaded", ("path", path)));
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             var detail = ex is TimeoutException ? L.T("errors.timeoutSuffix") : Net.Describe(ex);
             var cache = LoadCache();
-            if (cache != null)
+            bool fresh = cache?.Text != null && TeamFile.SamePath(cache.Path, path) && DateTime.Now - cache.LoadedAt < OfflineLimit;
+            if (fresh && Use(cache!.Text!, path, source, cache.LoadedAt, true, detail, settings))
             {
-                Config = cache.Config;
-                Status = new TeamStatus(path, source, cache.LoadedAt, true, detail, cache.Config.Version, cache.Config.Name);
                 Log.Warn(L.T("team.fromCache", ("path", path), ("detail", detail), ("date", cache.LoadedAt)));
+                return;
             }
-            else
-            {
-                Config = new TeamConfig();
-                Status = new TeamStatus(path, source, null, false, detail, 0, null);
-                Log.Warn(L.T("team.failed", ("path", path), ("detail", detail)));
-            }
+            Config = new TeamConfig();
+            Payload = null;
+            Status = new TeamStatus(path, source, null, false, cache?.Text != null && !fresh ? L.T("team.cacheExpired", ("days", OfflineLimit.Days)) : detail, 0, null);
+            Log.Warn(L.T("team.failed", ("path", path), ("detail", Status.Error ?? detail)));
         }
+    }
+
+    /// <summary>
+    /// Checks and takes over a team file: signature, path and version (see <see cref="TeamFile.Problem"/>).
+    /// A file that fails leaves Ember without team configuration, i.e. on the setup screen with the reason.
+    /// </summary>
+    bool Use(string text, string path, string? source, DateTime loadedAt, bool fromCache, string? error, UserSettings settings)
+    {
+        var content = TeamFile.Open(text.TrimStart('\uFEFF'));
+        var config = TeamConfig.Parse(content.Payload);
+        var location = TeamFile.Normalize(path);
+        settings.TeamVersions.TryGetValue(location, out var seen);
+        if (TeamFile.Problem(content, config, path, seen, TeamFile.SignatureRequired) is { } problem)
+        {
+            Config = new TeamConfig();
+            Payload = null;
+            var reason = L.T("errors." + problem, ("path", path), ("version", config.Version), ("seen", seen));
+            Status = new TeamStatus(path, source, null, false, reason, 0, null);
+            Log.Warn(L.T("team.failed", ("path", path), ("detail", reason)));
+            return false;
+        }
+        if (config.Version > seen && content.Trusted)
+        {
+            settings.TeamVersions[location] = config.Version;
+            try { settings.Save(); } catch (Exception ex) { Log.Debug("settings: " + ex.Message); }
+        }
+        Config = config;
+        Payload = content.Payload;
+        Status = new TeamStatus(path, source, loadedAt, fromCache, error, config.Version, config.Name, content.Trusted, content.KeyId, config.SignedBy, config.SignedAt);
+        return true;
     }
 
     static void SaveCache(Cache cache)

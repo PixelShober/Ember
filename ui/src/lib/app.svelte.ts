@@ -21,7 +21,7 @@ export interface ConfirmRequest {
 }
 
 export interface MailRequest {
-  template: 'softwareRequest' | 'adminAction' | 'problem' | 'accessRequest';
+  template: 'softwareRequest' | 'adminAction' | 'problem';
   vars: Record<string, string>;
 }
 
@@ -45,7 +45,7 @@ export const app = $state({
 let bridge: Bridge | null = null;
 let toastId = 0;
 
-/** The account sees this module (roles in team.json, or the starter key). */
+/** The account sees this module (its roles in the team file). */
 export const can = (module: ModuleId): boolean => !!app.info?.modules?.includes(module);
 
 /** A page may be shown: the start page always, the advanced tabs only while Ctrl+E has not hidden them. */

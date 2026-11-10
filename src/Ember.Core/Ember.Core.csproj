@@ -12,6 +12,8 @@
     <!-- One source of truth for all texts: the UI locale files are embedded here as well,
          so host messages (log, steps, errors) use the same keys and the same umlauts. -->
     <EmbeddedResource Include="..\..\ui\src\locales\*.json" LogicalName="Ember.Locales.%(Filename).json" />
+    <!-- Public keys of the admins (team file signatures). Without this file Ember checks no signature. -->
+    <EmbeddedResource Include="..\..\config\team-signing.pub" LogicalName="Ember.team-signing.pub" Condition="Exists('..\..\config\team-signing.pub')" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,8 +13,7 @@
     (['softwareRequest', 'adminAction', 'problem'] as const).filter((tpl) =>
       tpl === app.mail?.template || (tpl === 'adminAction' ? !!app.info?.supervisor : !!app.info?.serviceCenter)),
   );
-  // The access request only comes from the lock screen, and there it is the only sensible choice.
-  const templates = $derived<MailRequest['template'][]>(app.mail?.template === 'accessRequest' ? ['accessRequest'] : standard);
+  const templates = $derived<MailRequest['template'][]>(standard);
 
   let template = $state<MailRequest['template']>('problem');
   let details = $state('');
@@ -59,7 +58,7 @@
     <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mail-title" transition:scale={{ start: 0.96, duration: 150 }}>
       <div class="row">
         <Icon name="mail" />
-        <h2 id="mail-title">{template === 'accessRequest' ? t('access.locked.request') : t('mail.title')}</h2>
+        <h2 id="mail-title">{t('mail.title')}</h2>
       </div>
       <p class="muted">{t('mail.subtitle')}</p>
 

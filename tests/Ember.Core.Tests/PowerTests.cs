@@ -88,7 +88,10 @@ public class PowerTests
     [Fact]
     public void Team_profiles_replace_builtin_ones_by_id()
     {
-        var team = TeamConfig.Parse(File.ReadAllText(TestFiles.Fixture("team.example.json")));
+        var team = TeamConfig.Parse("""
+            { "power": { "allowedSchemes": ["SCHEME_BALANCED"], "profiles": [ { "id": "sleep-ac", "name": "Kein Standby",
+              "settings": [ { "sub": "SUB_SLEEP", "setting": "STANDBYIDLE", "ac": 0 }, { "sub": "SUB_VIDEO", "setting": "VIDEOIDLE", "ac": 1200 } ] } ] } }
+            """);
         var list = PowerProfiles.Effective(team);
         var sleep = list.Single(p => p.Id == "sleep-ac");
         Assert.Equal(1200, sleep.Settings.Single(s => s.Setting == "VIDEOIDLE").Ac);

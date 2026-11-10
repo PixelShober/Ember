@@ -461,7 +461,7 @@ public static class Models
 
     /// <summary>Team models first, then the ones added on this PC, then the built-in one (the same id wins in that order).</summary>
     public static List<(ModelEntry Entry, bool Mine)> All(UserSettings s, TeamConfig team) =>
-        (team.Models ?? new List<ModelEntry>()).Select(m => (m, false))
+        new List<ModelEntry>().Select(m => (m, false))
             .Concat(s.Models.Select(m => (m, true)))
             .Append((Qwen, false))
             .Where(x => !string.IsNullOrWhiteSpace(x.Item1.Url) || !string.IsNullOrWhiteSpace(x.Item1.Path))

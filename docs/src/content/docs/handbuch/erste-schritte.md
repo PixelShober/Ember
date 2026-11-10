@@ -11,7 +11,7 @@ Wo etwas fehlt oder falsch eingestellt ist, sitzt Calcifer, der kleine Feuerdäm
 
 Auf einem frischen Rechner geht es in dieser Reihenfolge am schnellsten:
 
-1. Die `team.json` verbinden. Startest du Ember vom Netzlaufwerk neben der `team.json`, passiert das von selbst. Sonst fragt Ember beim ersten Start nach dem Pfad oder einem Schlüssel, siehe [Installation](/Ember/handbuch/installation/#der-erste-start). Danach kennt Ember die internen Domains und alles, was das Team vorgibt. Den Firmenproxy erkennt Ember beim Start selbst.
+1. Die Teamdatei verbinden. Startest du Ember vom Netzlaufwerk neben der `team.ember`, passiert das von selbst. Sonst fragt Ember beim ersten Start nach dem Pfad, siehe [Installation](/Ember/handbuch/installation/#der-erste-start). Danach kennt Ember die internen Domains und alles, was das Team vorgibt. Den Firmenproxy erkennt Ember beim Start selbst.
 2. Unter Proxy auf „Installieren / Aktualisieren“ klicken. Ember lädt px von GitHub, prüft die Prüfsumme, schreibt die `px.ini`, richtet den Autostart ein und stellt Umgebungsvariablen, git, npm, NuGet und pip auf px um. Jeder Schritt zeigt seinen Status. Nach einem Fehler setzt „Ab Fehler wiederholen“ genau dort wieder an.
 3. Die git-Identität setzen. Ember schlägt Name und E-Mail aus dem Active Directory vor, du prüfst und speicherst.
 4. Unter Software „Fehlende installieren“ für die Entwicklerwerkzeuge (Node.js mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7), danach die Programme aus der Team-Liste über das Softwarecenter.

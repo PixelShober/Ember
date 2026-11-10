@@ -28,11 +28,11 @@ Ein neuer Dienstrechner kostet einen halben Tag, bis git, npm, NuGet und pip dur
 | Energie | Profile für das Schema „Ausbalanciert“, etwa volle CPU-Leistung am Netzteil für lokale Modelle. Ist, Ziel und Werkseinstellung stehen nebeneinander, zurück auf Standard ist ein Klick. |
 | System | Gruppenrichtlinien einsehen und auffrischen, PowerShell-Ausführungsrichtlinie, lange Pfade für git und Windows. |
 | KI | Diesen Rechner für Wake-on-LAN aus dem ausgeschalteten Zustand freischalten, llama.cpp mit CUDA (samt Laufzeit) installieren, Qwen3.8-27B laden oder eine GGUF-Datei vom PC nehmen, `llama-server` mit Kontext-Profilen starten und den Coding-Agenten Pi anbinden. |
-| Berechtigungen | Rollen legen fest, wer welche Module sieht, für Benutzer und AD-Gruppen. Ember prüft die Namen im Verzeichnis und schreibt die Rollen in die `team.json`. Wer in keiner Rolle steht, kann per Mail Zugriff anfragen. |
+| Berechtigungen | Die signierte Teamdatei bearbeiten: Rollen für Benutzer und AD-Gruppen, Sperrliste, Service-Center, Vorgesetzte, Updates, Playwright, Mailtexte. Signiert wird mit dem Schlüssel der Admins. |
 
-Jeder Tab ist ein Modul. Wer welches sieht, steht in den Rollen der `team.json`, ohne Rolle sieht man nichts. Gibt es noch keine `team.json`, schaltet ein Schlüssel Ember frei: für den Proxy, für Entwickler (Proxy, Playwright, Git, Software) oder für alles. Mit `team.json` kann jede Rolle einen eigenen Schlüssel haben. <kbd>Strg</kbd> + <kbd>K</kbd> öffnet das Handbuch in Ember. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein.
+Jeder Tab ist ein Modul. Wer welches sieht, steht in den Rollen der Teamdatei, ohne Rolle sieht man nichts. <kbd>Strg</kbd> + <kbd>K</kbd> öffnet das Handbuch in Ember. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein.
 
-Gemeinsame Einstellungen fürs Team (interne Domains, Softwareliste, Entwicklerwerkzeuge, Mailvorlagen, Energieprofile, Rollen) stehen in einer `team.json` auf dem Netzlaufwerk. Ändert sich dort etwas, haben es alle beim nächsten Start. Ein Beispiel liegt unter [`config/team.example.json`](config/team.example.json).
+Gemeinsame Einstellungen fürs Team stehen in der Teamdatei `team.ember` auf dem Netzlaufwerk. Sie ist mit dem Schlüssel der Admins signiert: Ember lädt sie nur mit gültiger Signatur, am richtigen Ort und nicht in einer älteren Fassung, eine selbst gebaute Datei hilft also nicht weiter. Die öffentlichen Schlüssel stehen in `config/team-signing.pub`. Ein Beispiel für den Inhalt liegt unter [`config/team.example.json`](config/team.example.json).
 
 Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne „ß“) und kommt in zwei Designs, Efeu und Glut, jeweils hell und dunkel. Unter GlazeWM (etwa mit WinMarchy) scheint Ember im Hintergrund durch wie die anderen Fenster. Alles, was Ember speichert, liegt unter `C:\Ember`: Einstellungen, Logs, Berichte, Caches.
 
@@ -40,7 +40,7 @@ Ember folgt der Windows-Sprache (Deutsch oder Englisch, Schweizer Deutsch ohne �
 
 1. [`Ember.exe` aus dem neuesten Release](https://github.com/PixelShober/Ember/releases/latest) herunterladen und starten. .NET bringt die Exe mit, Adminrechte braucht es nicht.
 2. Ember kopiert sich nach `C:\Ember\App`, legt einen Startmenü-Eintrag an und startet von dort.
-3. Beim ersten Start den Pfad zur `team.json` eintragen oder einen Schlüssel eingeben. Liegt `Ember.exe` auf dem Netzlaufwerk neben der `team.json`, findet Ember sie selbst.
+3. Beim ersten Start den Pfad zur Teamdatei eintragen. Liegt `Ember.exe` auf dem Netzlaufwerk neben der `team.ember`, findet Ember sie selbst.
 4. Unter Proxy px installieren.
 
 Danach aktualisiert sich Ember selbst. Neue Oberflächen kommen ohne Neustart, eine neue Exe braucht einen kurzen.

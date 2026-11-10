@@ -25,21 +25,15 @@ public sealed class TeamRole
     public List<string>? Modules { get; set; }
     public List<string>? Users { get; set; }
     public List<string>? Groups { get; set; }
-    /// <summary>
-    /// Unlocks the role for anyone who enters it, also without being listed (EMBER-XXXXX-…). Stored
-    /// in plain text so admins can look it up; like the roles themselves it is no security boundary.
-    /// </summary>
-    public string? Key { get; set; }
     /// <summary>Developer tools the role does not offer, e.g. ["bruno"].</summary>
     public List<string>? HideTools { get; set; }
 }
 
-/// <param name="Source">"team" (roles in team.json), "key" (starter key, no team.json), "dev" (development build), "preview" (an admin looks through another role) or "none".</param>
-/// <param name="Locked">null, "setup" (no team.json and no key) or "notListed" (team.json has no role for this account).</param>
+/// <param name="Source">"team" (roles in the team file), "dev" (development build), "preview" (an admin looks through another role) or "none".</param>
+/// <param name="Locked">null, "setup" (no usable team file), "notListed" (no role for this account) or "blocked" (on the block list).</param>
 /// <param name="HiddenTools">Developer tools none of the account's roles offers.</param>
-/// <param name="StaleKey">The account had a key that no longer opens anything (rotated or removed).</param>
-public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? Locked, IReadOnlyList<string> Roles, string? KeyLevel,
-                          IReadOnlySet<string>? HiddenTools = null, bool StaleKey = false)
+public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? Locked, IReadOnlyList<string> Roles,
+                          IReadOnlySet<string>? HiddenTools = null)
 {
     public bool Has(string module) => Modules.Contains(module);
     public bool Any => Modules.Count > 0;
@@ -47,35 +41,28 @@ public sealed record Grant(IReadOnlySet<string> Modules, string Source, string? 
 }
 
 /// <summary>
-/// Who sees what. With a team.json its roles decide: a module is visible when one of the account's
-/// roles lists it (or "*"). Nobody in a role: nothing, Ember shows the lock screen. Without a
-/// team.json a starter key decides. Like everything here it keeps Ember out of the wrong hands but is
-/// no security boundary, since Ember runs with the user's own rights and its code is public.
+/// Who sees what. Only the (signed) team file decides: a module is visible when one of the account's
+/// roles lists it (or "*"), unless the account or one of its groups is on the block list. Nobody in a
+/// role, or no usable team file: nothing, Ember shows the lock or setup screen. There are no keys.
 /// </summary>
 public static class Permissions
 {
-    public static Grant Compute(TeamConfig team, TeamStatus status, string? key, string account, IReadOnlyList<string> groups, bool dev)
+    static Grant Nothing(string source, string locked) => new(new HashSet<string>(), source, locked, Array.Empty<string>());
+
+    public static Grant Compute(TeamConfig team, TeamStatus status, string account, IReadOnlyList<string> groups, bool dev)
     {
-        if (dev) return new Grant(new HashSet<string>(ModuleIds.Known), "dev", null, Array.Empty<string>(), null);
+        if (dev) return new Grant(new HashSet<string>(ModuleIds.Known), "dev", null, Array.Empty<string>());
+        if (status.Path == null || status.LoadedAt == null) return Nothing("none", "setup");
+        if (Blocked(team, account, groups)) return Nothing("team", "blocked");
 
-        if (status.Path != null && status.LoadedAt != null)
-        {
-            var all = Roles(team);
-            var byKey = all.Where(r => StarterKeys.Same(r.Key, key)).ToList();
-            var mine = all.Where(r => Access.Listed(r.Users, r.Groups, account, groups)).Union(byKey).ToList();
-            var modules = Expand(mine.SelectMany(r => r.Modules ?? new List<string>()));
-            // A key was entered but opens no role (any more): the admin rotated it.
-            bool stale = !string.IsNullOrWhiteSpace(key) && byKey.Count == 0;
-            return new Grant(modules, "team", modules.Count == 0 ? "notListed" : null, mine.Select(r => r.Name).ToList(), null,
-                             Hidden(mine), stale && modules.Count == 0);
-        }
-
-        if (StarterKeys.Level(key) is { } level)
-            return new Grant(Expand(StarterKeys.LevelModules[level]), "key", null, Array.Empty<string>(), level,
-                             StarterKeys.LevelHiddenTools.TryGetValue(level, out var hide) ? hide.ToHashSet() : null);
-
-        return new Grant(new HashSet<string>(), "none", "setup", Array.Empty<string>(), null);
+        var mine = Roles(team).Where(r => Access.Listed(r.Users, r.Groups, account, groups)).ToList();
+        var modules = Expand(mine.SelectMany(r => r.Modules ?? new List<string>()));
+        return new Grant(modules, "team", modules.Count == 0 ? "notListed" : null, mine.Select(r => r.Name).ToList(), Hidden(mine));
     }
+
+    /// <summary>On the block list: by account or by one of its groups. It beats every role.</summary>
+    public static bool Blocked(TeamConfig team, string account, IReadOnlyList<string> groups) =>
+        team.Access?.Blocked is { } b && Access.Listed(b.Users, b.Groups, account, groups);
 
     /// <summary>A tool is hidden only if every one of the roles hides it.</summary>
     static IReadOnlySet<string>? Hidden(IReadOnlyList<TeamRole> roles)
@@ -88,27 +75,17 @@ public static class Permissions
 
     /// <summary>
     /// What another account would see, for an admin who wants to check Ember from their side:
-    /// "role:&lt;name&gt;" (one role of the team.json), "key:&lt;level&gt;" (a starter key) or "none"
-    /// (nobody's role: the lock screen). null for an unknown target.
+    /// "role:&lt;name&gt;" (one role of the team file) or "none" (nobody's role: the lock screen).
+    /// null for an unknown target.
     /// </summary>
     public static Grant? Preview(TeamConfig team, string target)
     {
-        if (target == "none") return new Grant(new HashSet<string>(), "preview", "notListed", Array.Empty<string>(), null);
-        if (target.StartsWith("key:", StringComparison.Ordinal))
-        {
-            var level = target[4..];
-            return StarterKeys.LevelModules.TryGetValue(level, out var keyModules)
-                ? new Grant(Expand(keyModules), "preview", null, Array.Empty<string>(), level,
-                            StarterKeys.LevelHiddenTools.TryGetValue(level, out var hide) ? hide.ToHashSet() : null) : null;
-        }
-        if (target.StartsWith("role:", StringComparison.Ordinal))
-        {
-            var role = Roles(team).FirstOrDefault(r => r.Name == target[5..]);
-            if (role == null) return null;
-            var modules = Expand(role.Modules ?? new List<string>());
-            return new Grant(modules, "preview", modules.Count == 0 ? "notListed" : null, new[] { role.Name }, null, Hidden(new[] { role }));
-        }
-        return null;
+        if (target == "none") return Nothing("preview", "notListed");
+        if (!target.StartsWith("role:", StringComparison.Ordinal)) return null;
+        var role = Roles(team).FirstOrDefault(r => r.Name == target[5..]);
+        if (role == null) return null;
+        var modules = Expand(role.Modules ?? new List<string>());
+        return new Grant(modules, "preview", modules.Count == 0 ? "notListed" : null, new[] { role.Name }, Hidden(new[] { role }));
     }
 
     /// <summary>
@@ -148,6 +125,7 @@ public static class Permissions
         "px.status" => null,
         "proxy.detect" => new[] { "proxy", "settings" },
         "settings.save" => new[] { "settings", "ai" },
+        "team.admin" or "team.save" or "team.newKey" => new[] { "access" },
         "settings.get" or "settings.defaults" => null,
         _ when method.StartsWith("proxy.", StringComparison.Ordinal) || method.StartsWith("px.", StringComparison.Ordinal) => new[] { "proxy" },
         _ when method.StartsWith("git.", StringComparison.Ordinal) => new[] { "git" },

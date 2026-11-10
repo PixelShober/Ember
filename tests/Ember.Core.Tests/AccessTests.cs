@@ -1,25 +1,23 @@
-using System.Text.Json.Nodes;
 using Ember.Core;
 using Xunit;
 
 public class AccessTests
 {
-    static readonly TeamStatus Loaded = new(@"\\srv\team\team.json", "settings", DateTime.Now, false, null, 1, "Team");
-    static readonly TeamStatus NoTeam = TeamStatus.None;
+    static readonly TeamStatus Loaded = new(@"\\srv\team\team.ember", "settings", DateTime.Now, false, null, 1, "Team");
 
-    static Grant Grant(TeamConfig team, string account, string[]? groups = null, TeamStatus? status = null, string? key = null) =>
-        Permissions.Compute(team, status ?? Loaded, key, account, groups ?? Array.Empty<string>(), dev: false);
-
-    internal static TeamConfig RolesForPreview => Roles;
+    static Grant Grant(TeamConfig team, string account, string[]? groups = null, TeamStatus? status = null) =>
+        Permissions.Compute(team, status ?? Loaded, account, groups ?? Array.Empty<string>(), dev: false);
 
     static readonly TeamConfig Roles = TeamConfig.Parse("""
         {
           "access": {
             "roles": [
               { "name": "Admins", "modules": ["*"], "users": ["FIRMA\\anna.admin"] },
+              { "name": "Entwickler", "modules": ["proxy", "playwright", "git", "software"], "groups": ["FIRMA\\GG-Dev"], "hideTools": ["bruno"] },
               { "name": "Test", "modules": ["proxy", "playwright"], "users": ["max.muster"], "groups": ["FIRMA\\GG-QA"] },
               { "name": "Logs", "modules": ["log", "gibtsnicht"], "groups": ["FIRMA\\GG-QA"] }
-            ]
+            ],
+            "blocked": { "users": ["FIRMA\\ex.mitarbeiter"], "groups": ["FIRMA\\GG-Gesperrt"] }
           }
         }
         """);
@@ -41,67 +39,31 @@ public class AccessTests
     }
 
     [Fact]
-    public void A_role_key_opens_the_role_until_it_is_rotated()
+    public void The_block_list_beats_every_role()
     {
-        var team = TeamConfig.Parse("""
-            { "access": { "roles": [
-              { "name": "Entwickler", "modules": ["proxy", "playwright", "git", "software"], "groups": ["FIRMA\\GG-Dev"],
-                "key": "EMBER-01234-56789-ABCDE-FGHJK", "hideTools": ["bruno"] },
-              { "name": "Test", "modules": ["proxy", "log"], "users": ["max.muster"] } ] } }
-            """);
-        var byKey = Grant(team, @"FIRMAremd", key: "ember-01234 56789-abcde-fghjk");
-        Assert.Equal(new[] { "Entwickler" }, byKey.Roles);
-        Assert.True(byKey.Hides("bruno"));
-        Assert.False(byKey.StaleKey);
+        var blocked = Grant(Roles, @"FIRMA\ex.mitarbeiter", new[] { @"FIRMA\GG-Dev" });
+        Assert.False(blocked.Any);
+        Assert.Equal("blocked", blocked.Locked);
 
-        // Rotated: the old key opens nothing, the account is locked out and Ember says why.
-        var old = Grant(team, @"FIRMAremd", key: "EMBER-ZZZZZ-56789-ABCDE-FGHJK");
-        Assert.False(old.Any);
-        Assert.True(old.StaleKey);
-
-        // Bruno stays only hidden if every role of the account hides it.
-        var both = Grant(team, @"FIRMA\max.muster", new[] { @"FIRMA\GG-Dev" });
-        Assert.False(both.Hides("bruno"));
-
-        Assert.Matches("^EMBER-[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){3}$", StarterKeys.Generate());
-        Assert.NotEqual(StarterKeys.Generate(), StarterKeys.Generate());
+        var byGroup = Grant(Roles, @"FIRMA\anna.admin", new[] { @"FIRMA\GG-Gesperrt" });
+        Assert.Equal("blocked", byGroup.Locked);
     }
 
     [Fact]
-    public void Without_a_role_nothing_is_visible()
+    public void Bruno_stays_hidden_only_if_every_role_hides_it()
+    {
+        Assert.True(Grant(Roles, @"FIRMA\x", new[] { @"FIRMA\GG-Dev" }).Hides("bruno"));
+        Assert.False(Grant(Roles, @"FIRMA\x", new[] { @"FIRMA\GG-Dev", @"FIRMA\GG-QA" }).Hides("bruno"));
+    }
+
+    [Fact]
+    public void Without_a_role_or_team_file_nothing_is_visible()
     {
         var nobody = Grant(Roles, @"FIRMA\gast", new[] { @"FIRMA\Vertrieb" });
         Assert.False(nobody.Any);
         Assert.Equal("notListed", nobody.Locked);
-        Assert.Equal("notListed", Grant(new TeamConfig(), @"FIRMA\anna.admin").Locked);   // team.json without roles
-    }
-
-    [Fact]
-    public void Without_team_json_a_starter_key_decides()
-    {
-        var none = Grant(new TeamConfig(), @"FIRMA\max.muster", status: NoTeam);
-        Assert.Equal("setup", none.Locked);
-        Assert.Equal("none", none.Source);
-        // A key does not count once a team.json is loaded.
-        Assert.Equal("notListed", Grant(new TeamConfig(), @"FIRMA\x", key: "EMBER-00000-00000-00000-00000").Locked);
-        // The offline copy counts as loaded.
-        var cached = Loaded with { FromCache = true, Error = "offline" };
-        Assert.True(Grant(Roles, @"FIRMA\max.muster", status: cached).Has("proxy"));
-    }
-
-    [Fact]
-    public void Starter_keys_are_compared_by_hash_and_forgive_typing()
-    {
-        // Test table: SHA-256("ember-key-v1:" + "0123456789ABCDEFGHJK")
-        var known = new[] { ("developer", Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes("ember-key-v1:0123456789ABCDEFGHJK"))).ToLowerInvariant()) };
-        Assert.Equal("developer", StarterKeys.Level("EMBER-01234-56789-ABCDE-FGHJK", known));
-        Assert.Equal("developer", StarterKeys.Level(" ember-o1234 56789-abcde-fghjk ", known));   // O for 0, lower case, spaces
-        Assert.Equal("developer", StarterKeys.Level("0123456789ABCDEFGHJK", known));
-        Assert.Null(StarterKeys.Level("EMBER-01234-56789-ABCDE-FGHJX", known));
-        Assert.Null(StarterKeys.Level("", known));
-        Assert.Equal(new[] { "proxy", "playwright", "git", "software" }, StarterKeys.LevelModules["developer"]);
-        Assert.Equal(new[] { "bruno" }, StarterKeys.LevelHiddenTools["developer"]);
+        Assert.Equal("notListed", Grant(new TeamConfig(), @"FIRMA\anna.admin").Locked);
+        Assert.Equal("setup", Grant(Roles, @"FIRMA\anna.admin", status: TeamStatus.None).Locked);
     }
 
     [Fact]
@@ -123,76 +85,53 @@ public class AccessTests
     [InlineData("settings.save", "ai", true)]
     [InlineData("settings.save", "proxy", false)]
     [InlineData("jobs.list", "proxy", true)]
-    [InlineData("access.save", "settings", false)]
+    [InlineData("team.save", "settings", false)]
+    [InlineData("team.save", "access", true)]
+    [InlineData("team.newKey", "proxy", false)]
     public void Bridge_methods_need_their_module(string method, string module, bool allowed)
     {
-        var grant = new Grant(new HashSet<string> { module }, "team", null, Array.Empty<string>(), null);
+        var grant = new Grant(new HashSet<string> { module }, "team", null, Array.Empty<string>());
         Assert.Equal(allowed, Permissions.MayCall(grant, method));
-        Assert.False(Permissions.MayCall(new Grant(new HashSet<string>(), "none", "setup", Array.Empty<string>(), null), "jobs.list"));
+        Assert.False(Permissions.MayCall(new Grant(new HashSet<string>(), "none", "setup", Array.Empty<string>()), "jobs.list"));
     }
 
-    static AccessChange Change(string version = "v") => new(new List<AccessRole>
-        {
-            new("Admins", new() { "*" }, new() { new(@"FIRMA\lead", "user"), new(@"FIRMA\Ember-Admins", "group") }),
-            new("Test", new() { "proxy", "playwright" }, new() { new(@"FIRMA\Entwicklung", "group"), new("jmoessner", "user"), new("jmoessner", "user") }),
-        }, "ember@firma.example", version);
+    static List<AccessRole> AdminRoles => new()
+    {
+        new("Admins", new() { "*" }, new() { new(@"FIRMA\lead", "user") }),
+        new("Test", new() { "proxy" }, new() { new(@"FIRMA\Entwicklung", "group") }),
+    };
 
     [Fact]
-    public void Only_access_changes_in_team_json_and_old_lists_become_roles()
+    public void Nobody_removes_their_own_permissions_tab_or_blocks_themselves()
     {
-        var json = "{\r\n    // Team Entwicklung\r\n    \"name\": \"Team Entwicklung – Jürgen\",\r\n    \"admins\": { \"users\": [\"alt\"] },\r\n    \"access\": { \"enabled\": true, \"users\": [\"x\"] },\r\n    \"proxy\": { \"internalDomains\": [\"firma.local\"] }\r\n}\r\n";
-        var result = Access.Apply(json, Change());
-        var root = JsonNode.Parse(result)!;
-        Assert.Equal("Team Entwicklung – Jürgen", (string?)root["name"]);
-        Assert.Equal("firma.local", (string?)root["proxy"]!["internalDomains"]![0]);
-        Assert.Null(root["admins"]);
-        Assert.Null(root["access"]!["enabled"]);
-        Assert.Null(root["access"]!["users"]);
-        var roles = root["access"]!["roles"]!.AsArray();
-        Assert.Equal(new[] { "Admins", "Test" }, roles.Select(r => (string?)r!["name"]));
-        Assert.Equal(new[] { "jmoessner" }, roles[1]!["users"]!.AsArray().Select(n => (string?)n)); // duplicates dropped
-        Assert.Equal(new[] { @"FIRMA\Entwicklung" }, roles[1]!["groups"]!.AsArray().Select(n => (string?)n));
-        Assert.Equal(new[] { "proxy", "playwright" }, roles[1]!["modules"]!.AsArray().Select(n => (string?)n));
-        Assert.Equal("ember@firma.example", (string?)root["access"]!["contact"]);
-        Assert.Contains("\r\n    \"name\"", result); // indentation and CRLF stay
-        Assert.Contains("Jürgen", result);
-    }
-
-    [Fact]
-    public void Nobody_removes_their_own_permissions_tab()
-    {
-        Access.EnsureStillAdmin(Change(), @"FIRMA\lead", Array.Empty<string>());
-        Access.EnsureStillAdmin(Change(), @"FIRMA\neu", new[] { @"FIRMA\ember-admins" });
-        Assert.Equal("accessSelfLockout", Assert.Throws<EmberException>(() => Access.EnsureStillAdmin(Change(), @"FIRMA\jmoessner", Array.Empty<string>())).Code);
+        Access.EnsureStillAdmin(AdminRoles, new List<AccessEntry>(), @"FIRMA\lead", Array.Empty<string>());
+        Assert.Equal("accessSelfLockout", Assert.Throws<EmberException>(() =>
+            Access.EnsureStillAdmin(AdminRoles, new List<AccessEntry>(), @"FIRMA\x", new[] { @"FIRMA\Entwicklung" })).Code);
+        Assert.Equal("accessSelfBlocked", Assert.Throws<EmberException>(() =>
+            Access.EnsureStillAdmin(AdminRoles, new List<AccessEntry> { new("lead", "user") }, @"FIRMA\lead", Array.Empty<string>())).Code);
     }
 
     [Fact]
     public void Roles_need_unique_names_and_known_modules()
     {
-        var change = Change();
-        change.Roles.Add(new AccessRole(" admins ", new() { "proxy" }, new()));
-        Assert.Equal("accessRoleDuplicate", Assert.Throws<EmberException>(() => Access.Validate(change)).Code);
-        var unknown = new AccessChange(new() { new("X", new() { "proxi" }, new()) }, null, "v");
-        Assert.Equal("accessModuleUnknown", Assert.Throws<EmberException>(() => Access.Validate(unknown)).Code);
-        var noName = new AccessChange(new() { new(" ", new() { "proxy" }, new()) }, null, "v");
-        Assert.Equal("accessRoleNameMissing", Assert.Throws<EmberException>(() => Access.Validate(noName)).Code);
+        Assert.Equal("accessRoleDuplicate", Assert.Throws<EmberException>(() => Access.Validate(new List<AccessRole>
+            { new("Test", new(), new()), new("test", new(), new()) })).Code);
+        Assert.Equal("accessModuleUnknown", Assert.Throws<EmberException>(() => Access.Validate(new List<AccessRole>
+            { new("Test", new() { "gibtsnicht" }, new()) })).Code);
+        Assert.Equal("accessRoleNameMissing", Assert.Throws<EmberException>(() => Access.Validate(new List<AccessRole>
+            { new(" ", new(), new()) })).Code);
     }
 
     [Fact]
-    public void Saving_refuses_when_team_json_changed_in_between()
+    public void Admins_preview_a_role_or_nobody()
     {
-        var dir = Directory.CreateTempSubdirectory("ember-access-").FullName;
-        try
-        {
-            var path = Path.Combine(dir, "team.json");
-            File.WriteAllText(path, "{ \"name\": \"Team\" }");
-            Assert.Equal("teamChanged", Assert.Throws<EmberException>(() => Access.Save(path, Change("stale"), @"FIRMA\lead", Array.Empty<string>())).Code);
-            Assert.Equal("{ \"name\": \"Team\" }", File.ReadAllText(path));
-        }
-        finally
-        {
-            Directory.Delete(dir, recursive: true);
-        }
+        var test = Permissions.Preview(Roles, "role:Test")!;
+        Assert.Equal("preview", test.Source);
+        Assert.True(test.Has("proxy") && !test.Has("access"));
+        Assert.True(Permissions.Preview(Roles, "role:Entwickler")!.Hides("bruno"));
+        Assert.Equal("notListed", Permissions.Preview(Roles, "none")!.Locked);
+        Assert.Null(Permissions.Preview(Roles, "role:gibt es nicht"));
+        Assert.Null(Permissions.Preview(Roles, "key:all"));
     }
 
     [Fact]
@@ -200,41 +139,5 @@ public class AccessTests
     {
         if (OperatingSystem.IsWindows()) return;
         Assert.Null(Access.Lookup("jmoessner").Found);
-    }
-}
-
-public class AccessMailTests
-{
-    [Fact]
-    public void Access_requests_go_to_the_contact_and_leave_no_gap()
-    {
-        var team = new TeamConfig
-        {
-            ServiceCenter = new TeamServiceCenter { Email = "servicecenter@firma.example" },
-            Access = new TeamAccess { Contact = "ember-admins@firma.example" },
-        };
-        Assert.Equal("ember-admins@firma.example", Mail.Recipient(team, "accessRequest"));
-        Assert.Equal("servicecenter@firma.example", Mail.Recipient(team, "problem"));
-        var (_, body) = Mail.Render(team, "accessRequest", new Dictionary<string, string?> { ["details"] = "" });
-        Assert.DoesNotContain("\n\n\n", body);
-    }
-
-    [Fact]
-    public void Admins_preview_a_role_a_key_or_nobody()
-    {
-        var test = Permissions.Preview(AccessTests.RolesForPreview, "role:" + Permissions.Roles(AccessTests.RolesForPreview)[0].Name);
-        Assert.NotNull(test);
-        Assert.Equal("preview", test!.Source);
-
-        var key = Permissions.Preview(AccessTests.RolesForPreview, "key:developer")!;
-        Assert.True(key.Has("proxy") && key.Has("playwright"));
-        Assert.False(key.Has("access"));
-
-        var none = Permissions.Preview(AccessTests.RolesForPreview, "none")!;
-        Assert.False(none.Any);
-        Assert.Equal("notListed", none.Locked);
-
-        Assert.Null(Permissions.Preview(AccessTests.RolesForPreview, "role:gibt es nicht"));
-        Assert.Null(Permissions.Preview(AccessTests.RolesForPreview, "key:root"));
     }
 }

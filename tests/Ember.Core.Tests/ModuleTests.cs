@@ -283,8 +283,6 @@ public class ModuleTests
         Assert.Equal(new[] { "@juicesharp/rpiv-todo", "context-mode", "pi-mcp-adapter" }, registered.OrderBy(n => n, StringComparer.Ordinal));
         Assert.Empty(PiAgent.Registered("kaputt"));
         Assert.Equal(new[] { "mcp", "websearch", "pretty", "ponytail", "simplify", "contextMode", "todo" }, PiAgent.Packages(new TeamConfig()).Select(p => p.Id));
-        var own = TeamConfig.Parse("""{ "pi": { "packages": [ { "id": "websearch", "npm": "@ollama/pi-web-search" } ] } }""");
-        Assert.Equal("@ollama/pi-web-search", PiAgent.Packages(own).Single().Npm);
     }
 
     [Fact]

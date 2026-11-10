@@ -23,10 +23,10 @@ Auf der Oberflächenseite kapselt `ui/src/lib/bridge.ts` das Protokoll (`call`, 
 
 | Bereich | Methoden |
 |---|---|
-| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.preview`, `app.unlock`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
+| App | `app.info`, `app.ready`, `app.setAppearance`, `app.toggleAdvanced`, `app.preview`, `app.openExternal`, `app.openFolder`, `app.pickFolder`, `app.pickFile` |
 | Einstellungen | `settings.get`, `settings.save`, `settings.defaults`, `team.status`, `team.reload`, `team.setPath` |
 | Proxy | `proxy.detect`, `proxy.diagnose`, `proxy.set`, `proxy.remove` |
-| Berechtigungen | `access.get`, `access.lookup`, `access.save` |
+| Berechtigungen | `team.admin`, `team.save`, `team.newKey`, `access.lookup` |
 | px | `px.status`, `px.install`, `px.uninstall`, `px.start`, `px.stop`, `px.restart`, `px.debug` |
 | Jobs | `jobs.list`, `jobs.cancel`, `jobs.retry`, `jobs.dismiss` |
 | Git | `git.get`, `git.set`, `git.proxy` |
@@ -56,15 +56,17 @@ Jede Methode gehört zu einem Modul, und `Bridge.Guard` lässt sie nur durch, we
 | `settings` | `settings.save` |
 | `log` | `log.*` |
 
-Alles andere (`jobs.*`, `update.*`, `mail.*`, `settings.get`, `app.openFolder` …) geht mit irgendeinem Modul. Ganz ohne Modul bleiben nur die Methoden für Sperr- und Einrichtungsbildschirm: `app.info`, `app.ready`, `app.setAppearance`, `app.openExternal`, `app.unlock`, `app.pickFile`, `app.preview`, `team.reload`, `team.setPath`, `mail.preview` und `mail.compose`. Alles andere antwortet mit `accessDenied`.
+Alles andere (`jobs.*`, `update.*`, `mail.*`, `settings.get`, `app.openFolder` …) geht mit irgendeinem Modul. Ganz ohne Modul bleiben nur die Methoden für Sperr- und Einrichtungsbildschirm: `app.info`, `app.ready`, `app.setAppearance`, `app.openExternal`, `app.pickFile`, `app.preview`, `team.reload`, `team.setPath`, `mail.preview` und `mail.compose`. Alles andere antwortet mit `accessDenied`.
 
-`app.info` sagt der Oberfläche, was sie zeigt: `modules` (die freigegebenen Module), `grant` (Quelle `team`, `key`, `dev` oder `none`, die Rollen, die Schlüsselstufe), `locked` (`setup` ohne `team.json` und Schlüssel, `notListed` ohne Rolle) und `showAdvanced` (Energie, KI und Berechtigungen nicht mit <kbd>Strg</kbd> + <kbd>E</kbd> ausgeblendet).
+`app.info` sagt der Oberfläche, was sie zeigt: `modules` (die freigegebenen Module), `grant` (Quelle `team`, `dev`, `preview` oder `none`, die Rollen), `locked` (`setup` ohne gültige Teamdatei, `notListed` ohne Rolle, `blocked` auf der Sperrliste) und `showAdvanced` (Energie, KI und Berechtigungen nicht mit <kbd>Strg</kbd> + <kbd>E</kbd> ausgeblendet).
 
-`app.preview` (`{ target }`) gibt es nur für Konten mit dem Modul `access`. `target` ist `role:<Name>`, `key:<Stufe>`, `none` oder `null` für die eigene Ansicht. Solange die Vorschau läuft, prüft der Guard gegen die Module der Vorschau (`grant.source` ist `preview`), `app.preview` selbst aber gegen das echte Konto, damit der Weg zurück offen bleibt. `app.info.preview` nennt die aktuelle Vorschau und die Rollen und Stufen, die zur Wahl stehen. Die Vorschau lebt nur im Speicher der Exe.
+`app.preview` (`{ target }`) gibt es nur für Konten mit dem Modul `access`. `target` ist `role:<Name>`, `none` oder `null` für die eigene Ansicht. Solange die Vorschau läuft, prüft der Guard gegen die Module der Vorschau (`grant.source` ist `preview`), `app.preview` selbst aber gegen das echte Konto, damit der Weg zurück offen bleibt. `app.info.preview` nennt die aktuelle Vorschau und die Rollen, die zur Wahl stehen. Die Vorschau lebt nur im Speicher der Exe.
 
 `mail.compose` (`{ template, vars }`) hängt nichts an, weder Log noch Diagnosebericht. Den Namen für die Grußzeile (`{sender}`) setzt die Exe selbst. Für die Begrüßung steht er in `app.info.displayName`, gemerkt vom letzten Start, damit er vom ersten Bild an stimmt.
 
-`app.unlock` nimmt einen Schlüssel (`{ key }`) und antwortet mit `app.info`, oder mit `keyInvalid`. `team.setPath` (`{ path }`) liest die Datei zur Probe, speichert den Pfad und lädt neu. Ist schon eine `team.json` geladen, braucht `team.setPath` das Modul `settings`.
+`team.setPath` (`{ path }`) liest und prüft die Datei zur Probe, speichert den Pfad und lädt neu. Ist schon eine Teamdatei geladen, braucht `team.setPath` das Modul `settings`.
+
+`team.admin` liefert die Teamdatei für den Tab Berechtigungen: die Pflichtteile als `doc`, den Rest als JSON-Text `extra`, dazu Version, Signatur und Schreibrecht. `team.save` (`{ doc, extra, version, keyFile, password }`) signiert und schreibt; `version` ist die gelesene, sonst antwortet die Exe mit `teamChanged`. `team.newKey` (`{ folder, password }`) legt einen Signaturschlüssel an und gibt den öffentlichen Teil zurück. Alle drei brauchen das Modul `access`.
 
 ## Ereignisse
 
@@ -74,7 +76,7 @@ Alles andere (`jobs.*`, `update.*`, `mail.*`, `settings.get`, `app.openFolder` �
 | `job` | Zustand eines Jobs mit allen Schritten, höchstens etwa acht Mal pro Sekunde |
 | `px.status` | px-Status, wenn er sich ändert (geprüft alle 4 s) |
 | `update` | Update-Status (geprüft, bereit, Fehler) |
-| `app.info` | nach Änderungen an Sprache, Team-Konfiguration, Schlüssel oder erweiterten Modulen |
+| `app.info` | nach Änderungen an Sprache, Teamdatei oder erweiterten Modulen |
 | `settings.detected` | die Proxy-Erkennung beim Start ist fertig |
 | `window.seeThrough` | `{ opacity }`: Ember ist inaktiv und soll durchscheinen (`null`: wieder deckend), siehe [Einstellungen](/Ember/handbuch/einstellungen/#im-hintergrund) |
 

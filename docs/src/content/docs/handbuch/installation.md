@@ -25,18 +25,12 @@ Dann läuft Ember einfach vom aktuellen Ort weiter und schreibt einen Hinweis in
 
 ## Der erste Start
 
-Was du siehst, bestimmt die `team.json` deines Teams: Ihre [Rollen](/Ember/handbuch/berechtigungen/) legen fest, wer welche Tabs bekommt. Findet Ember sie von selbst, geht es gleich los. Das klappt, wenn
+Was du siehst, bestimmt die Teamdatei deines Teams: Ihre [Rollen](/Ember/handbuch/berechtigungen/) legen fest, wer welche Tabs bekommt. Findet Ember sie von selbst, geht es gleich los. Das klappt, wenn
 
-- du Ember vom Netzlaufwerk startest und die `team.json` daneben liegt (oder eine `ember-team.txt` mit ihrem Pfad),
-- eure IT den Pfad per Gruppenrichtlinie verteilt,
+- du Ember vom Netzlaufwerk startest und die `team.ember` daneben liegt (oder eine `ember-team.txt` mit ihrem Pfad),
 - oder die Umgebungsvariable `EMBER_TEAM_CONFIG` gesetzt ist.
 
-Sonst erscheint **Ember einrichten** mit zwei Wegen:
-
-- **Schlüssel**: Den bekommst du von deinem Team. Je nach Schlüssel siehst du nur den Proxy, die Entwickler-Tabs (Proxy, Playwright, Git, Software) oder alles. Er gilt, bis eine `team.json` eingetragen ist.
-- **Team-Konfiguration**: den Pfad zur `team.json` eintragen, etwa `\\server\entwicklung\ember\team.json`, oder über „Durchsuchen“ auswählen.
-
-Mit einem Schlüssel kannst du die `team.json` später nachtragen, über die Karte „Team-Konfiguration“ auf der Startseite. Details stehen unter [Berechtigungen](/Ember/handbuch/berechtigungen/#ohne-teamjson-die-schlüssel) und [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#so-findet-ember-die-datei).
+Sonst erscheint **Ember einrichten** und fragt nach dem Pfad zur Teamdatei, etwa `\\server\entwicklung\ember\team.ember`. Den bekommst du von euren Admins. Einen anderen Weg hinein gibt es nicht: Ohne gültige, signierte Teamdatei und ohne Rolle darin bleibt Ember gesperrt. Details stehen unter [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#so-findet-ember-die-datei).
 
 ## WebView2
 

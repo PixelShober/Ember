@@ -11,7 +11,6 @@
 
   function label(target: string): string {
     if (target === 'none') return t('preview.none');
-    if (target.startsWith('key:')) return t('preview.key', { level: t(`access.keyLevels.${target.slice(4)}`) });
     return t('preview.role', { role: target.slice(5) });
   }
 
@@ -41,9 +40,6 @@
             {#each preview.roles as role (role)}<option value={'role:' + role}>{role}</option>{/each}
           </optgroup>
         {/if}
-        <optgroup label={t('preview.keys')}>
-          {#each preview.keys as level (level)}<option value={'key:' + level}>{t(`access.keyLevels.${level}`)}</option>{/each}
-        </optgroup>
         <option value="none">{t('preview.none')}</option>
       </select>
     </label>

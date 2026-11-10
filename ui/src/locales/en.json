@@ -197,7 +197,18 @@
     "playwrightTemplateNoProject": "There is no package.json in {path}. A template is made from a Node project.",
     "playwrightTemplateNoTarget": "Where should the template go? Pick a folder for it first.",
     "playwrightTemplateSameFolder": "Project and template cannot be the same folder.",
-    "playwrightTemplateTooBig": "{path} has {count} entries. That is not a project for a template but a whole drive folder."
+    "playwrightTemplateTooBig": "{path} has {count} entries. That is not a project for a template but a whole drive folder.",
+    "accessSelfBlocked": "That puts you on the block list yourself. Take yourself off, or you will not get into Ember any more.",
+    "teamExtraInvalid": "The further settings are not valid JSON: {detail}",
+    "teamKeyInvalid": "{path} is not an Ember signing key.",
+    "teamKeyMissing": "The signing key {path} does not exist (any more).",
+    "teamKeyPassword": "The password does not match the signing key.",
+    "teamKeyPasswordShort": "The password needs at least 12 characters.",
+    "teamKeyUnknown": "This signing key ({key}) is not known to this Ember version. Only a key from config/team-signing.pub can sign.",
+    "teamUnsigned": "{path} is not signed. This Ember version only accepts signed team files.",
+    "teamSignatureInvalid": "The signature of {path} does not match. Either the file was changed, or it does not come from your admins.",
+    "teamWrongPlace": "{path} is a copy. The team file only counts at the place it was signed for.",
+    "teamOlder": "{path} is an older version (version {version}, last seen: {seen})."
   },
   "jobs": {
     "started": "started",
@@ -260,9 +271,7 @@
     "quick": "Quick actions",
     "report": "Create diagnosis report",
     "contact": "Contact the service center",
-    "reportSaved": "Report saved and copied to the clipboard. Its folder is open: {path}",
-    "byKey": "Unlocked with the key “{level}”. Once you enter team.json, its roles decide what you see.",
-    "setUpTeam": "Set up team configuration"
+    "reportSaved": "Report saved and copied to the clipboard. Its folder is open: {path}"
   },
   "proxy": {
     "title": "Proxy",
@@ -516,8 +525,7 @@
     "templateNames": {
       "softwareRequest": "Request software",
       "adminAction": "Ask your supervisor for admin rights",
-      "problem": "Report a problem",
-      "accessRequest": "Access to Ember"
+      "problem": "Report a problem"
     },
     "details": "What exactly?",
     "to": "To",
@@ -539,10 +547,6 @@
       "problem": {
         "subject": "Problem on {computer}",
         "body": "Dear colleagues,\n\n{problemIntro}\n\n{details}\n\nUser: {user}\nComputer: {computer}\n\nKind regards,\n{sender}"
-      },
-      "accessRequest": {
-        "subject": "Access to Ember for {user}",
-        "body": "Hello,\n\nI would like to use Ember on {computer} to set up my developer machine. Please add me to a role.\n\n{details}\n\nUser: {user}\n\nKind regards,\n{sender}"
       }
     },
     "problemIntro": "I am facing the following problem in my development or work process:",
@@ -965,7 +969,6 @@
     "advanced": {
       "title": "Your modules",
       "roles": "Your roles from team.json: {roles}.",
-      "byKey": "Unlocked with the key “{level}” until a team.json is entered.",
       "dev": "Development build: every module is visible."
     },
     "folders": {
@@ -1014,7 +1017,10 @@
     "notConfigured": "No team configuration set up",
     "loaded": "Team configuration loaded: {path}",
     "fromCache": "Team configuration {path} not reachable ({detail}), using local copy of {date}",
-    "failed": "Team configuration {path} could not be loaded: {detail}"
+    "failed": "Team configuration {path} could not be loaded: {detail}",
+    "cacheExpired": "The team file has not been reachable for {days} days. Without a connection to the network drive Ember stays locked.",
+    "keyCreated": "Signing key created: {path} ({key})",
+    "signed": "Team file signed: {path}, version {version}, key {key}"
   },
   "install": {
     "prerelease": "Test build {version}: Ember runs portable, without copying itself to C:\\Ember\\App and without automatic updates.",
@@ -1247,25 +1253,15 @@
   },
   "access": {
     "saved": "Permissions saved to {path}: {roles} roles, {members} entries",
-    "unlocked": "Unlocked with a key: {level}",
     "title": "Permissions",
     "subtitle": "Who sees which modules. The roles are in team.json; everyone else gets them within two minutes.",
-    "roles": "Roles",
-    "rolesHint": "A role decides which modules its members see. Whoever is in several roles sees all of them together. Whoever is in none only sees the lock screen.",
     "noRoles": "No roles yet. Nobody sees anything that way, not even you.",
     "addRole": "Add role",
     "newRole": "New role",
     "roleName": "Role name",
-    "removeRole": "Delete role {name}",
-    "memberCount": "{count} entries",
     "modules": "Modules",
     "allModules": "All modules",
-    "allModulesHint": "including modules added later",
-    "advancedHint": "Ctrl + E hides and shows Power, AI and Permissions.",
     "membersEmpty": "Nobody in this role yet.",
-    "legacy": "team.json still uses the old format with “admins” and an access list. Ember shows both as roles and writes the new format when you save.",
-    "contact": "Access requests go to",
-    "contactHint": "Empty: the service center ({email}).",
     "addPlaceholder": "Name or COMPANY\\Name",
     "add": "Add",
     "user": "User",
@@ -1274,22 +1270,9 @@
     "notFound": "“{name}” does not exist in the directory.",
     "unchecked": "“{name}” could not be checked in the directory right now (VPN?) and was added as {kind}.",
     "duplicate": "“{name}” is already in this role.",
-    "me": "Your sign-in",
-    "meHint": "Your domain groups. Put a group straight into a role.",
-    "addTo": "To role",
-    "addToRole": "Put {name} into a role",
     "groupsFilter": "Filter groups",
-    "noGroups": "No domain groups found.",
-    "save": "Save to team.json",
     "discard": "Discard",
     "unsaved": "Unsaved changes",
-    "savedToast": "Saved. Everybody else gets the roles the next time they start Ember.",
-    "file": "Saving to {path}",
-    "keyLevels": {
-      "proxy": "Proxy",
-      "developer": "Developer",
-      "all": "Full access"
-    },
     "problems": {
       "noTeamFile": "Ember knows no team.json. Without it there are no roles: enter the path under Settings.",
       "teamOffline": "team.json cannot be reached right now. You see the local copy; saving works again once connected.",
@@ -1298,28 +1281,20 @@
     "locked": {
       "title": "Ember is not enabled for you yet",
       "text": "team.json has no role for you. You are signed in as {user}.",
-      "request": "Request access",
-      "contact": "Requests go to {email}.",
       "retry": "Check again",
       "stillLocked": "Not enabled yet. Once team.json has a role for you, the next check lets you in.",
-      "keyLabel": "Key",
-      "keyPlaceholder": "EMBER-XXXXX-XXXXX-XXXXX-XXXXX",
-      "keySubmit": "Unlock",
-      "stale": "Your key is no longer valid. The admins renewed it; ask them for the new one."
+      "blocked": "You are on the block list of the team file. Talk to your admins if that is wrong."
     },
     "setup": {
       "title": "Set up Ember",
-      "text": "Ember learns from your team's team.json who sees what. Until you have it, a key unlocks Ember.",
-      "key": "Key",
-      "keyHint": "Your team gives it to you. Depending on the key you see Proxy, Proxy and Playwright, or everything.",
-      "unlock": "Unlock",
-      "team": "Team configuration",
-      "teamHint": "The path to team.json, usually on the network share. Then its roles decide who sees what, and the key no longer counts.",
-      "teamPlaceholder": "\\\\server\\share\\ember\\team.json",
+      "text": "Ember takes from your team file who sees what. Without it Ember stays locked.",
+      "team": "Team file",
+      "teamHint": "The path to the team file (team.ember), usually on the network drive. Your admins have it.",
+      "teamPlaceholder": "\\\\server\\share\\ember\\team.ember",
       "browse": "Browse",
       "useTeam": "Use it",
       "teamSaved": "Team configuration set: {path}",
-      "teamFailed": "team.json at {path} cannot be reached right now: {detail}",
+      "teamFailed": "The team file at {path} cannot be used: {detail}",
       "account": "Signed in as {user}."
     },
     "hideBruno": "Offer Bruno",
@@ -1346,7 +1321,9 @@
       "hint": "Ember loads the file only if the signature matches, it is at this path and its version is not older than the last one seen. A home-made or old copy gets nobody further.",
       "extra": "More settings",
       "extraHint": "Everything optional: internal domains, software list, power profiles, developer tools. As JSON, signed along.",
-      "extraObject": "This needs to be a JSON object: { … }"
+      "extraObject": "This needs to be a JSON object: { … }",
+      "convert": "This team file is still an unsigned team.json. On the first “Sign and save” Ember creates team.ember next to it and uses only that from then on.",
+      "noCheck": "This Ember version checks no signature yet, because no public key is built in. As soon as config/team-signing.pub has one, Ember only accepts signed team files."
     },
     "sign": {
       "button": "Sign and save",
@@ -1357,7 +1334,8 @@
       "password": "Password",
       "confirm": "Sign",
       "saved": "Team file saved, version {version}",
-      "pick": "Choose file"
+      "pick": "Choose file",
+      "noKey": "No signing key chosen yet. The “Team file” tab can create one."
     },
     "savedVersion": "Team file version {version}",
     "blocked": {
@@ -1397,29 +1375,30 @@
     "deleteRole": "Delete role",
     "members": "Members",
     "myGroups": "Your groups ({count})",
-    "key": {
-      "title": "Key",
-      "none": "No key. Access only through members.",
-      "show": "Show",
-      "hide": "Hide",
-      "copy": "Copy",
-      "copied": "Key copied",
+    "newKey": {
+      "title": "Signing key",
+      "hint": "The admins sign the team file with this key. It is created once and protected with a password; its public half goes into Ember.",
+      "current": "Last used:",
+      "start": "Create a new key",
+      "folder": "Folder for the key",
+      "folderHint": "A folder only admins can read, not the folder of the team file.",
+      "repeat": "Repeat password",
       "create": "Create key",
-      "rotate": "Renew",
-      "remove": "Remove",
-      "rotateConfirm": "Everyone who works with the key of role “{role}” loses access once you save. They then need the new key.",
-      "rotated": "New key for “{role}”. It counts once you save.",
-      "hint": "Whoever enters the key gets the role, even without being a member."
-    }
+      "short": "At least 12 characters.",
+      "mismatch": "The passwords do not match.",
+      "done": "Key saved: {path}.",
+      "next": "Put the public half below into config/team-signing.pub. From the next Ember version on, Ember checks every team file with it.",
+      "copy": "Copy public key",
+      "id": "ID {id}"
+    },
+    "roles": "Roles"
   },
   "preview": {
     "title": "View as",
     "own": "Own view",
     "roles": "Roles",
-    "keys": "Keys",
     "none": "No role (lock screen)",
     "role": "role “{role}”",
-    "key": "key “{level}”",
     "active": "Preview: {view}",
     "back": "Back to own view"
   },

@@ -1,87 +1,89 @@
 ---
 title: Berechtigungen
-description: Rollen legen fest, wer welche Module sieht. Ohne team.json schaltet ein Schlüssel Ember frei.
+description: Die signierte Teamdatei legt fest, wer welche Module sieht. Bearbeitet wird sie nur hier.
 ---
 
 ![Berechtigungen](../../../assets/screens/access-de-light.png)
 
-Jeder Tab in Ember ist ein Modul: Proxy, Git, Software, Playwright, System, Energie, KI, Berechtigungen, Einstellungen und Log. Wer welches Modul sieht, legen Rollen in der [Team-Konfiguration](/Ember/handbuch/team-konfiguration/#access) fest. Damit gelten sie für alle und müssen nicht auf jedem Rechner einzeln gepflegt werden. Wer in keiner Rolle steht, sieht nichts außer einem Sperrbildschirm.
+Jeder Tab in Ember ist ein Modul: Proxy, Git, Software, Playwright, System Info, Energie, KI, Berechtigungen, Einstellungen und Log. Wer welches Modul sieht, steht in der **Teamdatei** (`team.ember`) auf dem Netzlaufwerk. Wer dort in keiner Rolle steht, sieht nur einen Sperrbildschirm. Es gibt keine Schlüssel und kein „Zugriff anfragen“: Wer nicht drinsteht, kommt nicht rein.
 
-Gepflegt werden die Rollen im Tab **Berechtigungen**. Den sieht nur, wer eine Rolle mit dem Modul Berechtigungen hat. Wie Ember für eine Rolle aussieht, zeigt [Ansehen als](#ember-als-eine-andere-rolle-ansehen). Energie, KI und Berechtigungen blendest du mit <kbd>Strg</kbd> + <kbd>E</kbd> aus und wieder ein.
+Den Tab **Berechtigungen** sieht nur, wer eine Rolle mit dem Modul Berechtigungen hat. Oben steht, wie es um die Teamdatei steht: signiert oder nicht, welche Version, wer sie zuletzt signiert hat. Darunter liegen vier Reiter.
 
 ## Rollen
 
-Eine Rolle hat einen Namen, Module und Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller seiner Rollen zusammen. Typisch sind zwei oder drei Rollen:
+Links stehen die Rollen, rechts die gerade gewählte. Eine Rolle hat einen Namen, Module und Mitglieder. Wer in mehreren Rollen ist, sieht die Module aller seiner Rollen zusammen.
+
+- **Module** klickst du als Kacheln an, gruppiert nach Alltag, Erweitert und Sonstiges. „Alle Module“ gibt auch die, die in späteren Versionen dazukommen.
+- **Bruno anbieten** erscheint bei Rollen mit dem Modul Software. Ohne Häkchen bietet Ember der Rolle Bruno nicht an. Wer in mehreren Rollen ist, bekommt ein Werkzeug, sobald eine davon es anbietet.
+- **Mitglieder** fügst du per Name hinzu, mit oder ohne Domäne (`jmoessner` oder `FIRMA\jmoessner`). Ember schlägt den Namen im Verzeichnis nach und erkennt selbst, ob es ein Benutzer oder eine Gruppe ist. Unter „Deine Gruppen“ stehen deine eigenen Domänengruppen zum schnellen Hinzufügen.
+
+Am einfachsten sind AD-Gruppen, die es ohnehin gibt. Nimmt die IT jemanden in die Gruppe auf, hat er die Rolle, ohne dass sich an der Teamdatei etwas ändert. Leute ohne passende Gruppe, etwa Externe, trägst du als Benutzer ein.
+
+Typisch sind drei Rollen:
 
 | Rolle | Module | Mitglieder |
 |---|---|---|
 | Admins | alle | die Leute, die Ember betreuen |
-| Entwicklung | Proxy, Git, Software, Playwright, System, Einstellungen, Log | die AD-Gruppe des Teams |
-| Test | Proxy, Playwright | die Testgruppe, einzelne Kolleginnen und Kollegen |
+| Entwickler | Proxy, Playwright, Git, Software (ohne Bruno) | die AD-Gruppe der Entwicklung |
+| Test | Proxy, Playwright | die Testgruppe |
 
-**Alle Module** heißt in der `team.json` `"*"`. Diese Rolle bekommt auch Module, die in späteren Versionen dazukommen.
+## Sperrliste
 
-Mitglieder fügst du per Name hinzu, mit oder ohne Domäne (`jmoessner` oder `FIRMA\jmoessner`). Ember schlägt den Namen im Verzeichnis nach, schreibt ihn in der richtigen Form und erkennt selbst, ob es ein Benutzer oder eine Gruppe ist. Gibt es den Namen nicht, kommt er nicht in die Rolle. Ohne Verbindung zum Verzeichnis (kein VPN) trägt Ember ihn ungeprüft mit der gewählten Art ein und sagt das dazu.
+Wer auf der Sperrliste steht, als Benutzer oder über eine Gruppe, kommt nicht in Ember, auch wenn eine Rolle ihn nennt. Der Sperrbildschirm sagt ihm das. Das ist der schnelle Weg, jemanden auszuschließen, ohne an Gruppen zu drehen.
 
-Am einfachsten sind AD-Gruppen, die es ohnehin gibt. Nimmt die IT jemanden in die Gruppe auf, sieht er beim nächsten Start die Module der Rolle, und in Ember ist nichts zu tun. Unter „Deine Anmeldung“ stehen deine eigenen Domänengruppen. Jede trägst du mit einem Klick in eine Rolle ein.
+## Team
 
-„Zugriffsanfragen gehen an“ legt fest, wohin die Mail vom Sperrbildschirm geht. Leer heißt: ans Service-Center.
+Die Einstellungen, die jede Teamdatei braucht:
 
-## Schlüssel einer Rolle
+- **Service-Center**: Adresse, Name, Text vor jedem Betreff und der erste Satz bei „Problem melden“.
+- **Vorgesetzte bzw. Vorgesetzter**: bekommt die Bitte um Adminrechte.
+- **Playwright**: der Ordner der [Projektvorlage](/Ember/handbuch/playwright/#die-vorlage) und ein Spiegel für die Browser-Downloads.
+- **Updates**: ein Spiegelordner, falls GitHub gesperrt ist.
+- **Mailtexte**: eigene Betreffe und Texte. Leer heißt: Embers eigener Text.
 
-Jede Rolle kann einen Schlüssel haben. Wer ihn eingibt, bekommt die Rolle, auch wenn er weder als Benutzer noch über eine Gruppe drinsteht. Das ist praktisch für Leute aus anderen Abteilungen, für Externe oder solange die AD-Gruppe noch fehlt. Eingegeben wird der Schlüssel auf dem Sperrbildschirm.
+## Teamdatei
 
-In der Rollenkarte steht der Schlüssel halb verdeckt (`EMBER-7QK2M-•••••-•••••-•••••`). Mit dem Auge zeigst du ihn ganz, daneben kopierst du ihn. „Schlüssel erzeugen“ legt einen an, „Neu erzeugen“ ersetzt ihn, das Kreuz entfernt ihn. Wirksam wird das erst mit „In team.json speichern“.
+Hier stehen Pfad, Version, wer wann signiert hat und mit welchem Schlüssel. Unter **Weitere Einstellungen** steht alles Optionale als JSON, etwa interne Domains, eine Softwareliste oder Energieprofile (siehe [Team-Konfiguration](/Ember/handbuch/team-konfiguration/)). Es wird mit signiert.
 
-Ein erneuerter Schlüssel sperrt den alten aus. Wer bisher damit gearbeitet hat, verliert die Rolle, sobald Ember die `team.json` neu liest: beim Start oder spätestens nach zwei Minuten. Der Sperrbildschirm sagt dann „Dein Schlüssel gilt nicht mehr“, und dort lässt sich der neue eingeben.
+## Signieren und speichern
 
-Der Schlüssel steht im Klartext in der `team.json`, damit Admins ihn jederzeit nachsehen können. Wer die Datei lesen kann, kann ihn also auch lesen. Mehr als eine Bequemlichkeit ist er nicht, siehe unten.
-
-## Werkzeuge pro Rolle
-
-Unter den Modulen steht bei Rollen mit dem Modul Software „Bruno anbieten“. Ohne Häkchen erscheint Bruno für diese Rolle nicht unter Software, Ember installiert es dann auch nicht. In der `team.json` heißt das `"hideTools": ["bruno"]`. Wer in mehreren Rollen ist, bekommt ein Werkzeug, sobald eine davon es anbietet.
-
-## Ember als eine andere Rolle ansehen
-
-Unten in der Seitenleiste steht für Admins **Ansehen als**. Dort wählst du eine Rolle aus der `team.json`, eine Schlüsselstufe oder „Ohne Rolle“. Ember zeigt sich dann genau so wie für diese Leute: dieselben Tabs, dieselbe Startseite, und auch die Exe lässt nur zu, was die Rolle darf. „Ohne Rolle“ zeigt den Sperrbildschirm.
-
-Unten in der Mitte steht dabei „Vorschau: …“ mit dem Knopf „Zurück zur eigenen Ansicht“. Der funktioniert auch dann, wenn die gewählte Rolle das Modul Berechtigungen nicht hat. Ember merkt sich die Vorschau nicht: Nach einem Neustart siehst du wieder deine eigene Ansicht.
-
-## Speichern
-
-„In team.json speichern“ schreibt den Abschnitt `access` zurück in die Datei auf dem Netzlaufwerk. Alles andere bleibt Zeichen für Zeichen stehen, auch Reihenfolge, Einrückung und Zeilenenden. Vorher legt Ember eine Kopie der alten Fassung unter `C:\Ember\Config\team-backups` ab (die letzten 20).
+Geändert wird die Teamdatei nur über „Signieren und speichern“ unten auf der Seite. Ember fragt nach der Schlüsseldatei und ihrem Passwort, zählt die Version hoch, schreibt den Pfad der Datei hinein und unterschreibt alles. Den Pfad zur Schlüsseldatei merkt sich Ember, das Passwort nicht. Die alte Fassung landet vorher unter `C:\Ember\Config\team-backups`.
 
 Ember speichert nicht, wenn
 
-- jemand die `team.json` geändert hat, seit du die Seite geöffnet hast. Dann neu laden, prüfen, noch einmal speichern.
-- du dich damit selbst aussperren würdest. Eine deiner Rollen muss das Modul Berechtigungen behalten.
+- jemand die Teamdatei geändert hat, seit du die Seite geöffnet hast. Dann neu laden, prüfen, noch einmal speichern.
+- du dich damit selbst aussperren würdest: Eine deiner Rollen muss das Modul Berechtigungen behalten, und du darfst nicht auf der Sperrliste stehen.
 - zwei Rollen gleich heißen oder eine keinen Namen hat.
-- die Datei gerade nicht erreichbar ist (VPN, Netzlaufwerk) oder du sie nur lesen darfst. Die Seite sagt das oben, die Knöpfe sind dann aus.
+- der Schlüssel nicht zu dieser Ember-Version gehört oder das Passwort nicht passt.
+- die Datei gerade nicht erreichbar ist (VPN, Netzlaufwerk) oder du sie nur lesen darfst.
 
-Schreibrechte auf die `team.json` vergibt die IT auf dem Netzlaufwerk. Für alle anderen reichen Leserechte. Die anderen bekommen die neuen Rollen beim nächsten Start von Ember, spätestens aber nach zwei Minuten, oder sofort mit „Neu laden“ in den Einstellungen.
+Die anderen bekommen die Änderung beim nächsten Start von Ember, spätestens aber nach zwei Minuten.
 
-Steht in der `team.json` noch das alte Format mit `admins` und einer Zugriffsliste, zeigt der Tab beides als Rollen an: „Admins“ mit allen Modulen und „Ember“ mit allem außer Energie, KI und Berechtigungen. Beim Speichern schreibt Ember das neue Format.
+## Warum signiert
 
-## Was Nutzer ohne Rolle sehen
+Die Teamdatei ist lesbar, aber nur die Admins können sie ändern. Ember enthält die öffentlichen Schlüssel der Admins und lädt eine Teamdatei nur, wenn
 
-Wer in keiner Rolle steht, sieht statt der Oberfläche einen Hinweis mit seinem Anmeldenamen und zwei Knöpfen:
+1. ihre Signatur zu einem dieser Schlüssel passt. Eine selbst gebaute oder veränderte Datei fällt durch.
+2. sie an dem Ort liegt, für den sie signiert wurde. Eine Kopie auf dem eigenen Rechner fällt durch. Ein Laufwerksbuchstabe wie `Z:\` zählt dabei wie der Netzwerkpfad dahinter.
+3. ihre Version nicht älter ist als die, die Ember zuletzt gesehen hat. Eine aufgehobene alte Fassung fällt durch.
 
-- **Zugriff anfragen** öffnet eine vorbereitete Mail (Vorlage `accessRequest`) an die eingetragene Adresse.
-- **Erneut prüfen** liest die `team.json` neu. Steht der Name inzwischen in einer Rolle, startet die Oberfläche.
+Ist das Netzlaufwerk nicht erreichbar, nimmt Ember seine lokale Kopie, höchstens 14 Tage lang. Danach bleibt Ember gesperrt, bis der Share wieder da ist.
 
-Mehr zeigt die Oberfläche nicht, und die Exe lehnt alle anderen Aufrufe ab. Das gilt auch für einzelne Module: Wer Playwright nicht hat, kann es auch nicht über die Bridge aufrufen. Im Hintergrund sucht Ember weiter nach Updates.
-
-## Ohne team.json: die Schlüssel
-
-Beim allerersten Start kennt Ember noch keine `team.json`, es sei denn, es liegt eine daneben oder eine Gruppenrichtlinie nennt sie (siehe [So findet Ember die Datei](/Ember/handbuch/team-konfiguration/#so-findet-ember-die-datei)). Dann erscheint **Ember einrichten** mit zwei Wegen:
-
-- **Schlüssel**: Ein Schlüssel wie `EMBER-XXXXX-XXXXX-XXXXX-XXXXX` schaltet Ember frei, bis es eine `team.json` gibt. Es gibt drei: **Proxy** (nur der Proxy-Tab), **Entwickler** (Proxy, Playwright, Git und Software, ohne Bruno) und **Vollzugriff** (alle Module). Bindestriche, Leerzeichen und Groß- und Kleinschreibung sind egal. Ember merkt sich den Schlüssel in den Einstellungen.
-- **Team-Konfiguration**: den Pfad zur `team.json` eintragen oder auswählen. Ember liest die Datei einmal zur Probe, bevor es den Pfad übernimmt. Ab dann bestimmen ihre Rollen, was du siehst.
-
-Wer mit einem Schlüssel arbeitet, sieht auf der Startseite die Karte „Team-Konfiguration“ mit dem Knopf „Team-Konfiguration einrichten“. Den Pfad kannst du also jederzeit nachtragen, auch ohne das Modul Einstellungen. Sobald eine `team.json` geladen ist, zählt der Schlüssel nicht mehr. Steht dann keine Rolle für dich drin, siehst du den Sperrbildschirm.
-
-Diese Startschlüssel stecken in Ember selbst, weil es ohne `team.json` sonst nichts gäbe, wogegen Ember prüfen könnte. Im Code steht nur ihr SHA-256-Hash, deshalb kann der Tab Berechtigungen sie nicht anzeigen. Sobald eine `team.json` geladen ist, zählen sie nicht mehr, dann gelten die [Schlüssel der Rollen](#schlüssel-einer-rolle). Neue Startschlüssel erzeugt `node scripts/make-key.mjs <proxy|developer|all>`. Das Skript gibt den Schlüssel und die Zeile für `src/Ember.Core/Config/StarterKeys.cs` aus. Ein Schlüssel hat 100 zufällige Bits, der Hash lässt sich also nicht zurückrechnen.
-
-:::note[Keine Sicherheitsgrenze]
-Rollen und Schlüssel halten Ember aus den falschen Händen, schützen aber nichts. Ember läuft mit den Rechten des Benutzers und kann nichts, was der Benutzer nicht auch selbst könnte. Der Code ist öffentlich, und wer will, baut sich eine Exe ohne die Prüfung. Was wirklich geschützt werden muss, schützen die Rechte auf Netzlaufwerk, Softwarecenter und Proxy.
+:::note[Was die Signatur leistet]
+Sie sorgt dafür, dass die normale Ember-Exe nur macht, was ihr freigegeben habt. Wer den öffentlichen Code nimmt und sich eine Exe ohne Prüfung baut, umgeht sie. Das lässt sich bei einem Programm auf dem eigenen Rechner nicht verhindern, ist aber kein Loch: Ember kann nur, was der Benutzer mit seinen Windows-Rechten ohnehin darf. Was wirklich geschützt werden muss, schützen die Rechte auf Netzlaufwerk, Softwarecenter und Proxy.
 :::
+
+## Einrichten: Schlüssel und erste Teamdatei
+
+Das passiert einmal, durch die Admins:
+
+1. Ember ohne eingebauten Schlüssel starten (so ist es, solange `config/team-signing.pub` fehlt). Diese Version nimmt auch eine unsignierte `team.json`, etwa die aus dem Beispiel `config/team.example.json` mit euren Namen.
+2. Im Tab Berechtigungen, Reiter **Teamdatei**, „Neuen Schlüssel erzeugen“: Ordner wählen, den nur Admins lesen können, Passwort mit mindestens 12 Zeichen. Ember legt `ember-team-signing.pem` an (passwortgeschützt) und zeigt den öffentlichen Schlüssel.
+3. „Signieren und speichern“: Ember legt neben der `team.json` die signierte `team.ember` an und nutzt ab dann diese.
+4. Den öffentlichen Schlüssel in `config/team-signing.pub` eintragen und eine neue Ember-Version bauen. Ab dieser Version nimmt Ember nur noch signierte Teamdateien.
+
+Mehrere öffentliche Schlüssel dürfen untereinander in der Datei stehen. So lässt sich ein Schlüssel ohne Ausfall wechseln: neuen dazu, neue Version verteilen, mit dem neuen signieren, den alten entfernen.
+
+## Ansehen als
+
+Unten in der Seitenleiste steht für Admins **Ansehen als**. Dort wählst du eine Rolle oder „Ohne Rolle“. Ember zeigt sich dann so wie für diese Leute: dieselben Tabs, dieselbe Startseite, und auch die Exe lässt nur zu, was die Rolle darf. „Zurück zur eigenen Ansicht“ unten in der Mitte bringt dich zurück, auch wenn die gewählte Rolle das Modul Berechtigungen nicht hat. Nach einem Neustart siehst du wieder deine eigene Ansicht.

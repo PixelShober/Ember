@@ -63,7 +63,10 @@ public sealed class UserSettings
     public bool HideAdvanced { get; set; }
 
     /// <summary>Starter key entered on the setup screen; only counts while there is no team.json.</summary>
-    public string? UnlockKey { get; set; }
+    /// <summary>The admin's signing key file (Berechtigungen → Signieren); the password is never stored.</summary>
+    public string? TeamKeyFile { get; set; }
+    /// <summary>Highest team file version seen per location; an older copy is refused.</summary>
+    public Dictionary<string, int> TeamVersions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>Full name from the directory at the last start, so the greeting is right from the first frame.</summary>
     public string? DisplayName { get; set; }
 

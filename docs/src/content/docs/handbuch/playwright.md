@@ -97,6 +97,6 @@ Hat sich in einem Projekt ein Aufbau bewährt (Page Objects, Fixtures, Config, S
 
 Jeden Vorschlag kannst du per Häkchen ändern, ein Häkchen am Ordner gilt für alles darin. Ordner, deren Inhalt wegfällt, bleiben als leere Ordner erhalten (mit `.gitkeep`), damit die Struktur stimmt. Außerdem macht Ember die Vorlage neutral: In der `package.json` wird der Name zu `$projectname$` und die Version zu `1.0.0`, Autor und Repository fallen weg. Ein fester `baseURL` in der Playwright-Config wird zu `process.env.BASE_URL`.
 
-Gespeichert wird in den Vorlagenordner: den aus der `team.json`, sonst deinen eigenen. Gibt es noch keinen, wählst du einen. Eine vorhandene Vorlage ersetzt Ember erst nach einer Rückfrage und sichert sie vorher unter `C:\Ember\Config\template-backups` (die letzten zehn). Neben die Dateien legt Ember `ember-template.json` mit Name, Beschreibung, Datum und wer sie erstellt hat. Die Datei landet nicht in neuen Projekten.
+Gespeichert wird in den Vorlagenordner: den aus der Teamdatei, sonst deinen eigenen. Gibt es noch keinen, wählst du einen. Eine vorhandene Vorlage ersetzt Ember erst nach einer Rückfrage und sichert sie vorher unter `C:\Ember\Config\template-backups` (die letzten zehn). Neben die Dateien legt Ember `ember-template.json` mit Name, Beschreibung, Datum und wer sie erstellt hat. Die Datei landet nicht in neuen Projekten.
 
 Für die Team-Vorlage brauchst du Schreibrechte auf den Ordner. Alle anderen können damit nur Projekte anlegen.

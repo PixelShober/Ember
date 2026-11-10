@@ -9,16 +9,15 @@ public class ConfigTests
     public void Example_team_config_parses_completely()
     {
         var team = Example;
-        Assert.Equal("Team Entwicklung", team.Name);
-        Assert.Equal(2, team.Proxy!.InternalDomains!.Count);
         Assert.Equal("servicecenter@firma.example", team.ServiceCenter!.Email);
-        Assert.Contains(team.Software!, s => s.Name == "Alfaview" && s.SccmName == "alfaview*");
+        Assert.Equal("Petra", team.Supervisor!.GreetingName());
         Assert.Null(team.Admins);
         Assert.Equal(new[] { "Admins", "Entwickler", "Test" }, team.Access!.Roles!.Select(r => r.Name));
-        Assert.Equal("pi-web-access", team.Pi!.Packages!.Single(p => p.Id == "websearch").Npm);
+        Assert.Equal(new[] { @"FIRMA\ehemalig.mitarbeiter" }, team.Access.Blocked!.Users);
         Assert.NotNull(team.Playwright!.Template);
+        Assert.NotNull(team.Update!.Mirror);
         Assert.False(Permissions.UsesLegacyFormat(team));
-        var tester = Permissions.Compute(team, new TeamStatus("x", "settings", DateTime.Now, false, null, 1, null), null,
+        var tester = Permissions.Compute(team, new TeamStatus("x", "settings", DateTime.Now, false, null, 1, null),
                                          @"FIRMA\erika.musterfrau", Array.Empty<string>(), dev: false);
         Assert.Equal(new[] { "playwright", "proxy" }, tester.Modules.OrderBy(m => m));
     }
@@ -26,7 +25,7 @@ public class ConfigTests
     [Fact]
     public void Effective_settings_prefer_user_then_team_then_default()
     {
-        var team = Example;
+        var team = TeamConfig.Parse("""{ "proxy": { "internalDomains": ["firma.local", "intranet.firma.example"] } }""");
         var user = new UserSettings();
         var detected = new ProxyDetectionResult("http://pac.firma.example/proxy.pac", null, new[] { "proxy.firma.example:8080" });
         var eff = EffectiveSettings.Build(user, team, detected);

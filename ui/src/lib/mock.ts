@@ -3,7 +3,7 @@
 import { BridgeError, type Bridge } from './bridge';
 import { t } from './i18n.svelte';
 import type {
-  AccessView, KeyLevel, ModuleId, AiStatus, PlaywrightState, PlaywrightTemplateInfo, TemplateEntry, TeamFileView, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
+  ModuleId, AiStatus, PlaywrightState, PlaywrightTemplateInfo, TemplateEntry, TeamFileView, AppInfo, CheckResult, GitIdentityInfo, JobSnapshot, LogEntry, PowerState,
   ProxyRow, PxStatus, SettingsView, SoftwareList, StepSnapshot, UpdateStatus, UserSettings, WolLocalState,
 } from './types';
 
@@ -27,35 +27,33 @@ export function createMockBridge(): Bridge {
     models: [],
   };
 
-  // ?setup: no team.json and no key; ?locked: no role in team.json; ?key=proxy|developer|all: unlocked by a starter key.
+  // ?setup: no usable team file; ?locked: no role in it; ?blocked: on its block list.
   const params = new URLSearchParams(location.search);
   const allModules: ModuleId[] = ['proxy', 'git', 'software', 'playwright', 'system', 'power', 'ai', 'access', 'settings', 'log'];
-  const keyModules: Record<KeyLevel, ModuleId[]> = { proxy: ['proxy'], developer: ['proxy', 'playwright', 'git', 'software'], all: allModules };
-  const keyLevel = (['proxy', 'developer', 'all'] as const).find((k) => k === params.get('key')) ?? null;
   const setup = params.has('setup');
-  const ownModules: ModuleId[] = setup || params.has('locked') ? [] : keyLevel ? keyModules[keyLevel] : allModules;
-  const withTeam = !setup && !keyLevel;
-  // ?preview=role:Test|key:proxy|none: an admin looks at Ember through another role (app.preview).
+  const blocked = params.has('blocked');
+  const ownModules: ModuleId[] = setup || blocked || params.has('locked') ? [] : allModules;
+  const withTeam = !setup;
+  // ?preview=role:Test|none: an admin looks at Ember through another role (app.preview).
   const mockRoles: Record<string, ModuleId[]> = { Admins: allModules, Entwickler: ['proxy', 'playwright', 'git', 'software'], Test: ['proxy', 'playwright'] };
   const preview = ownModules.includes('access') ? params.get('preview') : null;
   const modules: ModuleId[] = !preview ? ownModules
     : preview === 'none' ? []
-    : preview.startsWith('key:') ? keyModules[preview.slice(4) as KeyLevel] ?? []
     : mockRoles[preview.slice(5)] ?? [];
 
   const team = {
-    path: withTeam ? '\\\\fs01\\entwicklung\\ember\\team.json' : null, source: withTeam ? ('settings' as const) : null, loadedAt: withTeam ? now() : null, fromCache: false,
+    path: withTeam ? '\\\\fs01\\entwicklung\\ember\\team.ember' : null, source: withTeam ? ('settings' as const) : null, loadedAt: withTeam ? now() : null, fromCache: false,
     error: null, version: withTeam ? 3 : 0, name: withTeam ? 'Team Entwicklung' : null,
   };
 
   const info: AppInfo = {
     version: '1.0.0', uiVersion: '1.0.0', bridge: 1, mode: 'installed', language: lang as AppInfo['language'],
     languageSetting: user.language, windowsLanguage: 'de', user: 'FIRMA\\jmoessner', displayName: 'Jürgen Mößner', computer: 'NB-ENT-0427', elevated: false,
-    modules, grant: { source: setup ? 'none' : keyLevel ? 'key' : 'team', roles: withTeam && modules.length ? ['Admins'] : [], keyLevel },
-    locked: setup ? 'setup' : modules.length ? null : 'notListed',
-    preview: ownModules.includes('access') ? { current: preview, roles: withTeam ? Object.keys(mockRoles) : [], keys: ['proxy', 'developer', 'all'] } : null,
+    modules, grant: { source: setup ? 'none' : 'team', roles: withTeam && modules.length ? ['Admins'] : [] },
+    locked: setup ? 'setup' : blocked ? 'blocked' : modules.length ? null : 'notListed',
+    preview: ownModules.includes('access') ? { current: preview, roles: Object.keys(mockRoles) } : null,
     admin: modules.includes('access'), advanced: modules.some((m) => ['power', 'ai', 'access'].includes(m)), showAdvanced: true, access: modules.length > 0,
-    accessContact: withTeam ? 'ember-admins@firma.example' : null, root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: withTeam ? 'Team Entwicklung' : null,
+    root: 'C:\\Ember', logDir: 'C:\\Ember\\Logs', team, teamName: withTeam ? 'Team Entwicklung' : null,
     serviceCenter: withTeam ? 'servicecenter@firma.example' : null,
     supervisor: withTeam ? { name: 'Petra Lindner', email: 'petra.lindner@firma.example' } : null,
     repo: 'https://github.com/PixelShober/Ember', docs: 'https://pixelshober.github.io/Ember/',
@@ -248,19 +246,6 @@ export function createMockBridge(): Bridge {
   };
 
   let pwFailedOnce = false;
-  const accessView: AccessView = {
-    roles: [
-      { name: 'Admins', modules: ['*'], members: [{ name: 'FIRMA\\jmoessner', kind: 'user' }, { name: 'FIRMA\\GG-Ember-Admins', kind: 'group' }] },
-      { name: 'Entwickler', modules: ['proxy', 'playwright', 'git', 'software'], members: [{ name: 'FIRMA\\GG-Entwicklung', kind: 'group' }], key: 'EMBER-7QK2M-H4RTA-9VXCE-1BN5D', hideTools: ['bruno'] },
-      { name: 'Test', modules: ['proxy', 'playwright'], members: [{ name: 'FIRMA\\GG-Test', kind: 'group' }, { name: 'FIRMA\\akaya', kind: 'user' }] },
-    ],
-    contact: 'ember-admins@firma.example',
-    teamPath: '\\\\fs01\\entwicklung\\ember\\team.json', writable: true, version: 'a1b2c3', problem: null,
-    account: 'FIRMA\\jmoessner',
-    myGroups: ['FIRMA\\Domain Users', 'FIRMA\\GG-Entwicklung', 'FIRMA\\GG-Ember-Admins', 'FIRMA\\GG-VPN', 'FIRMA\\SCCM-Software-Entwicklung', 'FIRMA\\Teams-Entwicklung'],
-    modules: allModules,
-    legacy: false,
-  };
   let teamView: TeamFileView = {
     doc: {
       serviceCenter: { email: 'servicecenter@firma.example', name: 'IT-Service-Center', subjectPrefix: '[Ember]', problemIntro: '' },
@@ -346,33 +331,17 @@ export function createMockBridge(): Bridge {
     'team.reload': () => (modules.includes('settings') ? settingsView() : null),
     'proxy.detect': () => ({ pacUrl: 'http://pac.firma.example/proxy.pac', systemProxy: null, pacProxies: ['proxy.firma.example:8080'], pacDirect: ['firma.local', 'intranet.firma.example', '10.0.0.0/8'] }),
     'proxy.diagnose': () => proxyRows,
-    'access.get': () => structuredClone(accessView),
     'team.admin': () => structuredClone(teamView),
+    'team.newKey': (p) => ({ path: p.folder + '\\ember-team-signing.pem', keyId: '5be0 93a1 c47f 2d68', publicKey: '-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE…\n-----END PUBLIC KEY-----\n' }),
     'team.save': (p) => {
       teamView = { ...teamView, doc: p.doc, extra: p.extra, version: teamView.version + 1, signedBy: info.user, signedAt: new Date().toISOString(), keyFile: p.keyFile };
       return structuredClone(teamView);
-    },
-    'access.newKey': () => {
-      const a = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-      const part = () => Array.from(crypto.getRandomValues(new Uint8Array(5)), (b) => a[b % 32]).join('');
-      return `EMBER-${part()}-${part()}-${part()}-${part()}`;
     },
     'access.lookup': (p) => {
       const name = String(p.name).trim();
       if (/^x/i.test(name)) return { name, kind: null, found: false };
       const group = /gruppe|team|admins|entwicklung/i.test(name);
       return { name: name.includes('\\') ? name : `FIRMA\\${name}`, kind: group ? 'group' : 'user', found: true };
-    },
-    'access.save': (p) => {
-      const c = p.change as { roles: AccessView['roles']; contact: string | null };
-      Object.assign(accessView, { roles: c.roles, contact: c.contact || null, version: String(Date.now()), legacy: false });
-      return structuredClone(accessView);
-    },
-    'app.unlock': (p) => {
-      const key = String(p.key).toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/^EMBER(?=.{20}$)/, '');
-      if (key.length !== 20) throw new BridgeError('keyInvalid', t('errors.keyInvalid'));
-      restartWith('lang=' + lang + '&clean&key=developer');
-      return info;
     },
     'team.setPath': (p) => {
       if (!/\.json$/i.test(String(p.path))) throw new BridgeError('teamUnreadable', t('errors.teamUnreadable', { path: String(p.path), detail: '–' }));
@@ -442,7 +411,7 @@ export function createMockBridge(): Bridge {
     'software.install': (p) => { void simulate('software:' + p.key, 'software', t('software.jobs.install', { name: p.name }), [t('software.steps.trigger'), t('software.steps.wait')]); return null; },
     'mail.preview': (p) => {
       const vars = { ...p.vars, user: info.user, computer: info.computer, sender: 'Jürgen Mößner', supervisor: 'Petra', problemIntro: t('mail.problemIntro') };
-      const to = p.template === 'accessRequest' ? info.accessContact : p.template === 'adminAction' ? info.supervisor?.email ?? null : info.serviceCenter;
+      const to = p.template === 'adminAction' ? info.supervisor?.email ?? null : info.serviceCenter;
       return { to, subject: t(`mail.templates.${p.template}.subject`, vars), body: t(`mail.templates.${p.template}.body`, vars) };
     },
     'mail.compose': () => ({ method: 'mailto', to: info.serviceCenter, subject: 'Betreff', body: 'Text' }),

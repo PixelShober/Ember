@@ -14,7 +14,6 @@ Kurz: Ember speichert keine Passwörter, schickt keine Telemetrie und sendet kei
 - Energieeinstellungen, Netzwerkadapter-Eigenschaften und Gruppenrichtlinien-Ergebnisse
 - die Team-Konfiguration auf dem Netzlaufwerk
 - die Namen deiner Windows- und AD-Gruppen (für die Rollen)
-- den Pfad zur `team.json` aus der Gruppenrichtlinie, falls eure IT einen setzt
 
 ## Was Ember ins Netz schickt
 
@@ -36,9 +35,10 @@ Alles steht unter [Installation](/Ember/handbuch/installation/#wo-ember-seine-da
 - Werte im erlaubten Energieschema, Adapter-Einstellungen für Wake-on-LAN, Schnellstart
 - die PowerShell-Ausführungsrichtlinie für dein Konto
 - Dateien in `C:\Ember`
-- den Abschnitt `access` der `team.json`, wenn du im Tab Berechtigungen speicherst (vorher eine Kopie nach `C:\Ember\Config\team-backups`)
-- `C:\Ember\App\ember-team.txt` mit dem Pfad zur `team.json`, wenn du Ember vom Netzlaufwerk startest
-- deinen Schlüssel in `settings.json`, wenn du Ember damit freischaltest
+- die Teamdatei `team.ember`, wenn du im Tab Berechtigungen signierst und speicherst (vorher eine Kopie nach `C:\Ember\Config\team-backups`)
+- deinen Signaturschlüssel als passwortgeschützte Datei in dem Ordner, den du dafür wählst. Das Passwort speichert Ember nicht.
+- `C:\Ember\App\ember-team.txt` mit dem Pfad zur Teamdatei, wenn du Ember vom Netzlaufwerk startest
+- in `settings.json` die höchste gesehene Version der Teamdatei, damit eine ältere Kopie nicht mehr zählt
 - einen markierten Block in `Dokumente\WindowsPowerShell\profile.ps1` und `Dokumente\PowerShell\profile.ps1`, wenn du PowerShell auf px setzt
 - git `http.<url>.allowNTLMAuth` für die internen Domains und `http.sslBackend`, wenn es noch leer ist
 - `%USERPROFILE%\.pi\agent\models.json` (Provider `llama-cpp`), wenn du Pi mit dem llama-server verbindest

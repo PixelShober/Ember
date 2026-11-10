@@ -14,11 +14,10 @@ Im Dialog wählst du das Anliegen und ergänzt, worum es geht. Empfänger, Betre
 | Software anfordern | Service-Center | „Bitte stellen Sie mir die Software … über das Software Center bereit.“ Das Feld „Welche Software?“ füllt die Lücke. |
 | Problem melden | Service-Center | Ein einleitender Satz, danach deine Beschreibung. Den Satz kann die Team-Konfiguration ersetzen (`serviceCenter.problemIntro`). |
 | Adminrechte beantragen | deine direkte Vorgesetzte bzw. dein direkter Vorgesetzter | „Hallo …, kannst du bitte einmal für mich Admin-Rechte für meinen Rechner beim Service-Center beantragen?“ Adminrechte beantragt bei euch die Führungskraft, deshalb geht die Mail dorthin. |
-| Zugriff auf Ember | wer die Rollen pflegt | kommt nur vom Sperrbildschirm |
 
 Mails ans Service-Center beginnen mit „Sehr geehrte Kolleginnen und Kollegen“. Jede Mail endet mit „Mit freundlichen Grüßen“ und deinem Vor- und Nachnamen. Den Namen holt Ember aus dem Verzeichnis, ohne Verbindung dorthin aus `git config user.name`.
 
-Fehlt in der `team.json` die Adresse, bietet Ember das Anliegen gar nicht erst an. Ohne `serviceCenter.email` gibt es auf der Startseite also keinen Knopf „Service-Center kontaktieren“, ohne `supervisor.email` keinen Antrag auf Adminrechte.
+Fehlt in der Teamdatei die Adresse, bietet Ember das Anliegen gar nicht erst an. Ohne `serviceCenter.email` gibt es auf der Startseite also keinen Knopf „Service-Center kontaktieren“, ohne `supervisor.email` keinen Antrag auf Adminrechte.
 
 Danach versucht Ember zuerst das klassische Outlook und öffnet dort einen Entwurf. Mit dem neuen Outlook oder einem anderen Mailprogramm nimmt Ember einen `mailto:`-Link. Umlaute im Betreff und Text kommen an, weil der Link UTF-8-kodiert ist.
 

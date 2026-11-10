@@ -115,8 +115,6 @@ Unter **Erweiterungen** stehen Pakete für Pi, jeweils mit installierter und neu
 | Context Mode | `context-mode` | spart Kontext bei langen Ausgaben |
 | Todo | `@juicesharp/rpiv-todo` | Aufgabenliste für das Modell |
 
-Die Liste lässt sich in der Team-Konfiguration ersetzen (`pi.packages` mit `id` und `npm`).
-
 Zur Websuche: `pi-web-access` ist ein Werkzeug, das das Modell aufruft. Deshalb sucht es auch mit dem lokalen Modell, anders als Pakete, die die Suche des Cloud-Anbieters nutzen. Ohne Schlüssel sucht es über Exa und DuckDuckGo, mit Schlüssel auch über Brave, Tavily und andere. Node schickt seine Anfragen nicht über `HTTPS_PROXY`, deshalb trägt Ember beim Installieren und bei „Mit llama-server verbinden“ px als `proxy` in `%USERPROFILE%\.pi\agent\web-search.json` ein. Ein eigener Proxy, der nicht auf `localhost` zeigt, bleibt stehen.
 
 Gestartet wird im Projektordner mit `pi --provider llama-cpp --model qwen3.8-27b`. Die MCP-Server liest Pi aus der `.mcp.json` des Repos und aus `%USERPROFILE%\.pi\agent\mcp.json`. Schalte nur die ein, die du gerade brauchst, jede Tool-Beschreibung kostet Kontext.

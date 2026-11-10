@@ -14,7 +14,7 @@ public sealed record MailResult(string Method, string To, string Subject, string
 /// </summary>
 public static class Mail
 {
-    public static readonly string[] Templates = { "softwareRequest", "adminAction", "problem", "accessRequest" };
+    public static readonly string[] Templates = { "softwareRequest", "adminAction", "problem" };
 
     /// <summary>
     /// Access requests go to whoever looks after the roles (team.json access.contact, else the
@@ -22,7 +22,6 @@ public static class Mail
     /// </summary>
     public static string? Recipient(TeamConfig team, string template) => template switch
     {
-        "accessRequest" when team.Access?.Contact is { Length: > 0 } contact => contact,
         "adminAction" => NullIfBlank(team.Supervisor?.Email),
         _ => NullIfBlank(team.ServiceCenter?.Email),
     };

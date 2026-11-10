@@ -1,24 +1,14 @@
 <script lang="ts">
-  // First start without team.json: a starter key unlocks a fixed set of modules until the team.json
-  // is there; with a team.json its roles decide. Both ways start here.
+  // First start, or the team file cannot be used: Ember needs the path to the signed team file.
+  // There is no other way in; the roles in the file decide what this account sees.
   import { fade } from 'svelte/transition';
-  import { api, app, openMail, run } from '../lib/app.svelte';
+  import { app } from '../lib/app.svelte';
   import { t } from '../lib/i18n.svelte';
-  import type { AppInfo } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
   import TeamPathForm from '../lib/components/TeamPathForm.svelte';
 
-  let key = $state('');
-  let busy = $state(false);
   const team = $derived(app.info?.team);
-
-  async function unlock() {
-    busy = true;
-    // The host answers with app.info; getting access reloads the page (lib/app.svelte.ts).
-    await run(() => api<AppInfo>('app.unlock', { key: key.trim() }));
-    busy = false;
-  }
 </script>
 
 <main class="center" in:fade>
@@ -34,24 +24,12 @@
     {/if}
 
     <section class="card stack tight">
-      <div class="card-head"><Icon name="shield" /><h2>{t('access.setup.key')}</h2></div>
-      <p class="small muted">{t('access.setup.keyHint')}</p>
-      <form class="key" onsubmit={(e) => { e.preventDefault(); void unlock(); }}>
-        <input type="text" bind:value={key} placeholder="EMBER-XXXXX-XXXXX-XXXXX-XXXXX" spellcheck="false" autocomplete="off" aria-label={t('access.setup.key')} />
-        <button type="submit" class="btn primary" disabled={busy || !key.trim()}><Icon name="check" size={16} />{t('access.setup.unlock')}</button>
-      </form>
-    </section>
-
-    <section class="card stack tight">
       <div class="card-head"><Icon name="folder" /><h2>{t('access.setup.team')}</h2></div>
       <p class="small muted">{t('access.setup.teamHint')}</p>
       <TeamPathForm />
     </section>
 
-    <p class="small muted foot">
-      {t('access.setup.account', { user: app.info?.user ?? '' })}
-      <button class="btn ghost small" onclick={() => openMail('accessRequest')}><Icon name="mail" size={14} />{t('access.locked.request')}</button>
-    </p>
+    <p class="small muted foot">{t('access.setup.account', { user: app.info?.user ?? '' })}</p>
   </div>
 </main>
 
@@ -61,7 +39,5 @@
   .intro { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; margin-bottom: 4px; }
   .intro h1 { margin: 6px 0 0; font-size: 22px; }
   .card-head { margin-bottom: 0; }
-  .key { display: flex; gap: 8px; flex-wrap: wrap; }
-  .key input { flex: 1 1 260px; font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
-  .foot { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .foot { text-align: center; }
 </style>

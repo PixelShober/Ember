@@ -42,8 +42,8 @@ public sealed class EmberHost : IDisposable
     /// <summary>Company proxy as Windows reports it (detected once at start, see <see cref="DetectProxyAtStartAsync"/>).</summary>
     ProxyDetectionResult? _detected;
 
-    /// <summary>Which modules this account sees: roles in team.json, or a starter key while there is none.</summary>
-    public Grant RealGrant => Permissions.Compute(Team.Config, Team.Status, Settings.UnlockKey, Elevation.AccountName, Access.MyGroups, Access.DevBuild);
+    /// <summary>Which modules this account sees: its roles in the (signed) team file.</summary>
+    public Grant RealGrant => Permissions.Compute(Team.Config, Team.Status, Elevation.AccountName, Access.MyGroups, Access.DevBuild);
 
     /// <summary>
     /// What the window shows and the bridge allows: the account's own modules, or, while an admin
@@ -66,7 +66,7 @@ public sealed class EmberHost : IDisposable
     /// </summary>
     static readonly HashSet<string> OpenMethods = new(StringComparer.Ordinal)
     {
-        "app.info", "app.ready", "app.setAppearance", "app.openExternal", "app.unlock", "app.pickFile", "app.preview",
+        "app.info", "app.ready", "app.setAppearance", "app.openExternal", "app.pickFile", "app.preview",
         "team.reload", "team.setPath", "mail.compose", "mail.preview",
     };
 
@@ -99,7 +99,7 @@ public sealed class EmberHost : IDisposable
             var before = Grant;
             await Team.LoadAsync(Settings, _cts.Token);
             var after = Grant;
-            if (!before.Modules.SetEquals(after.Modules) || before.StaleKey != after.StaleKey || !before.Roles.SequenceEqual(after.Roles))
+            if (!before.Modules.SetEquals(after.Modules) || before.Locked != after.Locked || !before.Roles.SequenceEqual(after.Roles))
                 GrantChanged();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -237,20 +237,18 @@ public sealed class EmberHost : IDisposable
         computer = Environment.MachineName,
         elevated = Elevation.IsElevated,
         modules = ModuleIds.Known.Where(Grant.Has).ToList(),
-        grant = new { Grant.Source, Grant.Roles, Grant.KeyLevel, Grant.StaleKey },
-        // An admin can look at Ember through any role or key level (and back), see app.preview.
+        grant = new { Grant.Source, Grant.Roles },
+        // An admin can look at Ember through any role or nobody's (and back), see app.preview.
         preview = RealGrant.Has("access") ? new
         {
             current = _preview,
             roles = Permissions.Roles(Team.Config).Select(r => r.Name).Where(n => n.Length > 0).Distinct().ToList(),
-            keys = StarterKeys.LevelModules.Keys.ToList(),
         } : null,
         locked = Grant.Locked,
         admin = Grant.Has("access"),
         advanced = ModuleIds.Advanced.Any(Grant.Has),
         showAdvanced = ShowAdvanced,
         access = Grant.Any,
-        accessContact = Team.Config.Access?.Contact ?? Team.Config.ServiceCenter?.Email,
         appearance = new { scheme = Settings.ColorScheme, design = Settings.Design },
         root = Paths.Root,
         logDir = Paths.LogDir,
@@ -317,28 +315,6 @@ public sealed class EmberHost : IDisposable
             Bridge.Emit("app.info", info);
             return Task.FromResult<object?>(info);
         });
-        // Starter key (only counts while there is no team.json).
-        b.Register("app.unlock", (args, _) =>
-        {
-            var key = args.Req("key");
-            string label;
-            if (Team.Status.LoadedAt != null)
-            {
-                // With a team.json the role keys count (Berechtigungen → Schlüssel), the starter keys not.
-                var role = Permissions.Roles(Team.Config).FirstOrDefault(r => StarterKeys.Same(r.Key, key)) ?? throw new EmberException("keyInvalid");
-                label = role.Name;
-            }
-            else
-            {
-                var level = StarterKeys.Level(key) ?? throw new EmberException("keyInvalid");
-                label = L.T($"access.keyLevels.{level}");
-            }
-            Settings.UnlockKey = key.Trim();
-            Settings.Save();
-            Log.Info(L.T("access.unlocked", ("level", label)));
-            GrantChanged();
-            return Task.FromResult<object?>(Info());
-        });
         b.Register("app.ready", (args, _) =>
         {
             Log.Debug("UI ready: " + args.OptStr("version"));
@@ -386,6 +362,9 @@ public sealed class EmberHost : IDisposable
             next.HideAdvanced = Settings.HideAdvanced;   // only Ctrl+E changes this (app.toggleAdvanced)
             next.LlamaProfileChosen |= Settings.LlamaProfileChosen;
             next.DisplayName ??= Settings.DisplayName;
+            // Only Ember itself writes these (team file versions, signing key path).
+            next.TeamVersions = Settings.TeamVersions;
+            next.TeamKeyFile ??= Settings.TeamKeyFile;
             next.Save();
             Settings = next;
             if (languageChanged) L.Configure(next.Language);
@@ -418,19 +397,23 @@ public sealed class EmberHost : IDisposable
         });
 
         // ------------------------------------------------------------------ access (admins)
-        b.Register("access.get", async ct => await Access.ViewAsync(Team.Config, Team.Status, ct));
-        b.Register("access.newKey", () => StarterKeys.Generate());
         b.Register("access.lookup", (args, _) => Task.FromResult<object?>(Access.Lookup(args.Req("name"))));
-        b.Register("access.save", async (args, ct) =>
+        // The team file: only here can it change, and only signed with the admins' key.
+        b.Register("team.admin", async ct => await TeamAdmin.ViewAsync(Team, Settings, ct));
+        b.Register("team.save", async (args, ct) =>
         {
-            var change = args.Get<AccessChange>("change") ?? throw new EmberException("missingParam", ("name", "change"));
-            var path = Team.Status.Path ?? throw new EmberException("accessNoTeamFile");
-            if (Team.Status.FromCache) throw new EmberException("teamOffline", ("path", path));
-            await Task.Run(() => Access.Save(path, change, Elevation.AccountName, Access.MyGroups), ct).WaitAsync(TimeSpan.FromSeconds(20), ct);
+            var doc = args.Get<TeamDoc>("doc") ?? throw new EmberException("missingParam", ("name", "doc"));
+            var version = args.TryGetProperty("version", out var v) && v.TryGetInt32(out var n) ? n : throw new EmberException("missingParam", ("name", "version"));
+            var keyFile = args.Req("keyFile");
+            var password = args.Req("password");
+            await Task.Run(() => TeamAdmin.Save(Team, Settings, doc, args.OptStr("extra") ?? "", version, keyFile, password, Elevation.AccountName, Access.MyGroups), ct)
+                      .WaitAsync(TimeSpan.FromSeconds(60), ct);
             await Team.LoadAsync(Settings, ct);
             GrantChanged();
-            return await Access.ViewAsync(Team.Config, Team.Status, ct);
+            return await TeamAdmin.ViewAsync(Team, Settings, ct);
         });
+        b.Register("team.newKey", (args, _) =>
+            Task.FromResult<object?>(TeamAdmin.NewKey(args.Req("folder"), args.Req("password"), Settings)));
 
         // ------------------------------------------------------------------ proxy & px
         b.Register("proxy.detect", async ct => await Net.DetectProxyAsync(ct));

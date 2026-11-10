@@ -206,9 +206,7 @@
     <!-- what this account sees -->
     <section class="card stack tight">
       <h2>{t('settings.advanced.title')}</h2>
-      {#if app.info?.grant.source === 'key'}
-        <p class="muted">{t('settings.advanced.byKey', { level: t(`access.keyLevels.${app.info.grant.keyLevel ?? 'proxy'}`) })}</p>
-      {:else if app.info?.grant.source === 'dev'}
+      {#if app.info?.grant.source === 'dev'}
         <p class="muted">{t('settings.advanced.dev')}</p>
       {:else}
         <p class="muted">{t('settings.advanced.roles', { roles: app.info?.grant.roles.join(', ') || '–' })}</p>
