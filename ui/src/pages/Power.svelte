@@ -83,49 +83,48 @@
         </div>
         {#if p.description}<p class="muted desc">{host(p.description)}</p>{/if}
 
-        <button class="btn ghost small toggle" onclick={() => (open[p.id] = !open[p.id])} aria-expanded={!!open[p.id]}>
+        <button class="btn ghost small toggle" onclick={() => (open[p.id] = !open[p.id])} aria-expanded={!!open[p.id]} aria-label={`${t('common.details')}: ${host(p.name)}`}>
           <span class="chev" class:open={open[p.id]}><Icon name="chevron" size={14} /></span>{t('common.details')}
         </button>
         {#if open[p.id]}
           <div transition:slide={{ duration: 180 }}>
-            <table class="table">
+            <div class="table-scroll"><table class="table">
               <thead>
                 <tr>
-                  <th>{t('power.setting')}</th>
-                  <th colspan="3">{t('power.ac')}</th>
-                  <th colspan="3">{t('power.dc')}</th>
+                  <th scope="col" rowspan="2">{t('power.setting')}</th>
+                  <th scope="colgroup" colspan="3">{t('power.ac')}</th>
+                  <th scope="colgroup" colspan="3">{t('power.dc')}</th>
                 </tr>
                 <tr class="sub">
-                  <th></th>
-                  <th>{t('power.currentValue')}</th><th>{t('power.target')}</th><th>{t('power.factory')}</th>
-                  <th>{t('power.currentValue')}</th><th>{t('power.target')}</th><th>{t('power.factory')}</th>
+                  <th scope="col">{t('power.currentValue')}</th><th scope="col">{t('power.target')}</th><th scope="col">{t('power.factory')}</th>
+                  <th scope="col">{t('power.currentValue')}</th><th scope="col">{t('power.target')}</th><th scope="col">{t('power.factory')}</th>
                 </tr>
               </thead>
               <tbody>
                 {#each p.settings as s (s.guid)}
                   <tr class:dim={!s.supported}>
-                    <td>
+                    <th scope="row" class="setting">
                       <span class="name">{s.name}</span>
                       <span class="small muted mono">{s.alias}</span>
                       {#if !s.supported}<span class="badge">{t('power.unsupported')}</span>{/if}
                       {#if s.locked}<span class="badge info">{t('power.locked')}</span>{/if}
-                    </td>
+                    </th>
                     {#each [s.ac, s.dc] as v, i (i)}
-                      <td class:hit={sideTouched(v) && v.current === v.target} class:miss={sideTouched(v) && v.current !== v.target}>{fmt(s, v.current)}</td>
+                      <td class:hit={sideTouched(v) && v.current === v.target} class:miss={sideTouched(v) && v.current !== v.target}>{fmt(s, v.current)}{#if sideTouched(v)}<span class="mark"><Icon name={v.current === v.target ? 'check' : 'alert'} size={12} label={v.current === v.target ? t('power.matchesTarget') : t('power.differsFromTarget')} /></span>{/if}</td>
                       <td class="target">{sideTouched(v) ? fmt(s, v.target) : '·'}</td>
                       <td class="muted">{fmt(s, v.default)}</td>
                     {/each}
                   </tr>
                 {/each}
               </tbody>
-            </table>
+            </table></div>
           </div>
         {/if}
       </section>
     {/each}
   </div>
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 
@@ -139,6 +138,10 @@
   .name { display: block; font-weight: 500; }
   td.hit { color: var(--ok); font-weight: 600; }
   td.miss { color: var(--warn); font-weight: 600; }
+  .mark { display: inline-flex; vertical-align: -1px; margin-left: 4px; }
+  /* Row headers look like the cells they label. */
+  th.setting { text-align: left; font-weight: 400; color: var(--text); font-size: inherit; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child th.setting { border-bottom: none; }
   td.target { font-weight: 500; }
   tr.dim { opacity: 0.55; }
 </style>

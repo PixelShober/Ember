@@ -2,24 +2,21 @@
   import { fade, scale } from 'svelte/transition';
   import { app, closeConfirm } from '../app.svelte';
   import { host, t } from '../i18n.svelte';
-
-  function onKey(e: KeyboardEvent) {
-    if (app.confirm && e.key === 'Escape') closeConfirm(false);
-  }
+  import { modal } from '../modal';
 </script>
-
-<svelte:window onkeydown={onKey} />
 
 {#if app.confirm}
   <div class="layer" transition:fade={{ duration: 120 }}>
     <div class="backdrop" onclick={() => closeConfirm(false)} role="presentation"></div>
-    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" transition:scale={{ start: 0.96, duration: 150 }}>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text" use:modal={() => closeConfirm(false)} transition:scale={{ start: 0.96, duration: 150 }}>
       <h2 id="confirm-title">{host(app.confirm.title)}</h2>
-      <p class="break">{host(app.confirm.text)}</p>
+      <p id="confirm-text" class="break">{host(app.confirm.text)}</p>
       <div class="row actions">
-        <button class="btn" onclick={() => closeConfirm(false)}>{t('common.cancel')}</button>
+        <!-- Focus starts on the harmless choice: Cancel when the action deletes or removes something. -->
         <!-- svelte-ignore a11y_autofocus -->
-        <button class="btn {app.confirm.danger ? 'danger' : 'primary'}" autofocus onclick={() => closeConfirm(true)}>{app.confirm.confirm}</button>
+        <button class="btn" autofocus={app.confirm.danger} onclick={() => closeConfirm(false)}>{t('common.cancel')}</button>
+        <!-- svelte-ignore a11y_autofocus -->
+        <button class="btn {app.confirm.danger ? 'danger' : 'primary'}" autofocus={!app.confirm.danger} onclick={() => closeConfirm(true)}>{app.confirm.confirm}</button>
       </div>
     </div>
   </div>

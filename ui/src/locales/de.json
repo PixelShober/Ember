@@ -21,7 +21,8 @@
     "advancedOff": "Energie, KI und Berechtigungen sind ausgeblendet. Strg + E zeigt sie wieder.",
     "advancedNotAllowed": "Energie, KI und Berechtigungen hat keine deiner Rollen.",
     "previewLog": "Vorschau gestartet: Ember zeigt, was {target} sieht.",
-    "previewEnd": "Vorschau beendet, wieder die eigene Ansicht."
+    "previewEnd": "Vorschau beendet, wieder die eigene Ansicht.",
+    "skipToContent": "Zum Inhalt springen"
   },
   "nav": {
     "start": "Start",
@@ -78,7 +79,8 @@
     "resetToDetected": "Erkannten Wert nutzen",
     "admin": "Admin",
     "showMore": "{count} weitere",
-    "showLess": "weniger"
+    "showLess": "weniger",
+    "action": "Aktion"
   },
   "errors": {
     "internal": "Interner Fehler: {message}",
@@ -645,7 +647,9 @@
         "5": "Aggressiv bei Zusicherung",
         "6": "Effizient aggressiv bei Zusicherung"
       }
-    }
+    },
+    "matchesTarget": "entspricht dem Ziel",
+    "differsFromTarget": "weicht vom Ziel ab"
   },
   "wol": {
     "title": "Wake-on-LAN für diesen Rechner",
@@ -680,7 +684,8 @@
         "deepSleep": "„Deep Sleep Control“ ausschalten"
       }
     },
-    "notSet": "nicht vorhanden"
+    "notSet": "nicht vorhanden",
+    "copyMac": "MAC-Adresse kopieren"
   },
   "system": {
     "title": "System & Richtlinien",
@@ -1001,7 +1006,8 @@
     "clear": "Leeren",
     "openFolder": "Log-Ordner",
     "empty": "Noch keine Einträge.",
-    "savedTo": "Log gespeichert: {path}"
+    "savedTo": "Log gespeichert: {path}",
+    "filterLabel": "Log filtern"
   },
   "update": {
     "uiReadyTitle": "Neue Oberfläche bereit",
@@ -1299,7 +1305,8 @@
       "useTeam": "Übernehmen",
       "teamSaved": "Team-Konfiguration übernommen: {path}",
       "teamFailed": "Die Teamdatei unter {path} lässt sich nicht nutzen: {detail}",
-      "account": "Angemeldet als {user}."
+      "account": "Angemeldet als {user}.",
+      "teamPathLabel": "Pfad zur Teamdatei"
     },
     "tabs": {
       "roles": "Rollen",
@@ -1389,7 +1396,8 @@
     },
     "roles": "Rollen",
     "tools": "Installationen",
-    "searchEmpty": "Nichts im Verzeichnis zu „{query}“. Mit Enter übernimmst du den Namen so, wie er dasteht."
+    "searchEmpty": "Nichts im Verzeichnis zu „{query}“. Mit Enter übernimmst du den Namen so, wie er dasteht.",
+    "roleHeading": "Rolle {name}"
   },
   "preview": {
     "title": "Ansehen als",

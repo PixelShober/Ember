@@ -29,7 +29,7 @@
         {/if}
       </div>
     </div>
-    <div class="progress" aria-hidden="true"><div style="width: {job.progress}%"></div></div>
+    <div class="progress" role="progressbar" aria-label={host(job.title)} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(job.progress)}><div style="width: {job.progress}%"></div></div>
     {#if job.status}<p class="small muted">{host(job.status)}</p>{/if}
 
     {#if !compact || job.state !== 'done'}
@@ -37,6 +37,7 @@
         {#each job.steps as step, i (i)}
           <li class="step {step.status}">
             <span class="icon" title={t(`jobs.status.${step.status}`)}><Icon name={icons[step.status]} size={15} /></span>
+            <span class="visually-hidden">{t(`jobs.status.${step.status}`)}:</span>
             <div class="body">
               <div class="row between">
                 <span class="title">{host(step.title)}</span>
@@ -44,7 +45,8 @@
               </div>
               {#if step.detail}<p class="small detail break">{host(step.detail)}</p>{/if}
               {#if step.progressVisible}
-                <div class="progress" class:indeterminate={step.progress == null}><div style="width: {step.progress ?? 0}%"></div></div>
+                <div class="progress" class:indeterminate={step.progress == null} role="progressbar" aria-label={host(step.title)}
+                  aria-valuemin="0" aria-valuemax="100" aria-valuenow={step.progress == null ? undefined : Math.round(step.progress)}><div style="width: {step.progress ?? 0}%"></div></div>
               {/if}
             </div>
           </li>

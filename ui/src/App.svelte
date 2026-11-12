@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { fade } from 'svelte/transition';
   import { api, app, can, canOpen, init, navigate, openMail, run, toast } from './lib/app.svelte';
   import { t } from './lib/i18n.svelte';
@@ -34,6 +34,28 @@
   $effect(() => {
     void app.route;
     content?.scrollTo(0, 0);
+    if (matchMedia('(max-width: 720px)').matches) window.scrollTo(0, 0);
+  });
+
+  /** Moves the keyboard (and a screen reader) to the title of the open page. */
+  async function focusPage() {
+    await tick();
+    const heading = content?.querySelector<HTMLElement>('.page h1');
+    const target = heading ?? content;
+    if (!target) return;
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
+
+  // Every page has its own window title, and after a page change the focus moves to its title,
+  // so a screen reader says where you are (not on the very first page: that would skip the navigation).
+  let shown: string | null = null;
+  $effect(() => {
+    const route = app.route;
+    if (!app.ready || !app.info?.access) return;
+    document.title = `${t(`nav.${route}`)} · Ember`;
+    if (shown !== null && shown !== route) void focusPage();
+    shown = route;
   });
 
   onMount(() => {
@@ -115,6 +137,7 @@
   </main>
 {:else}
   <div class="shell">
+    <button class="skip btn primary" onclick={focusPage}>{t('app.skipToContent')}</button>
     <aside class="sidebar" style={`--ivy: url("${ivy}")`}>
       <div class="brand">
         <img src="./favicon.svg" alt="" width="32" height="32" />
@@ -132,8 +155,8 @@
           </a>
         {/each}
         {#if can('settings') || can('log')}<div class="sep"></div>{/if}
-        {#if can('settings')}<a href="#/settings" class:active={app.route === 'settings'}><Icon name="settings" /><span>{t('nav.settings')}</span></a>{/if}
-        {#if can('log')}<a href="#/log" class:active={app.route === 'log'}><Icon name="log" /><span>{t('nav.log')}</span></a>{/if}
+        {#if can('settings')}<a href="#/settings" class:active={app.route === 'settings'} aria-current={app.route === 'settings' ? 'page' : undefined}><Icon name="settings" /><span>{t('nav.settings')}</span></a>{/if}
+        {#if can('log')}<a href="#/log" class:active={app.route === 'log'} aria-current={app.route === 'log' ? 'page' : undefined}><Icon name="log" /><span>{t('nav.log')}</span></a>{/if}
       </nav>
 
       <div class="foot">
@@ -175,6 +198,9 @@
 {/if}
 
 {#if app.ready}<PreviewSwitch bar />{/if}
+<!-- What changed without moving the focus (toasts, jobs): see announce() in lib/app.svelte.ts. -->
+<div class="visually-hidden" aria-live="polite" aria-atomic="true">{app.live.polite}</div>
+<div class="visually-hidden" aria-live="assertive" aria-atomic="true">{app.live.assertive}</div>
 <Handbook />
 <Toasts />
 <ConfirmDialog />
@@ -242,6 +268,23 @@
   .px-pill.muted .dot { color: var(--text-muted); }
 
   .content { overflow-y: auto; padding: 28px 36px 48px; min-width: 0; }
+  .content :global(h1:focus) { outline: none; }
   .page { max-width: 1120px; }
+
+  /* Skip link: hidden until the keyboard reaches it (the first Tab on every page). */
+  .skip { position: fixed; left: 12px; top: 12px; z-index: 60; transform: translateY(-200%); }
+  .skip:focus-visible { transform: none; }
+
+  /* Narrow window or large zoom (WCAG 1.4.10, down to 320 px): the sidebar becomes a bar on top,
+     the page scrolls as a whole and nothing needs sideways scrolling. */
+  @media (max-width: 720px) {
+    .shell { display: block; height: auto; }
+    .sidebar { padding: 12px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--border); }
+    .sidebar::after { display: none; }
+    nav { flex-direction: row; flex-wrap: wrap; overflow: visible; }
+    .sep { display: none; }
+    .foot { margin-top: 0; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 0 6px; }
+    .content { overflow: visible; padding: 20px 16px 40px; }
+  }
   .preview { margin-bottom: 18px; }
 </style>

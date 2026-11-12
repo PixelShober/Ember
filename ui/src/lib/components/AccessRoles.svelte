@@ -103,7 +103,7 @@
   <!-- the roles -->
   <nav class="list" aria-label={t('access.roles')}>
     {#each roles as r, i (i)}
-      <button class="item" class:active={r === role} onclick={() => (selected = i)} animate:flip={{ duration: 160 }}>
+      <button class="item" class:active={r === role} aria-current={r === role ? 'true' : undefined} onclick={() => (selected = i)} animate:flip={{ duration: 160 }}>
         <span class="name">{r.name || '–'}</span>
         <span class="small muted sum">{summary(r)}</span>
         <span class="small muted count"><Icon name="users" size={12} />{r.members.length}</span>
@@ -114,7 +114,8 @@
 
   <!-- the open role -->
   {#if role}
-    <section class="card detail stack">
+    <section class="card detail stack" aria-labelledby="role-heading">
+      <h2 id="role-heading" class="visually-hidden">{t('access.roleHeading', { name: role.name || '–' })}</h2>
       <div class="head">
         <input id="role-name" class="role-name" type="text" bind:value={role.name} disabled={!editable} aria-label={t('access.roleName')} spellcheck="false" />
         <button class="btn small ghost" disabled={!editable} onclick={removeRole}><Icon name="trash" size={14} />{t('access.deleteRole')}</button>
@@ -196,7 +197,7 @@
     transition: background-color 150ms ease-out, border-color 150ms ease-out;
   }
   .item:hover { background: var(--surface-2); }
-  .item.active { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow); }
+  .item.active { background: var(--surface); border-color: var(--border); box-shadow: inset 3px 0 0 var(--accent), var(--shadow); }
   .item .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .count { display: inline-flex; align-items: center; gap: 4px; grid-row: 1; grid-column: 2; }
   .item .sum { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -208,7 +209,7 @@
   .block + .block { padding-top: 16px; border-top: 1px solid var(--border); }
   .group { display: grid; grid-template-columns: 96px 1fr; gap: 8px; align-items: start; }
   .group .label { padding-top: 8px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 6px; }
   .tile {
     position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; text-align: left;
     font: inherit; font-size: 13px; color: var(--text-muted); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-small);
@@ -247,6 +248,6 @@
   .mine li { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 6px; }
   .mine li:hover { background: var(--surface-2); }
   .filter { margin-top: 8px; max-width: 280px; }
-  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } .list { position: static; } }
+  @media (max-width: 820px) { .split { grid-template-columns: minmax(0, 1fr); } .list { position: static; } }
   @media (prefers-reduced-motion: reduce) { .tile, .tile .tick { transition: none; } }
 </style>

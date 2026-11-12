@@ -6,9 +6,11 @@
   import Icon from './Icon.svelte';
 
   const icon = { ok: 'check', error: 'alert', info: 'info' } as const;
+  const hold = (held: boolean) => () => (app.toastsHeld = held);
 </script>
 
-<div class="toasts" role="status" aria-live="polite">
+<!-- Screen readers hear the text through the live regions in App.svelte (announce()); this is the visible copy. -->
+<div class="toasts" role="presentation" onmouseenter={hold(true)} onmouseleave={hold(false)} onfocusin={hold(true)} onfocusout={hold(false)}>
   {#each app.toasts as toast (toast.id)}
     <div class="toast {toast.kind}" in:fly={{ y: 16, duration: 200 }} out:fly={{ x: 40, duration: 160 }} animate:flip={{ duration: 200 }}>
       <Icon name={icon[toast.kind]} />

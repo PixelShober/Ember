@@ -26,7 +26,10 @@
 </script>
 
 <form class="team" onsubmit={(e) => { e.preventDefault(); void apply(); }}>
-  <input type="text" bind:value={path} placeholder={t('access.setup.teamPlaceholder')} spellcheck="false" autocomplete="off" aria-label={t('access.setup.team')} />
+  <label class="field">
+    <span>{t('access.setup.teamPathLabel')}</span>
+    <input type="text" bind:value={path} placeholder={t('access.setup.teamPlaceholder')} spellcheck="false" autocomplete="off" />
+  </label>
   <div class="row">
     <button type="button" class="btn" onclick={browse}><Icon name="folder" size={16} />{t('access.setup.browse')}</button>
     <button type="submit" class="btn primary" disabled={busy || !path.trim()}><Icon name="check" size={16} />{t('access.setup.useTeam')}</button>

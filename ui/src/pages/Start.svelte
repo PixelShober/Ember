@@ -84,7 +84,7 @@
     <svelte:element this={open ? 'button' : 'div'} class="card status {card.tone}" class:static={!open} role={open ? undefined : 'group'} onclick={open ? () => navigate(card.route) : undefined}>
       <div class="row">
         {#if card.todo}<Calcifer size={32} />{:else}<span class="icon"><Icon name={card.icon} /></span>{/if}
-        <h3>{card.title}</h3>
+        <h2 class="card-title">{card.title}</h2>
       </div>
       <p class="break">{card.text}</p>
       {#if open}<span class="go small">{t('start.goTo')} <Icon name="chevron" size={14} /></span>{/if}
@@ -117,4 +117,5 @@
   .status.warn .icon { background: var(--warn-soft); color: var(--warn); }
   .go { margin-top: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-fg); font-weight: 500; }
   .quick { margin-top: 28px; }
+  .card-title { font-size: 14px; }
 </style>

@@ -89,8 +89,8 @@
     </div>
     <label class="field">
       <span class="small muted">{t('playwright.create.name')}</span>
-      <input type="text" bind:value={rawName} placeholder={t('playwright.create.namePlaceholder')} spellcheck="false" autocomplete="off" />
-      <span class="small muted">{target ? t('playwright.create.target', { path: target }) : t('playwright.create.nameRule')}</span>
+      <input type="text" bind:value={rawName} placeholder={t('playwright.create.namePlaceholder')} spellcheck="false" autocomplete="off" aria-describedby="pw-new-name-hint" />
+      <span id="pw-new-name-hint" class="small muted">{target ? t('playwright.create.target', { path: target }) : t('playwright.create.nameRule')}</span>
     </label>
   </div>
 
@@ -139,7 +139,7 @@
   .path { flex: 1; min-width: 0; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-small); overflow-wrap: anywhere; }
   .what { display: flex; flex-direction: column; gap: 6px; }
   .files {
-    list-style: none; margin: 0; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 16px;
+    list-style: none; margin: 0; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 2px 16px;
     border: 1px dashed var(--border-strong); border-radius: var(--radius-small);
   }
   .files li { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12.5px; min-width: 0; }

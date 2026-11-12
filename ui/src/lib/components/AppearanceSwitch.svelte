@@ -41,7 +41,7 @@
     <legend>{t('appearance.scheme')}</legend>
     {#each schemes as o (o.value)}
       <label title={t(`appearance.schemes.${o.value}`)}>
-        <input type="radio" name="scheme-{id}" value={o.value} checked={appearance.scheme === o.value}
+        <input type="radio" name="scheme-{id}" value={o.value} aria-label={t(`appearance.schemes.${o.value}`)} checked={appearance.scheme === o.value}
           onchange={(e) => choose({ scheme: o.value }, e.currentTarget)} />
         <span><Icon name={o.icon} size={16} />{#if variant === 'card'}<span class="text">{t(`appearance.schemes.${o.value}`)}</span>{/if}</span>
       </label>
@@ -51,7 +51,7 @@
     <legend>{t('appearance.design')}</legend>
     {#each designs as o (o.value)}
       <label title={t(`appearance.designs.${o.value}`)}>
-        <input type="radio" name="design-{id}" value={o.value} checked={appearance.design === o.value}
+        <input type="radio" name="design-{id}" value={o.value} aria-label={t(`appearance.designs.${o.value}`)} checked={appearance.design === o.value}
           onchange={(e) => choose({ design: o.value }, e.currentTarget)} />
         <span><Icon name={o.icon} size={16} />{#if variant === 'card'}<span class="text">{t(`appearance.designs.${o.value}`)}</span>{/if}</span>
       </label>
@@ -67,13 +67,14 @@
   }
   legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   label { position: relative; }
-  input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  input { position: absolute; inset: 0; width: 100% !important; height: 100% !important; margin: 0; opacity: 0; cursor: pointer; }
   label > span {
     display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 7px; border-radius: 6px;
     color: var(--text-muted); white-space: nowrap; font-size: 12.5px; font-weight: 500;
     transition: background-color 150ms ease-out, color 150ms ease-out;
   }
-  input:checked + span { background: var(--accent-soft); color: var(--accent-fg); }
+  /* Chosen: filled and outlined, so it shows without telling colours apart (WCAG 1.4.11). */
+  input:checked + span { background: var(--accent-soft); color: var(--accent-fg); box-shadow: inset 0 0 0 1.5px var(--accent-fg); }
   input:hover + span { color: var(--text); }
   input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
   .rail label > span { padding: 0 6px; min-height: 26px; }

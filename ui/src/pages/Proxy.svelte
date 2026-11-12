@@ -99,7 +99,7 @@
 
     {#if rows}
       <div class="scroll"><table class="table">
-        <thead><tr><th>{t('proxy.diag.tool')}</th><th>{t('proxy.diag.value')}</th><th>{t('proxy.diag.state')}</th><th></th></tr></thead>
+        <thead><tr><th scope="col">{t('proxy.diag.tool')}</th><th scope="col">{t('proxy.diag.value')}</th><th scope="col">{t('proxy.diag.state')}</th><th scope="col"><span class="visually-hidden">{t('common.action')}</span></th></tr></thead>
         <tbody>
           {#each rows as row (row.tool)}
             <tr>
@@ -138,7 +138,7 @@
         </tbody>
       </table></div>
     {:else}
-      <p class="muted">{t('common.loading')}</p>
+      <p class="muted" role="status">{t('common.loading')}</p>
     {/if}
   </section>
 </div>

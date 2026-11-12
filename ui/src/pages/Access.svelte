@@ -14,6 +14,7 @@
   import AccessRoles from '../lib/components/AccessRoles.svelte';
   import AccessBlocked from '../lib/components/AccessBlocked.svelte';
   import AccessTeam from '../lib/components/AccessTeam.svelte';
+  import { modal } from '../lib/modal';
 
   const tabs = ['roles', 'blocked', 'team', 'file'] as const;
   let tab = $state<(typeof tabs)[number]>('roles');
@@ -186,9 +187,10 @@
         {/if}
       </section>
       <section class="card stack tight">
-        <div class="card-head"><Icon name="settings" /><div class="grow"><h2>{t('access.teamfile.extra')}</h2></div></div>
-        <textarea class="json" rows="14" bind:value={extra} disabled={!editable} spellcheck="false"></textarea>
-        {#if extraError}<p class="small error">{extraError}</p>{/if}
+        <div class="card-head"><Icon name="settings" /><div class="grow"><h2 id="extra-title">{t('access.teamfile.extra')}</h2></div></div>
+        <textarea class="json" rows="14" bind:value={extra} disabled={!editable} spellcheck="false" aria-labelledby="extra-title"
+          aria-invalid={!!extraError} aria-describedby={extraError ? 'extra-error' : undefined}></textarea>
+        {#if extraError}<p id="extra-error" class="field-error"><Icon name="alert" size={14} />{extraError}</p>{/if}
       </section>
     {/if}
   </div>
@@ -199,13 +201,13 @@
     <button class="btn primary small" disabled={!dirty || !editable || !!extraError} onclick={() => (signing = true)}><Icon name="shield" size={14} />{t('access.sign.button')}</button>
   </div>
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 {#if signing && view}
   <div class="layer" transition:fade={{ duration: 120 }}>
     <div class="backdrop" onclick={() => (signing = false)} role="presentation"></div>
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="sign-title" transition:scale={{ start: 0.96, duration: 150 }}>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="sign-title" use:modal={() => (signing = false)} transition:scale={{ start: 0.96, duration: 150 }}>
     <form class="stack tight" onsubmit={(e) => { e.preventDefault(); void sign(); }}>
       <div class="row"><Icon name="shield" /><h2 id="sign-title">{t('access.sign.title')}</h2></div>
       <p class="small muted">{t('access.sign.text', { from: view.version, to: view.version + 1 })}</p>
@@ -238,7 +240,7 @@
   .status .what { display: flex; flex-direction: column; gap: 1px; }
   .status .path { margin-left: auto; color: var(--text-muted); overflow-wrap: anywhere; text-align: right; background: none; padding: 0; }
   .note { margin-bottom: 14px; }
-  .grow { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 3px; }
+  .grow { flex: 1; min-width: min(200px, 100%); display: flex; flex-direction: column; gap: 3px; }
   .facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
   .facts dt { color: var(--text-muted); }
   .facts dd { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow-wrap: anywhere; }
@@ -246,7 +248,7 @@
   .json { font-family: var(--mono); font-size: 12.5px; resize: vertical; tab-size: 2; }
   .error { color: var(--error); }
   .savebar {
-    margin-top: 18px; display: flex; align-items: center; gap: 10px;
+    margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border);
   }
   .savebar.dirty { position: sticky; bottom: 0; border-color: var(--accent); box-shadow: 0 -6px 18px -12px color-mix(in srgb, var(--accent) 60%, transparent); }

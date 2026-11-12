@@ -40,6 +40,10 @@ export const app = $state({
   toasts: [] as Toast[],
   confirm: null as ConfirmRequest | null,
   mail: null as MailRequest | null,
+  /** The pointer or the keyboard is on a toast: none of them goes away meanwhile. */
+  toastsHeld: false,
+  /** What a screen reader says next (App.svelte renders the live regions). */
+  live: { polite: '', assertive: '' },
 });
 
 let bridge: Bridge | null = null;
@@ -155,6 +159,8 @@ export async function init(): Promise<void> {
     // Finished: whatever it installed or changed is not in the kept answers yet.
     const before = app.jobs[job.id]?.state;
     if (before !== job.state && (job.state === 'done' || job.state === 'failed')) forget();
+    // Started, finished, failed or cancelled: say so (the progress itself is not read out every second).
+    if (before !== job.state) announce(`${host(job.title)}: ${t(`jobs.states.${job.state}`)}`, job.state === 'failed' ? 'assertive' : 'polite');
     app.jobs[job.id] = job;
   });
   bridge.on('px.status', (s: PxStatus) => {
@@ -206,10 +212,31 @@ export async function init(): Promise<void> {
   void warmUp(info.modules);
 }
 
+/**
+ * Tells screen readers about something that changed without moving the focus (WCAG 4.1.3).
+ * "assertive" interrupts (errors), "polite" waits until the reader is done.
+ */
+export function announce(text: string, urgency: 'polite' | 'assertive' = 'polite'): void {
+  // Empty first, so the same message twice in a row is read twice.
+  app.live[urgency] = '';
+  setTimeout(() => (app.live[urgency] = text), 60);
+}
+
+/**
+ * A short message at the bottom right. Errors and messages with a button stay until closed
+ * (WCAG 2.2.1: no time limit on something you need to read or act on); the others go after
+ * a few seconds, but not while the pointer or the keyboard is on the toasts.
+ */
 export function toast(kind: Toast['kind'], text: string, action?: Toast['action']): void {
   const id = ++toastId;
-  app.toasts.push({ id, kind, text: host(text), action });
-  setTimeout(() => dismissToast(id), kind === 'error' ? 12000 : 5000);
+  const shown = host(text);
+  app.toasts.push({ id, kind, text: shown, action });
+  announce(shown, kind === 'error' ? 'assertive' : 'polite');
+  if (kind !== 'error' && !action) expire(id, 6000);
+}
+
+function expire(id: number, ms: number): void {
+  setTimeout(() => (app.toastsHeld ? expire(id, 2000) : dismissToast(id)), ms);
 }
 
 export function dismissToast(id: number): void {
