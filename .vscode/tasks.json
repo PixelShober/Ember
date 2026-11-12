@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ui: build",
+      "type": "shell",
+      "command": "npm ci && npm run build",
+      "options": { "cwd": "${workspaceFolder}/ui" },
+      "problemMatcher": []
+    },
+    {
+      "label": "ui: dev (Browser mit Beispieldaten)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/ui" },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/src/Ember.App/Ember.App.csproj"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "run",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/Ember.App/Ember.App.csproj"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run mit UI-Dev-Server (--ui-dev)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "${workspaceFolder}/src/Ember.App/Ember.App.csproj", "--", "--ui-dev"],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "${workspaceFolder}/tests/Ember.Core.Tests/Ember.Core.Tests.csproj"],
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    },
+    {
+      "label": "publish: eigenständige Ember.exe",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["publish", "${workspaceFolder}/src/Ember.App/Ember.App.csproj", "-c", "Release", "-o", "${workspaceFolder}/publish"],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

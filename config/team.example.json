@@ -1,0 +1,58 @@
+{
+  "$schema": "https://pixelshober.github.io/Ember/team.schema.json",
+  "version": 1,
+
+  "serviceCenter": {
+    "email": "servicecenter@firma.example",
+    "name": "IT-Service-Center",
+    "subjectPrefix": "[Ember]"
+  },
+
+  "supervisor": {
+    "name": "Petra Lindner",
+    "email": "petra.lindner@firma.example"
+  },
+
+  "access": {
+    "roles": [
+      {
+        "name": "Admins",
+        "modules": ["*"],
+        "users": ["FIRMA\\max.mustermann"],
+        "groups": ["FIRMA\\Entwicklung-Admins"]
+      },
+      {
+        "name": "Entwickler",
+        "modules": ["proxy", "playwright", "git", "software"],
+        "groups": ["FIRMA\\Entwicklung"],
+        "hideTools": ["bruno"]
+      },
+      {
+        "name": "Test",
+        "modules": ["proxy", "playwright"],
+        "users": ["FIRMA\\erika.musterfrau"],
+        "groups": ["FIRMA\\Test"]
+      }
+    ],
+    "blocked": {
+      "users": ["FIRMA\\ehemalig.mitarbeiter"],
+      "groups": []
+    }
+  },
+
+  "update": {
+    "mirror": "\\\\fs01\\entwicklung\\ember\\releases"
+  },
+
+  "playwright": {
+    "template": "\\\\fs01\\entwicklung\\vorlagen\\playwright",
+    "downloadHost": "https://artifactory.firma.example/playwright"
+  },
+
+  "mailTemplates": {
+    "softwareRequest": {
+      "subject": "Softwarebereitstellung: {app} für {user}",
+      "body": "Sehr geehrte Kolleginnen und Kollegen,\n\nbitte stellen Sie mir die Software {app} über das Software Center bereit.\n\nBenutzer: {user}\nRechner: {computer}"
+    }
+  }
+}

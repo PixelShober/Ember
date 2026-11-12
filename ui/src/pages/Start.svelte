@@ -1,0 +1,120 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { api, app, can, canOpen, copyText, navigate, openMail, run, toast } from '../lib/app.svelte';
+  import { t } from '../lib/i18n.svelte';
+  import { firstName, formatDate } from '../lib/format';
+  import type { GitIdentityInfo, ProxyRow, Route } from '../lib/types';
+  import Icon from '../lib/components/Icon.svelte';
+  import Calcifer from '../lib/components/Calcifer.svelte';
+
+  let git = $state<GitIdentityInfo | null>(null);
+  let gitLoaded = $state(false);
+  let rows = $state<ProxyRow[] | null>(null);
+
+  // Only what this account's modules cover. Each card fills in as soon as its answer is there;
+  // until then it says "loading", not "not set up".
+  onMount(() => {
+    if (can('git')) void api<GitIdentityInfo>('git.get').then((g) => (git = g)).catch(() => {}).finally(() => (gitLoaded = true));
+    if (can('proxy')) void api<ProxyRow[]>('proxy.diagnose').then((r) => (rows = r)).catch(() => {});
+  });
+
+
+  // From Ember.exe (directory name, remembered from the last start), so it is right from the first frame.
+  const name = $derived(firstName(app.info?.displayName, app.info?.user ?? ''));
+  // Tools that should point to px (the Node.js certificates are no proxy setting).
+  const relevant = $derived(rows?.filter((r) => r.state !== 'info' && r.state !== 'missing' && r.tool !== 'nodeCerts') ?? []);
+  const okCount = $derived(relevant.filter((r) => r.state === 'px').length);
+  const team = $derived(app.info?.team);
+
+  // todo: something is missing or set up wrong (an available update is not one of those).
+  type Card = { route: Route; icon: string; title: string; text: string; tone: 'ok' | 'warn' | 'muted'; todo?: boolean; show?: boolean };
+  const allCards = $derived<Card[]>([
+    {
+      show: can('proxy'),
+      route: 'proxy', icon: 'proxy', title: t('start.cards.px'),
+      text: app.px?.portOpen ? t('start.pxRunning', { url: app.px.url }) : app.px?.installed ? t('start.pxStopped') : t('start.pxMissing'),
+      tone: app.px?.portOpen ? 'ok' : 'warn',
+      todo: !!app.px && !app.px.portOpen,
+    },
+    {
+      show: can('proxy'),
+      route: 'proxy', icon: 'check', title: t('start.cards.proxy'),
+      text: rows ? t('start.proxySummary', { ok: okCount, total: relevant.length }) : t('common.loading'),
+      tone: !rows ? 'muted' : okCount === relevant.length ? 'ok' : 'warn',
+      todo: !!rows && okCount !== relevant.length,
+    },
+    {
+      show: can('git'),
+      route: 'git', icon: 'git', title: t('start.cards.git'),
+      text: !gitLoaded ? t('common.loading') : git?.name && git?.email ? t('start.gitSet', { name: git.name, email: git.email }) : t('start.gitMissing'),
+      tone: !gitLoaded ? 'muted' : git?.name && git?.email ? 'ok' : 'warn',
+      todo: !!git && !(git.name && git.email),
+    },
+    {
+      show: can('settings'),
+      route: 'settings', icon: 'folder', title: t('start.cards.team'),
+      text: !team?.path ? t('start.teamNone') : team.fromCache ? t('start.teamCache', { date: formatDate(team.loadedAt) }) : t('start.teamOk', { date: formatDate(team.loadedAt) }),
+      tone: !team?.path ? 'warn' : team.fromCache || team.error ? 'warn' : 'ok',
+      todo: !team?.path || !!team.fromCache || !!team.error,
+    },
+    {
+      route: 'settings', icon: 'sparkle', title: t('start.cards.update'),
+      text: app.update?.uiAvailable || app.update?.exeAvailable ? t('start.updateAvailable', { version: app.update?.latest }) : t('start.updateCurrent', { version: app.info?.version }),
+      tone: app.update?.uiAvailable || app.update?.exeAvailable ? 'warn' : 'ok',
+    },
+  ]);
+  const cards = $derived(allCards.filter((c) => c.show !== false));
+
+  async function report() {
+    const r = await run(() => api<{ text: string; path: string }>('diagnostics.report'));
+    if (r) {
+      await copyText(r.text);
+      toast('ok', t('start.reportSaved', { path: r.path }));
+    }
+  }
+</script>
+
+<header class="page-head">
+  <h1>{t('start.title', { name })}</h1>
+</header>
+
+<section class="grid">
+  {#each cards as card, i (i)}
+    {@const open = canOpen(card.route)}
+    <svelte:element this={open ? 'button' : 'div'} class="card status {card.tone}" class:static={!open} role={open ? undefined : 'group'} onclick={open ? () => navigate(card.route) : undefined}>
+      <div class="row">
+        {#if card.todo}<Calcifer size={32} />{:else}<span class="icon"><Icon name={card.icon} /></span>{/if}
+        <h3>{card.title}</h3>
+      </div>
+      <p class="break">{card.text}</p>
+      {#if open}<span class="go small">{t('start.goTo')} <Icon name="chevron" size={14} /></span>{/if}
+    </svelte:element>
+  {/each}
+</section>
+
+<section class="stack quick">
+  <h2>{t('start.quick')}</h2>
+  <div class="row">
+    <button class="btn" onclick={report}><Icon name="report" size={16} />{t('start.report')}</button>
+    {#if app.info?.serviceCenter}<button class="btn" onclick={() => openMail('problem')}><Icon name="mail" size={16} />{t('start.contact')}</button>{/if}
+  </div>
+</section>
+
+<style>
+  .status {
+    text-align: left; font: inherit; color: inherit; cursor: pointer;
+    display: flex; flex-direction: column; gap: 8px; border-top: 3px solid var(--border-strong);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .status:hover:not(.static) { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .static { cursor: default; }
+  .set-up { align-self: flex-start; margin-top: auto; }
+  .team { margin-top: 16px; max-width: 640px; }
+  .status.ok { border-top-color: var(--ok); }
+  .status.warn { border-top-color: var(--warn); }
+  .icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--text-muted); }
+  .status.ok .icon { background: var(--ok-soft); color: var(--ok); }
+  .status.warn .icon { background: var(--warn-soft); color: var(--warn); }
+  .go { margin-top: auto; display: inline-flex; align-items: center; gap: 2px; color: var(--accent-fg); font-weight: 500; }
+  .quick { margin-top: 28px; }
+</style>
