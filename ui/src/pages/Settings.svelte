@@ -115,7 +115,7 @@
           {:else if view.teamStatus.error}
             <span class="badge error">{t('settings.team.failed', { error: view.teamStatus.error })}</span>
           {:else}
-            <span class="badge ok">{t('settings.team.status', { path: view.teamStatus.path, date: formatDate(view.teamStatus.loadedAt) })}</span>
+            <span class="badge ok wrap">{t('settings.team.status', { path: view.teamStatus.path, date: formatDate(view.teamStatus.loadedAt) })}</span>
           {/if}
           {#if view.teamStatus.source}<span class="muted"> · {t(`settings.team.source.${view.teamStatus.source}`)}</span>{/if}
         </p>

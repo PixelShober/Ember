@@ -21,7 +21,8 @@
     "advancedOff": "Power, AI and Permissions are hidden. Ctrl + E shows them again.",
     "advancedNotAllowed": "None of your roles has Power, AI or Permissions.",
     "previewLog": "Preview started: Ember shows what {target} sees.",
-    "previewEnd": "Preview ended, back to the own view."
+    "previewEnd": "Preview ended, back to the own view.",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "start": "Home",
@@ -78,7 +79,8 @@
     "resetToDetected": "Use detected value",
     "admin": "Admin",
     "showMore": "{count} more",
-    "showLess": "less"
+    "showLess": "less",
+    "action": "Action"
   },
   "errors": {
     "internal": "Internal error: {message}",
@@ -680,7 +682,8 @@
         "deepSleep": "turn off “Deep Sleep Control”"
       }
     },
-    "notSet": "not present"
+    "notSet": "not present",
+    "copyMac": "Copy MAC address"
   },
   "system": {
     "title": "System & policies",
@@ -1001,7 +1004,8 @@
     "clear": "Clear",
     "openFolder": "Log folder",
     "empty": "No entries yet.",
-    "savedTo": "Log saved: {path}"
+    "savedTo": "Log saved: {path}",
+    "filterLabel": "Filter the log"
   },
   "update": {
     "uiReadyTitle": "New UI ready",
@@ -1389,7 +1393,8 @@
     },
     "roles": "Roles",
     "tools": "Installers",
-    "searchEmpty": "Nothing in the directory for “{query}”. Enter takes the name as typed."
+    "searchEmpty": "Nothing in the directory for “{query}”. Enter takes the name as typed.",
+    "roleHeading": "Role {name}"
   },
   "preview": {
     "title": "View as",

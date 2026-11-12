@@ -99,7 +99,7 @@
 
     {#if rows}
       <div class="scroll"><table class="table">
-        <thead><tr><th>{t('proxy.diag.tool')}</th><th>{t('proxy.diag.value')}</th><th>{t('proxy.diag.state')}</th><th></th></tr></thead>
+        <thead><tr><th>{t('proxy.diag.tool')}</th><th>{t('proxy.diag.value')}</th><th>{t('proxy.diag.state')}</th><th><span class="visually-hidden">{t('common.action')}</span></th></tr></thead>
         <tbody>
           {#each rows as row (row.tool)}
             <tr>

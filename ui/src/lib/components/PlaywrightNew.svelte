@@ -139,7 +139,7 @@
   .path { flex: 1; min-width: 0; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-small); overflow-wrap: anywhere; }
   .what { display: flex; flex-direction: column; gap: 6px; }
   .files {
-    list-style: none; margin: 0; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2px 16px;
+    list-style: none; margin: 0; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 2px 16px;
     border: 1px dashed var(--border-strong); border-radius: var(--radius-small);
   }
   .files li { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12.5px; min-width: 0; }

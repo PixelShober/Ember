@@ -88,7 +88,7 @@
         </button>
         {#if open[p.id]}
           <div transition:slide={{ duration: 180 }}>
-            <table class="table">
+            <div class="table-scroll"><table class="table">
               <thead>
                 <tr>
                   <th>{t('power.setting')}</th>
@@ -118,7 +118,7 @@
                   </tr>
                 {/each}
               </tbody>
-            </table>
+            </table></div>
           </div>
         {/if}
       </section>

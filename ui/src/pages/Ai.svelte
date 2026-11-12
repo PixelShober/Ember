@@ -181,7 +181,7 @@
     </div>
     {#if status?.llama.recommendedVariant === 'cuda'}<p class="small muted hint">{t('ai.llama.cudaHint')}</p>{/if}
     {#if status?.llama.installed.length}
-      <table class="table">
+      <div class="table-scroll"><table class="table">
         <tbody>
           {#each status.llama.installed as l (l.path)}
             <tr>
@@ -196,7 +196,7 @@
             </tr>
           {/each}
         </tbody>
-      </table>
+      </table></div>
     {:else if status}
       <p class="muted">{t('ai.llama.none')}</p>
     {/if}
@@ -242,8 +242,8 @@
     </ul>
     <p class="small muted">{t('ai.models.orUrl')}</p>
     <div class="add">
-      <input bind:value={newModel.url} placeholder={t('ai.models.addUrl')} spellcheck="false" />
-      <input bind:value={newModel.name} placeholder={t('ai.models.addName')} />
+      <label class="field"><span class="small">{t('ai.models.addUrl')}</span><input bind:value={newModel.url} spellcheck="false" /></label>
+      <label class="field"><span class="small">{t('ai.models.addName')}</span><input bind:value={newModel.name} /></label>
       <button class="btn small" disabled={!newModel.url.trim()} onclick={addModel}><Icon name="plus" size={14} />{t('ai.models.add')}</button>
     </div>
   </section>
@@ -369,7 +369,8 @@
   .models li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
   .models li:first-child { border-top: none; }
   .grow { flex: 1; min-width: 240px; }
-  .add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; margin-top: 8px; }
+  .add { display: grid; grid-template-columns: 2fr 1fr auto; gap: 8px; margin-top: 8px; align-items: end; }
+  .add > .btn { min-height: 32px; justify-self: start; }
   .server { display: grid; grid-template-columns: 1.4fr 1.4fr 100px; gap: 10px; margin-bottom: 6px; }
   .args { margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
   .check { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }

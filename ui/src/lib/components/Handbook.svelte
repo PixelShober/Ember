@@ -32,6 +32,7 @@
   import { fade, scale } from 'svelte/transition';
   import { t } from '../i18n.svelte';
   import Icon from './Icon.svelte';
+  import { modal } from '../modal';
 
   let local = $state<boolean | null>(null);
   let frame = $state<HTMLIFrameElement>();
@@ -68,12 +69,10 @@
 
 </script>
 
-<svelte:window onkeydown={(e) => { if (handbook.open && e.key === 'Escape') close(); }} />
-
 {#if handbook.open}
   <div class="layer" transition:fade={{ duration: 120 }}>
     <div class="backdrop" onclick={close} role="presentation"></div>
-    <div class="sheet" role="dialog" aria-modal="true" aria-label={t('handbook.title')} transition:scale={{ start: 0.97, duration: 160 }}>
+    <div class="sheet" role="dialog" aria-modal="true" aria-label={t('handbook.title')} use:modal={close} transition:scale={{ start: 0.97, duration: 160 }}>
       <header>
         <Icon name="book" size={17} />
         <strong>{t('handbook.title')}</strong>

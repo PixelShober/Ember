@@ -141,7 +141,7 @@
 {/if}
 
 <style>
-  .two { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+  .two { grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
   .grid:not(.two) { grid-template-columns: minmax(0, 560px); }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
   dt { color: var(--text-muted); }
@@ -150,7 +150,7 @@
   .section-title.first { margin-top: 0; }
   .form { margin-top: 16px; }
   .proxy { margin-top: 16px; }
-  .grow { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 3px; }
+  .grow { flex: 1; min-width: min(240px, 100%); display: flex; flex-direction: column; gap: 3px; }
   .ok-text { display: flex; align-items: center; gap: 6px; color: var(--ok); }
   .warn-text { color: var(--warn); }
   dd { margin: 0; font-weight: 500; }

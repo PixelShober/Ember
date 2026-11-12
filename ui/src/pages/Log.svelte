@@ -34,7 +34,7 @@
   {#each levels as l (l)}
     <label class="check"><input type="checkbox" bind:checked={show[l]} />{t(`log.levels.${l}`)}</label>
   {/each}
-  <input class="filter" bind:value={filter} placeholder={t('log.filter')} />
+  <input class="filter" type="search" bind:value={filter} placeholder={t('log.filter')} aria-label={t('log.filterLabel')} />
   <label class="check"><input type="checkbox" bind:checked={autoscroll} />{t('log.autoscroll')}</label>
   <span class="spacer"></span>
   <button class="btn small" onclick={async () => { await copyText(asText()); toast('ok', t('common.copied')); }}><Icon name="copy" size={14} />{t('log.copy')}</button>

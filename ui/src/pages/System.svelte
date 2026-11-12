@@ -60,7 +60,7 @@
         <div class="row">
           {#if c.status === 'warn'}<Calcifer size={28} />{/if}
           <span class="badge {tone[c.status]}">{#if c.status === 'pending'}<span class="spin"><Icon name="refresh" size={12} /></span>{/if}{t(`system.status.${c.status}`)}</span>
-          <h3>{host(c.title)}</h3>
+          <h2 class="check-title">{host(c.title)}</h2>
           <span class="muted">{host(c.value)}</span>
           <span class="spacer"></span>
           {#each c.actions as a (a.id)}
@@ -85,6 +85,7 @@
 <style>
   .head { margin: -8px 0 12px; }
   .check { padding: 12px 16px; }
+  .check-title { font-size: 14px; }
   .spin { display: inline-flex; animation: spin 1.2s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   pre { margin: 10px 0 0; padding: 10px 12px; background: var(--surface-2); border-radius: var(--radius-small); white-space: pre-wrap; font-family: var(--mono); font-size: 12px; max-height: 280px; overflow: auto; }

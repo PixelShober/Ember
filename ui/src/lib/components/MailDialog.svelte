@@ -6,6 +6,7 @@
   import type { MailResult } from '../types';
   import Icon from './Icon.svelte';
   import Calcifer from './Calcifer.svelte';
+  import { modal } from '../modal';
 
   // Software and problems go to the service center, admin rights to the supervisor: only what has
   // an address in team.json is offered (plus whatever was asked for, which then says what is missing).
@@ -55,7 +56,7 @@
 {#if app.mail}
   <div class="layer" transition:fade={{ duration: 120 }}>
     <div class="backdrop" onclick={close} role="presentation"></div>
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mail-title" transition:scale={{ start: 0.96, duration: 150 }}>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mail-title" use:modal={close} transition:scale={{ start: 0.96, duration: 150 }}>
       <div class="row">
         <Icon name="mail" />
         <h2 id="mail-title">{t('mail.title')}</h2>

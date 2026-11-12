@@ -41,7 +41,7 @@
     <legend>{t('appearance.scheme')}</legend>
     {#each schemes as o (o.value)}
       <label title={t(`appearance.schemes.${o.value}`)}>
-        <input type="radio" name="scheme-{id}" value={o.value} checked={appearance.scheme === o.value}
+        <input type="radio" name="scheme-{id}" value={o.value} aria-label={t(`appearance.schemes.${o.value}`)} checked={appearance.scheme === o.value}
           onchange={(e) => choose({ scheme: o.value }, e.currentTarget)} />
         <span><Icon name={o.icon} size={16} />{#if variant === 'card'}<span class="text">{t(`appearance.schemes.${o.value}`)}</span>{/if}</span>
       </label>
@@ -51,7 +51,7 @@
     <legend>{t('appearance.design')}</legend>
     {#each designs as o (o.value)}
       <label title={t(`appearance.designs.${o.value}`)}>
-        <input type="radio" name="design-{id}" value={o.value} checked={appearance.design === o.value}
+        <input type="radio" name="design-{id}" value={o.value} aria-label={t(`appearance.designs.${o.value}`)} checked={appearance.design === o.value}
           onchange={(e) => choose({ design: o.value }, e.currentTarget)} />
         <span><Icon name={o.icon} size={16} />{#if variant === 'card'}<span class="text">{t(`appearance.designs.${o.value}`)}</span>{/if}</span>
       </label>

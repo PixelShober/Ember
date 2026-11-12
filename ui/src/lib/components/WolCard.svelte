@@ -58,7 +58,7 @@
           <div class="row">
             <span class="small">{t('wol.mac')}:</span>
             <code>{a.mac}</code>
-            <button class="btn ghost small" title={t('wol.macHint')} onclick={async () => { await copyText(a.mac); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button>
+            <button class="btn ghost small" title={t('wol.macHint')} aria-label={t('wol.copyMac')} onclick={async () => { await copyText(a.mac); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button>
             <span class="badge {a.armed ? 'ok' : 'warn'}">{a.armed ? t('wol.armed') : t('wol.notArmed')}</span>
           </div>
           <ul class="props">
@@ -95,10 +95,11 @@
   .bios ul { margin: 4px 0 0; padding-left: 18px; }
   .bios li + li { margin-top: 2px; }
   .desc { margin-bottom: 8px; max-width: 820px; }
-  .adapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; margin: 12px 0; }
+  .adapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 12px; margin: 12px 0; }
   .adapter { border: 1px solid var(--border); border-radius: var(--radius-small); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
   .props { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-  .props li { display: grid; grid-template-columns: 20px 1fr auto auto; gap: 8px; align-items: center; }
+  .props li { display: grid; grid-template-columns: 20px minmax(0, 1fr) minmax(0, auto) auto; gap: 8px; align-items: center; }
+  .props li > span { overflow-wrap: anywhere; }
   .state { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--warn-soft); color: var(--warn); }
   .state.ok { background: var(--ok-soft); color: var(--ok); }
 </style>

@@ -194,7 +194,7 @@
   .grow { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 3px; }
   .filter { width: 240px; }
   .category { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 14px 0 8px; }
-  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); }
   .tile { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-top: 3px solid var(--border-strong); }
   .tile.done { border-top-color: var(--ok); }
   .tile-head { display: flex; gap: 10px; align-items: flex-start; }
