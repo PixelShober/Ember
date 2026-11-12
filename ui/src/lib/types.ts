@@ -534,6 +534,21 @@ export interface LlamaStatus {
   device: string | null;
   promptTps: number | null;
   generationTps: number | null;
+  /** Started without Ember (by Pi or the start script). */
+  external?: boolean;
+}
+
+/** llama-server without Ember: llama.json, start script and the Pi extension (LlamaLaunch). */
+export interface LaunchInfo {
+  ready: boolean;
+  reason: 'noBuild' | 'noCudaRuntime' | 'noModel' | null;
+  model: string | null;
+  profile: string;
+  port: number;
+  configFile: string;
+  scriptFile: string;
+  extensionFile: string;
+  piExtension: boolean;
 }
 
 export interface ModelState {
@@ -590,5 +605,8 @@ export interface AiStatus {
   profiles: LlamaProfile[];
   profile: LlamaProfile['id'];
   pi: PiState;
+  launch?: LaunchInfo;
+  /** The model the next start uses (chosen last, else the first one there). */
+  serverModelId?: string | null;
 }
 

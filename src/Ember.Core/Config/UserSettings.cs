@@ -88,6 +88,8 @@ public sealed class UserSettings
     public string LlamaProfile { get; set; } = "lang";
     /// <summary>true once the user picked a profile when starting. Until then the default applies, also after it changed ("standard" → "lang").</summary>
     public bool LlamaProfileChosen { get; set; }
+    /// <summary>Id of the model llama-server starts with (Ember, Pi and the start script); empty: the first one that is there.</summary>
+    public string LlamaModel { get; set; } = "";
     /// <summary>A llama.cpp folder that is already there (e.g. C:\llama); used instead of Ember's own builds.</summary>
     public string LlamaCustomDir { get; set; } = "";
     /// <summary>Additional arguments after the profile's (empty: none).</summary>

@@ -36,6 +36,25 @@ public static class Gpu
                   .ToList();
     }
 
+    /// <summary>
+    /// Processes that compute on an NVIDIA card right now (nvidia-smi --query-compute-apps). This is the
+    /// reliable answer to "does llama-server use the GPU": it does not depend on how a llama.cpp version
+    /// words its log. Empty without nvidia-smi.
+    /// </summary>
+    public static async Task<HashSet<int>> ComputePidsAsync(CancellationToken ct)
+    {
+        var smi = Tools.NvidiaSmi;
+        if (smi == null) return new HashSet<int>();
+        var r = await ProcessRunner.RunAsync(smi, new[] { "--query-compute-apps=pid", "--format=csv,noheader,nounits" }, ct, 30, logOutput: false);
+        return ParsePids(r.StdOut);
+    }
+
+    internal static HashSet<int> ParsePids(string csv) =>
+        csv.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+           .Select(l => int.TryParse(l.Split(',')[0].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var pid) ? pid : 0)
+           .Where(pid => pid > 0)
+           .ToHashSet();
+
     /// <summary>Any GPU at all (for choosing the Vulkan build when there is no NVIDIA card).</summary>
     public static async Task<List<string>> AdaptersAsync(CancellationToken ct)
     {
@@ -60,10 +79,12 @@ public sealed record LlamaInstall(string Tag, string Variant, string Path, bool 
 /// <param name="Device">The GPU llama.cpp found ("CUDA0: NVIDIA RTX …"); null after loading means CPU only.</param>
 /// <param name="PromptTps">Tokens per second while reading the prompt, from the last request.</param>
 /// <param name="GenerationTps">Tokens per second while writing the answer, from the last request.</param>
+/// <param name="External">Started without Ember (by Pi or the start script); Ember can still stop it.</param>
 public sealed record LlamaStatus(IReadOnlyList<LlamaInstall> Installed, string? Current, string RecommendedVariant,
                                  bool ServerRunning, int Port, string? ServerModel, string? ServerAlias, string? ServerProfile,
                                  int? ServerContext, string? Offloaded, string? LastError,
-                                 bool Loaded = false, string? Device = null, double? PromptTps = null, double? GenerationTps = null);
+                                 bool Loaded = false, string? Device = null, double? PromptTps = null, double? GenerationTps = null,
+                                 bool External = false);
 
 /// <summary>Context size and KV cache for llama-server; the weights stay fully in VRAM in every profile.</summary>
 public sealed record LlamaProfile(string Id, int Context, string KvCache, bool Mtp);
@@ -77,6 +98,8 @@ public static class LlamaCpp
     static bool _loaded;
     static double? _promptTps, _genTps;
     static int? _serverContext;
+    // Process ids nvidia-smi listed as computing on the GPU: checked once per server process.
+    static readonly Dictionary<int, string> _gpuByPid = new();
 
     /// <summary>
     /// For a 27B model on 24 GB: "standard" 96K with q8_0 KV cache, "lang" 160K with q4_0, "max" 256K
@@ -147,11 +170,73 @@ public static class LlamaCpp
 
     public static async Task<LlamaStatus> StatusAsync(UserSettings s, CancellationToken ct)
     {
-        bool running = _server is { HasExited: false };
-        return new(Installed(s), string.IsNullOrEmpty(s.LlamaCurrent) ? null : s.LlamaCurrent, await RecommendVariantAsync(s, ct),
-                   running, s.LlamaPort, running ? _serverModel : null, running ? _serverAlias : null, running ? _serverProfile : null,
-                   running ? _serverContext : null, running ? _offloaded : null, _lastError,
-                   running && _loaded, running ? _device : null, running ? _promptTps : null, running ? _genTps : null);
+        var installed = Installed(s);
+        var current = string.IsNullOrEmpty(s.LlamaCurrent) ? null : s.LlamaCurrent;
+        var variant = await RecommendVariantAsync(s, ct);
+        if (_server is { HasExited: false } own)
+        {
+            var device = _device ?? (_loaded ? await GpuOfAsync(own.Id, ct) : null);
+            return new(installed, current, variant, true, s.LlamaPort, _serverModel, _serverAlias, _serverProfile, _serverContext,
+                       _offloaded, _lastError, _loaded, device, _promptTps, _genTps);
+        }
+
+        // Started by Pi or the start script: what it runs comes from llama.json, the rest from its log and port.
+        using var external = LlamaLaunch.ExternalServer(_server);
+        if (external == null) return new(installed, current, variant, false, s.LlamaPort, null, null, null, null, null, _lastError);
+        var (model, alias, profile, context) = LlamaLaunch.Started();
+        string? offloaded = null, logDevice = null, error = null;
+        double? promptTps = null, genTps = null;
+        // The log belongs to this process only if it was written after the start (the script logs to its console).
+        var logFresh = File.Exists(LlamaLaunch.LogFile) && File.GetLastWriteTime(LlamaLaunch.LogFile) >= SafeStart(external).AddSeconds(-5);
+        foreach (var line in logFresh ? LlamaLaunch.LogTail() : Array.Empty<string>())
+        {
+            if (Offloaded(line) is { } layers) offloaded = layers;
+            logDevice ??= Device(line);
+            if (Speed(line) is { } speed) { if (speed.Prompt) promptTps = speed.Tps; else genTps = speed.Tps; }
+            if (IsError(line)) error = line.Trim();
+        }
+        var loaded = await AnswersAsync(s.LlamaPort, ct);
+        var gpu = logDevice ?? (loaded ? await GpuOfAsync(external.Id, ct) : null);
+        return new(installed, current, variant, true, s.LlamaPort, model, alias, profile, context, offloaded, error,
+                   loaded, gpu, promptTps, genTps, External: true);
+    }
+
+    static DateTime SafeStart(Process p)
+    {
+        try { return p.StartTime; } catch { return DateTime.MinValue; }
+    }
+
+    /// <summary>The GPU's name when nvidia-smi lists this process as computing on it; null otherwise.</summary>
+    static async Task<string?> GpuOfAsync(int pid, CancellationToken ct)
+    {
+        lock (_gpuByPid) if (_gpuByPid.TryGetValue(pid, out var known)) return known;
+        try
+        {
+            if (!(await Gpu.ComputePidsAsync(ct)).Contains(pid)) return null;
+            var name = (await Gpu.NvidiaAsync(ct)).FirstOrDefault()?.Name ?? "CUDA";
+            lock (_gpuByPid) _gpuByPid[pid] = name;
+            return name;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.Debug("nvidia-smi compute apps: " + ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>llama-server's /health answers 200 once the model is loaded (503 while loading).</summary>
+    static async Task<bool> AnswersAsync(int port, CancellationToken ct)
+    {
+        try
+        {
+            using var http = new HttpClient(new HttpClientHandler { UseProxy = false }) { Timeout = TimeSpan.FromSeconds(2) };
+            using var r = await http.GetAsync($"http://127.0.0.1:{port}/health", ct);
+            return r.IsSuccessStatusCode;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -334,6 +419,13 @@ public static class LlamaCpp
             throw new EmberException("llamaNoCudaAtStart", ("path", current.Path), ("detail", output.Split('\n').LastOrDefault()?.Trim() ?? ""));
     }
 
+    /// <summary>The build that starts, or null when none is installed (no exception).</summary>
+    public static LlamaInstall? TryCurrent(UserSettings s)
+    {
+        var all = Installed(s);
+        return all.FirstOrDefault(i => i.Current) ?? all.FirstOrDefault(i => i.Complete) ?? all.FirstOrDefault();
+    }
+
     static LlamaInstall Current(UserSettings s)
     {
         var all = Installed(s);
@@ -414,13 +506,16 @@ public static class LlamaCpp
     }
 
     /// <summary>
-    /// "ggml_cuda_init: found 1 CUDA devices: Device 0: NVIDIA RTX PRO 5000 …" or
-    /// "using device CUDA0 (NVIDIA …)" → the GPU; the CPU backend says nothing like that.
+    /// "ggml_cuda_init: found 1 CUDA devices: Device 0: NVIDIA RTX PRO 5000 …", "using device CUDA0 (NVIDIA …)"
+    /// or "load_tensors: CUDA0 model buffer size = 15000.00 MiB" → the GPU; the CPU backend says nothing like
+    /// that. Newer llama.cpp versions word or leave out some of these lines, so the status also asks nvidia-smi.
     /// </summary>
     internal static string? Device(string line)
     {
         var m = Regex.Match(line, @"(?:Device \d+|using device (?:CUDA|Vulkan)\d+)\s*[:(]\s*([^,()]+)", RegexOptions.IgnoreCase);
-        return m.Success && !m.Groups[1].Value.Contains("CPU", StringComparison.OrdinalIgnoreCase) ? m.Groups[1].Value.Trim() : null;
+        if (m.Success && !m.Groups[1].Value.Contains("CPU", StringComparison.OrdinalIgnoreCase)) return m.Groups[1].Value.Trim();
+        var buffer = Regex.Match(line, @"\b((?:CUDA|Vulkan)\d+)\s+(?:model|KV|compute)\s+buffer size", RegexOptions.IgnoreCase);
+        return buffer.Success ? buffer.Groups[1].Value : null;
     }
 
     /// <summary>
@@ -438,9 +533,16 @@ public static class LlamaCpp
     {
         var p = _server;
         _server = null;
-        if (p == null) return;
-        try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch { }
-        p.Dispose();
+        if (p != null)
+        {
+            try { if (!p.HasExited) p.Kill(entireProcessTree: true); } catch { }
+            p.Dispose();
+        }
+        // One started by Pi or the start script: Ember stops it too, so the graphics memory is free.
+        using var external = LlamaLaunch.ExternalServer(null);
+        if (external == null) return;
+        try { external.Kill(entireProcessTree: true); } catch { }
+        Log.Info(L.T("ai.server.stoppedExternal"), "llama");
     }
 
     /// <summary>Splits "-ngl 99 -c 8192 --alias \"my model\"" like a command line.</summary>

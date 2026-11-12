@@ -89,12 +89,29 @@ Der Server lauscht nur auf `127.0.0.1`. Sobald das Modell geladen ist, zeigt Emb
 
 Unter „Letzte Fehlermeldung“ zeigt Ember nur Fehler. Warnungen wie `common_fit_params: failed to fit params to free device memory: n_gpu_layers already set by user to 99, abort` bleiben im Log: llama.cpp passt die Schichten nur selbst an, wenn niemand `-ngl` vorgibt, und Ember gibt `-ngl 99` vor. Der Server läuft trotzdem normal.
 
-- **Grafikkarte**: welche GPU llama.cpp gefunden hat. Findet ein CUDA-Build keine, rechnet er still auf der CPU, oft weil die CUDA-Laufzeit fehlt. Ember warnt dann. Einen CUDA-Build ohne `cudart64_*.dll` und `cublas64_*.dll` startet Ember gar nicht erst. Er steht in der Liste mit dem Hinweis „unvollständig“ und dem Knopf „Neu installieren“. Ist „Server starten“ aus, steht der Grund daneben: kein llama.cpp, ein unvollständiger Build oder noch kein Modell.
+- **Grafikkarte**: welche GPU llama-server nutzt. Ember liest das aus dem Log und fragt zusätzlich `nvidia-smi`, ob `llama-server.exe` auf der NVIDIA rechnet. Neuere llama.cpp-Versionen schreiben die Gerätezeilen nicht mehr zuverlässig ins Log, `nvidia-smi` ist deshalb die eigentliche Antwort. Rechnet ein CUDA-Build trotzdem auf der CPU, oft weil die CUDA-Laufzeit fehlt, warnt Ember. Einen CUDA-Build ohne `cudart64_*.dll` und `cublas64_*.dll` startet Ember gar nicht erst. Er steht in der Liste mit dem Hinweis „unvollständig“ und dem Knopf „Neu installieren“. Ist „Server starten“ aus, steht der Grund daneben: kein llama.cpp, ein unvollständiger Build oder noch kein Modell.
 - **Schichten auf der GPU**: steht im Log „offloaded X/Y layers to GPU“, zeigt Ember das an. Sind es nicht alle, rechnet ein Teil auf der CPU.
 - **Tempo**: Token pro Sekunde beim Lesen des Prompts und beim Schreiben der Antwort, aus der letzten Anfrage.
 - **Freier VRAM**: Mindestens 0,5 bis 1 GB sollten frei bleiben. Sonst ein kleineres Profil nehmen.
 
-„Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Beim Beenden von Ember stoppt der Server mit.
+„Weboberfläche öffnen“ zeigt die eingebaute Chat-Seite von llama.cpp. Einen Server, den Ember selbst gestartet hat, stoppt Ember beim Beenden mit.
+
+## llama-server ohne Ember starten
+
+Wie bei px richtest du llama einmal in Ember ein und musst Ember danach nicht mehr öffnen. Modell und Profil, die du oben auswählst, gelten sofort, auch ohne „Server starten“. Ember schreibt sie zusammen mit dem llama.cpp-Build, dem Port und allen Argumenten nach `C:\Ember\llama.cpp\llama.json`. Daraus starten pi und das Startskript den Server genau so, wie Ember es tun würde.
+
+**Über pi.** Nach „Mit llama-server verbinden“ in der Pi-Karte legt Ember die pi-Erweiterung `ember-llama.ts` in `%USERPROFILE%\.pi\agent\extensions` ab. Öffnest du pi mit dem lokalen Modell, passiert Folgendes:
+
+1. Läuft llama-server schon, legt pi gleich los.
+2. Sonst startet die Erweiterung ihn unsichtbar im Hintergrund. Unten in pi steht „llama lädt …“.
+3. Schickst du vorher schon eine Nachricht, wartet pi, bis das Modell geladen ist.
+4. Der Server läuft weiter, wenn du pi schließt. Der nächste Start geht dann sofort.
+
+In pi gibt es dazu den Befehl `/llama`: ohne Zusatz zeigt er den Stand, `/llama start` startet den Server, `/llama stop` beendet ihn und gibt den Grafikspeicher frei. Das Log des Servers steht in `C:\Ember\Logs\llama-server.log`. Bricht der Start ab, zeigt pi die letzte Fehlerzeile daraus.
+
+**Über das Startskript.** `C:\Ember\llama.cpp\llama-server starten.cmd` startet den Server in einem Konsolenfenster, zum Beispiel im Terminal von VS Code oder über das Startmenü unter „llama-server (Ember)“. Strg+C beendet ihn. Läuft schon einer, etwa von pi gestartet, sagt das Skript das und startet keinen zweiten.
+
+Ember zeigt einen so gestarteten Server mit „außerhalb von Ember gestartet“ an. „Server stoppen“ beendet ihn auch dann.
 
 ## Pi
 

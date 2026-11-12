@@ -13,6 +13,8 @@
          so host messages (log, steps, errors) use the same keys and the same umlauts. -->
     <EmbeddedResource Include="..\..\ui\src\locales\*.json" LogicalName="Ember.Locales.%(Filename).json" />
     <!-- Public keys of the admins (team file signatures). Without this file Ember checks no signature. -->
+    <!-- The Pi extension that starts llama-server (LlamaLaunch writes it into ~/.pi/agent/extensions). -->
+    <EmbeddedResource Include="Resources\ember-llama.ts" LogicalName="Ember.ember-llama.ts" />
     <EmbeddedResource Include="..\..\config\team-signing.pub" LogicalName="Ember.team-signing.pub" Condition="Exists('..\..\config\team-signing.pub')" />
   </ItemGroup>
 

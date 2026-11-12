@@ -852,13 +852,15 @@
       "lastError": "Letzte Fehlermeldung: {line}",
       "generation": "{tps} Token/s Antwort",
       "prompt": "{tps} Token/s Prompt",
-      "onCpu": "llama-server rechnet auf der CPU, nicht auf der NVIDIA. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu.",
+      "onCpu": "llama-server rechnet laut nvidia-smi nicht auf der NVIDIA, sondern auf der CPU. Meist fehlt die CUDA-Laufzeit neben llama-server.exe. Installier llama.cpp neu.",
       "build": "llama-server aus {path} · Laufzeit: {dlls} · Geräte: {devices}",
       "blocked": {
         "noLlama": "Erst llama.cpp installieren oder einen vorhandenen Ordner verwenden.",
         "incomplete": "Der gewählte llama.cpp-Build ist unvollständig. Neu installieren oder einen vorhandenen Ordner verwenden.",
         "noModel": "Erst ein Modell laden oder ein lokales hinzufügen."
-      }
+      },
+      "stoppedExternal": "llama-server beendet, der außerhalb von Ember lief (Pi oder Startskript)",
+      "external": "außerhalb von Ember gestartet"
     },
     "pi": {
       "title": "Pi (Coding-Agent)",
@@ -906,6 +908,42 @@
         "todo": "Aufgabenliste für das Modell, live sichtbar"
       },
       "webSearchProxy": "Websuche geht über px: proxy in {path} = {url}"
+    },
+    "launch": {
+      "title": "Ohne Ember starten",
+      "piText": "pi startet den Server, sobald du es mit dem lokalen Modell öffnest. /llama stop in pi beendet ihn.",
+      "pi": {
+        "noConfig": "Ember hat llama-server noch nicht eingerichtet ({path} fehlt). Ember öffnen, KI.",
+        "notReady": "llama-server ist in Ember noch nicht startklar.",
+        "loading": "llama lädt {model} …",
+        "ready": "llama bereit · Port {port}",
+        "readyLong": "llama-server läuft.",
+        "waiting": "Warte auf llama-server, das Modell wird geladen …",
+        "exited": "llama-server hat sich beendet (Code {code}). {line} Ganzes Log: {log}",
+        "timeout": "llama-server antwortet nach 5 Minuten noch nicht. Log: {log}",
+        "stopped": "llama-server beendet, der Grafikspeicher ist wieder frei.",
+        "notRunning": "llama-server lief nicht.",
+        "command": "llama-server: /llama start, /llama stop oder /llama für den Stand",
+        "stateReady": "llama-server läuft mit {model} auf Port {port}.",
+        "stateLoading": "llama-server lädt gerade {model}.",
+        "stateOff": "llama-server läuft nicht. /llama start startet ihn, sonst startet er mit der nächsten Nachricht."
+      },
+      "piOff": "Klickst du unten bei Pi auf „Mit llama-server verbinden“, startet pi den Server künftig selbst.",
+      "piOn": "pi startet llama",
+      "script": "Startskript, auch im Startmenü als „llama-server (Ember)“:",
+      "openFolder": "Ordner öffnen",
+      "copyPath": "Pfad kopieren",
+      "notReady": "Noch nicht startklar: {reason}",
+      "shortcut": "llama-server mit den Einstellungen aus Ember starten",
+      "writeFailed": "Startdateien für llama-server ließen sich nicht schreiben: {detail}",
+      "piExtension": "pi startet llama-server jetzt selbst: {path}",
+      "alreadyRunning": "llama-server läuft schon auf Port {port} (zum Beispiel von pi gestartet).",
+      "starting": "Starte llama-server mit {model} auf Port {port}. Strg+C beendet ihn.",
+      "reasons": {
+        "noBuild": "llama.cpp ist noch nicht installiert. Ember öffnen, KI, llama.cpp installieren.",
+        "noCudaRuntime": "Dem llama.cpp-Build fehlt die CUDA-Laufzeit. In Ember llama.cpp neu installieren.",
+        "noModel": "Es ist noch kein Modell geladen. In Ember unter KI ein Modell laden."
+      }
     }
   },
   "settings": {
