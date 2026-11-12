@@ -43,7 +43,9 @@
   <button class="btn small ghost" onclick={async () => { await run(() => api('log.clear')); app.logs = []; }}><Icon name="trash" size={14} />{t('log.clear')}</button>
 </div>
 
-<div class="log card" bind:this={list}>
+<!-- Focusable, so the keyboard can scroll it; not role="log", which would read every new line aloud. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scroll area must be reachable by keyboard, WCAG 2.1.1) -->
+<div class="log card" bind:this={list} role="region" aria-label={t('log.title')} tabindex="0">
   {#if visible.length === 0}
     <p class="muted">{t('log.empty')}</p>
   {:else}
@@ -51,6 +53,8 @@
       <div class="entry {e.level}">
         <span class="time">{formatTime(e.time)}</span>
         <span class="source">{e.source}</span>
+        <!-- The level as a sign and as text, not only as the colour of the message. -->
+        <span class="level">{#if e.level === 'warning' || e.level === 'error'}<Icon name="alert" size={13} label={t(`log.levels.${e.level}`)} />{:else}<span class="visually-hidden">{t(`log.levels.${e.level}`)}</span>{/if}</span>
         <span class="message">{e.message}</span>
       </div>
     {/each}
@@ -61,11 +65,15 @@
   .tools { margin-bottom: 12px; gap: 12px; }
   .filter { width: 220px; }
   .log { font-family: var(--mono); font-size: 12.5px; padding: 10px 0; height: calc(100vh - 260px); min-height: 300px; overflow: auto; }
-  .entry { display: grid; grid-template-columns: 74px 52px 1fr; gap: 10px; padding: 2px 16px; }
+  .entry { display: grid; grid-template-columns: 74px 52px 14px 1fr; gap: 10px; padding: 2px 16px; }
   .entry:hover { background: var(--surface-2); }
   .time, .source { color: var(--text-muted); }
   .message { white-space: pre-wrap; overflow-wrap: anywhere; }
   .entry.debug .message { color: var(--text-muted); }
+  .level { display: flex; align-items: center; height: 1.5em; }
+  .entry.warning .level { color: var(--warn); }
+  .entry.error .level { color: var(--error); }
+  .log:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .entry.warning .message { color: var(--warn); }
   .entry.error .message { color: var(--error); font-weight: 500; }
   .log .muted { padding: 0 16px; font-family: var(--font); }

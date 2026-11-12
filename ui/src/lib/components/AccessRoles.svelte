@@ -103,7 +103,7 @@
   <!-- the roles -->
   <nav class="list" aria-label={t('access.roles')}>
     {#each roles as r, i (i)}
-      <button class="item" class:active={r === role} onclick={() => (selected = i)} animate:flip={{ duration: 160 }}>
+      <button class="item" class:active={r === role} aria-current={r === role ? 'true' : undefined} onclick={() => (selected = i)} animate:flip={{ duration: 160 }}>
         <span class="name">{r.name || '–'}</span>
         <span class="small muted sum">{summary(r)}</span>
         <span class="small muted count"><Icon name="users" size={12} />{r.members.length}</span>
@@ -197,7 +197,7 @@
     transition: background-color 150ms ease-out, border-color 150ms ease-out;
   }
   .item:hover { background: var(--surface-2); }
-  .item.active { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow); }
+  .item.active { background: var(--surface); border-color: var(--border); box-shadow: inset 3px 0 0 var(--accent), var(--shadow); }
   .item .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .item .count { display: inline-flex; align-items: center; gap: 4px; grid-row: 1; grid-column: 2; }
   .item .sum { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

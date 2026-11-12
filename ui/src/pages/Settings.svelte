@@ -233,7 +233,7 @@
     </div>
   {/if}
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 <style>

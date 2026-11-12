@@ -69,7 +69,7 @@
             </button>
           {/each}
           {#if c.detail || output[c.id]}
-            <button class="btn ghost small" aria-expanded={!!open[c.id]} onclick={() => (open[c.id] = !open[c.id])}>{t('common.details')}</button>
+            <button class="btn ghost small" aria-expanded={!!open[c.id]} aria-label={`${t('common.details')}: ${host(c.title)}`} onclick={() => (open[c.id] = !open[c.id])}>{t('common.details')}</button>
           {/if}
         </div>
         {#if open[c.id]}
@@ -79,7 +79,7 @@
     {/each}
   </div>
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 <style>

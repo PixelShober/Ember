@@ -32,7 +32,11 @@
     !!info?.suggestedName && !!info.suggestedEmail && info.name === info.suggestedName &&
       (info.email ?? '').toLowerCase() === info.suggestedEmail.toLowerCase(),
   );
-  const valid = $derived(name.trim().length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()));
+  const nameOk = $derived(name.trim().length > 1);
+  const emailOk = $derived(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()));
+  const valid = $derived(nameOk && emailOk);
+  // Only once something was typed: an empty form is not an error yet.
+  const showProblem = $derived(!valid && !!(name || email));
   const changed = $derived(info != null && (name.trim() !== (info.name ?? '') || email.trim() !== (info.email ?? '')));
 
   function useSuggestion() {
@@ -85,11 +89,11 @@
   </div>
 
   <section class="card stack form">
-    <label class="field"><span>{t('git.name')}</span><input bind:value={name} autocomplete="name" spellcheck="false" /></label>
-    <label class="field"><span>{t('git.email')}</span><input bind:value={email} type="text" inputmode="email" autocomplete="email" spellcheck="false" /></label>
+    <label class="field"><span>{t('git.name')}</span><input bind:value={name} autocomplete="name" spellcheck="false" aria-invalid={showProblem && !nameOk} aria-describedby={showProblem ? 'git-identity-problem' : undefined} /></label>
+    <label class="field"><span>{t('git.email')}</span><input bind:value={email} type="text" inputmode="email" autocomplete="email" spellcheck="false" aria-invalid={showProblem && !emailOk} aria-describedby={showProblem ? 'git-identity-problem' : undefined} /></label>
     <div class="row">
       <button class="btn primary" disabled={!valid || !changed} onclick={save}><Icon name="check" size={16} />{t('git.save')}</button>
-      {#if !valid && (name || email)}<span class="small muted">{t('errors.gitIdentityInvalid')}</span>{/if}
+      {#if showProblem}<span id="git-identity-problem" class="field-error"><Icon name="alert" size={14} />{t('errors.gitIdentityInvalid')}</span>{/if}
     </div>
   </section>
 
@@ -137,7 +141,7 @@
     </section>
   {/if}
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 <style>

@@ -647,7 +647,9 @@
         "5": "Aggressive at guaranteed",
         "6": "Efficient aggressive at guaranteed"
       }
-    }
+    },
+    "matchesTarget": "matches the target",
+    "differsFromTarget": "differs from the target"
   },
   "wol": {
     "title": "Wake-on-LAN for this machine",
@@ -1303,7 +1305,8 @@
       "useTeam": "Use it",
       "teamSaved": "Team configuration set: {path}",
       "teamFailed": "The team file at {path} cannot be used: {detail}",
-      "account": "Signed in as {user}."
+      "account": "Signed in as {user}.",
+      "teamPathLabel": "Path to the team file"
     },
     "tabs": {
       "roles": "Roles",

@@ -81,7 +81,7 @@
         <button class="btn small ghost icon-only" onclick={close} title={t('common.close')} aria-label={t('common.close')}><Icon name="x" size={16} /></button>
       </header>
       {#if local === null}
-        <div class="wait muted small">{t('common.loading')}</div>
+        <div class="wait muted small" role="status">{t('common.loading')}</div>
       {:else if !local}
         <div class="wait muted small">{t('handbook.missing')}</div>
       {:else}

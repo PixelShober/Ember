@@ -647,7 +647,9 @@
         "5": "Aggressiv bei Zusicherung",
         "6": "Effizient aggressiv bei Zusicherung"
       }
-    }
+    },
+    "matchesTarget": "entspricht dem Ziel",
+    "differsFromTarget": "weicht vom Ziel ab"
   },
   "wol": {
     "title": "Wake-on-LAN für diesen Rechner",
@@ -1303,7 +1305,8 @@
       "useTeam": "Übernehmen",
       "teamSaved": "Team-Konfiguration übernommen: {path}",
       "teamFailed": "Die Teamdatei unter {path} lässt sich nicht nutzen: {detail}",
-      "account": "Angemeldet als {user}."
+      "account": "Angemeldet als {user}.",
+      "teamPathLabel": "Pfad zur Teamdatei"
     },
     "tabs": {
       "roles": "Rollen",

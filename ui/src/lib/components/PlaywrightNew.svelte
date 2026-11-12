@@ -89,8 +89,8 @@
     </div>
     <label class="field">
       <span class="small muted">{t('playwright.create.name')}</span>
-      <input type="text" bind:value={rawName} placeholder={t('playwright.create.namePlaceholder')} spellcheck="false" autocomplete="off" />
-      <span class="small muted">{target ? t('playwright.create.target', { path: target }) : t('playwright.create.nameRule')}</span>
+      <input type="text" bind:value={rawName} placeholder={t('playwright.create.namePlaceholder')} spellcheck="false" autocomplete="off" aria-describedby="pw-new-name-hint" />
+      <span id="pw-new-name-hint" class="small muted">{target ? t('playwright.create.target', { path: target }) : t('playwright.create.nameRule')}</span>
     </label>
   </div>
 

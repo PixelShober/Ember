@@ -187,9 +187,10 @@
         {/if}
       </section>
       <section class="card stack tight">
-        <div class="card-head"><Icon name="settings" /><div class="grow"><h2>{t('access.teamfile.extra')}</h2></div></div>
-        <textarea class="json" rows="14" bind:value={extra} disabled={!editable} spellcheck="false"></textarea>
-        {#if extraError}<p class="small error">{extraError}</p>{/if}
+        <div class="card-head"><Icon name="settings" /><div class="grow"><h2 id="extra-title">{t('access.teamfile.extra')}</h2></div></div>
+        <textarea class="json" rows="14" bind:value={extra} disabled={!editable} spellcheck="false" aria-labelledby="extra-title"
+          aria-invalid={!!extraError} aria-describedby={extraError ? 'extra-error' : undefined}></textarea>
+        {#if extraError}<p id="extra-error" class="field-error"><Icon name="alert" size={14} />{extraError}</p>{/if}
       </section>
     {/if}
   </div>
@@ -200,7 +201,7 @@
     <button class="btn primary small" disabled={!dirty || !editable || !!extraError} onclick={() => (signing = true)}><Icon name="shield" size={14} />{t('access.sign.button')}</button>
   </div>
 {:else}
-  <p class="muted">{t('common.loading')}</p>
+  <p class="muted" role="status">{t('common.loading')}</p>
 {/if}
 
 {#if signing && view}

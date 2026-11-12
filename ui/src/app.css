@@ -26,6 +26,9 @@
   --ember: linear-gradient(90deg, var(--accent), var(--glow) 65%, var(--core));
   --ember-up: linear-gradient(0deg, var(--accent), var(--glow) 60%, var(--core));
 
+  /* Edges of text fields and selects: at least 3:1 against every background (WCAG 1.4.11). */
+  --field-border: color-mix(in srgb, var(--text-muted) 75%, var(--border-strong));
+
   --radius: 12px;
   --radius-small: 8px;
   --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Noto Sans', sans-serif;
@@ -194,7 +197,7 @@ input[type='text'], input[type='search'], input[type='number'], input[type='url'
   padding: 6px 10px;
   min-height: 32px;
   border-radius: var(--radius-small);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--field-border);
   background: var(--surface);
   color: var(--text);
   width: 100%;
@@ -202,6 +205,12 @@ input[type='text'], input[type='search'], input[type='number'], input[type='url'
 textarea { resize: vertical; min-height: 80px; }
 input:focus-visible, select:focus-visible, textarea:focus-visible { border-color: var(--accent); }
 ::placeholder { color: var(--text-muted); opacity: 1; }
+/* A field with a problem: red edge plus the message linked via aria-describedby (not colour alone). */
+[aria-invalid='true'] { border-color: var(--error) !important; }
+.field-error { display: flex; align-items: flex-start; gap: 6px; color: var(--error); font-size: 12.5px; }
+.field-error > svg { flex: none; margin-top: 2px; }
+/* Disclosure toggles get a target of at least 24 px (WCAG 2.5.8). */
+summary { min-height: 24px; display: list-item; padding: 2px 0; }
 input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
 .check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 
