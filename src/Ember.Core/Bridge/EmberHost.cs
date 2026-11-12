@@ -80,6 +80,8 @@ public sealed class EmberHost : IDisposable
         Shell.SetDevTools(DevToolsAllowed);
         _ = DetectProxyAtStartAsync();
         _ = RefreshDisplayNameAsync();
+        // llama.json, start script and Pi extension follow this Ember version's settings and arguments.
+        try { LlamaLaunch.Sync(Settings, Team.Config); } catch (Exception ex) { Log.Debug("llama launch: " + ex.Message); }
 
         _logTimer = new Timer(_ => FlushLog(), null, 150, 150);
         _pxTimer = new Timer(async _ => await PollPxAsync(), null, 500, 4000);
@@ -361,6 +363,7 @@ public sealed class EmberHost : IDisposable
             bool teamChanged = next.TeamConfigPath != Settings.TeamConfigPath;
             next.HideAdvanced = Settings.HideAdvanced;   // only Ctrl+E changes this (app.toggleAdvanced)
             next.LlamaProfileChosen |= Settings.LlamaProfileChosen;
+            next.LlamaModel = Settings.LlamaModel;   // only ai.server.choose / ai.server.start change it
             next.DisplayName ??= Settings.DisplayName;
             // Only Ember itself writes these (team file versions, signing key path).
             next.TeamVersions = Settings.TeamVersions;
@@ -683,11 +686,15 @@ public sealed class EmberHost : IDisposable
             var models = Models.List(Settings, Team.Config);
             var profile = LlamaCpp.Profile(Settings.LlamaProfile);
             var llama = await LlamaCpp.StatusAsync(Settings, ct);
+            // Also writes llama.json and the start script when a download, install or setting changed them.
+            var launch = LlamaLaunch.Sync(Settings, Team.Config);
             // Pi follows the running server, otherwise the model that would start.
-            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? models.FirstOrDefault(m => m.Downloaded);
+            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? LlamaLaunch.Model(Settings, Team.Config);
             var alias = llama.ServerAlias ?? model?.Alias ?? Models.Qwen.Alias!;
             return new
             {
+                launch,
+                serverModelId = LlamaLaunch.Model(Settings, Team.Config)?.Id,
                 gpus = await Gpu.NvidiaAsync(ct),
                 llama,
                 models,
@@ -734,9 +741,28 @@ public sealed class EmberHost : IDisposable
                 Settings.LlamaProfileChosen = true;
                 Settings.Save();
             }
+            if (model.Id != Settings.LlamaModel)
+            {
+                Settings.LlamaModel = model.Id;
+                Settings.Save();
+            }
             await LlamaCpp.CheckBeforeStartAsync(Settings, ct);
             LlamaCpp.StartServer(Settings, model);
+            LlamaLaunch.Sync(Settings, Team.Config);
             return null;
+        });
+        // Model and profile for the next start, also without Ember (Pi, start script): llama.json follows.
+        b.Register("ai.server.choose", (args, _) =>
+        {
+            if (args.OptStr("model") is { } id && Models.List(Settings, Team.Config).Any(m => m.Id == id && m.Downloaded))
+                Settings.LlamaModel = id;
+            if (args.OptStr("profile") is { } profile && LlamaCpp.Profiles.Any(p => p.Id == profile))
+            {
+                Settings.LlamaProfile = profile;
+                Settings.LlamaProfileChosen = true;
+            }
+            Settings.Save();
+            return Task.FromResult<object?>(LlamaLaunch.Sync(Settings, Team.Config));
         });
         // A llama.cpp folder that already works (e.g. C:\llama): Ember starts that build instead of its own.
         b.Register("ai.llama.useFolder", async (args, _) =>
@@ -789,10 +815,13 @@ public sealed class EmberHost : IDisposable
         {
             var llama = await LlamaCpp.StatusAsync(Settings, ct);
             var models = Models.List(Settings, Team.Config);
-            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? models.FirstOrDefault(m => m.Downloaded);
+            var model = models.FirstOrDefault(m => m.Alias == llama.ServerAlias) ?? LlamaLaunch.Model(Settings, Team.Config);
             var alias = llama.ServerAlias ?? model?.Alias ?? Models.Qwen.Alias!;
             var context = llama.ServerContext ?? LlamaCpp.Profile(Settings.LlamaProfile).Context;
             var file = PiAgent.Configure(alias, context, Settings.LlamaPort, model?.MmprojPresent ?? false);
+            // Pi starts llama-server by itself from now on.
+            LlamaLaunch.Sync(Settings, Team.Config);
+            LlamaLaunch.InstallPiExtension();
             if (PiAgent.InstalledVersion(PiAgent.WebSearchPackage) != null) PiAgent.SetWebSearchProxy(Effective.PxUrl);
             return file;
         });

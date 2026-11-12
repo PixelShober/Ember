@@ -243,6 +243,9 @@ export function createMockBridge(): Bridge {
     profiles,
     profile: 'standard',
     pi: { installed: false, nodeFound: true, configured: false, configFile: 'C:\\Users\\jmoessner\\.pi\\agent\\models.json', command: 'pi --provider llama-cpp --model qwen3.8-27b', version: null },
+    launch: { ready: true, reason: null, model: 'Qwen3.8-27B (UD-Q4_K_XL)', profile: 'lang', port: 8080, configFile: 'C:\\Ember\\llama.cpp\\llama.json',
+      scriptFile: 'C:\\Ember\\llama.cpp\\llama-server starten.cmd', extensionFile: 'C:\\Users\\jmoessner\\.pi\\agent\\extensions\\ember-llama.ts', piExtension: false },
+    serverModelId: null,
   };
 
   let pwFailedOnce = false;
@@ -455,7 +458,8 @@ export function createMockBridge(): Bridge {
     'ai.server.stop': () => { Object.assign(ai.llama, { serverRunning: false, offloaded: null }); ai.gpus[0].memoryUsedMb = 1830; return null; },
     'ai.models.addLocal': () => { ai.models.push({ id: 'Mistral-Small-Q4_K_M.gguf', name: 'Mistral-Small-Q4_K_M', url: '', note: null, downloaded: true, size: 13_700_000_000, path: 'D:\\KI\\Mistral-Small-Q4_K_M.gguf', local: true, mine: true, alias: 'mistral-small-q4_k_m', mtp: false, mmprojPath: null, mmprojPresent: false, mmprojUrl: null }); return 'Mistral-Small-Q4_K_M.gguf'; },
     'ai.pi.install': () => { void simulate('pi', 'pi', t('ai.pi.jobs.install'), [t('ai.pi.steps.install'), t('ai.pi.steps.mcp')]).then(() => (ai.pi.installed = true)); return null; },
-    'ai.pi.configure': () => { ai.pi.configured = true; return ai.pi.configFile; },
+    'ai.pi.configure': () => { ai.pi.configured = true; if (ai.launch) ai.launch.piExtension = true; return ai.pi.configFile; },
+    'ai.server.choose': (p) => { ai.serverModelId = p.model; if (ai.launch) { ai.launch.profile = p.profile; ai.launch.model = ai.models.find((m) => m.id === p.model)?.name ?? null; } return ai.launch; },
     'ai.pi.packages': async () => {
       await wait(400);
       const pkg = (id: string, npm: string, installed: string | null, latest: string) => ({ id, npm, note: null, installed, latest, updateAvailable: !!installed && installed !== latest });

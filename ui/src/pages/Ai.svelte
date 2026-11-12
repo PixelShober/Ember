@@ -33,7 +33,7 @@
     status = s ?? status;
     settings = v?.user ?? settings;
     if (status) profile = (status.llama.serverProfile as LlamaProfile['id'] | null) ?? status.profile;
-    if (!serverModel || !ready.some((m) => m.id === serverModel)) serverModel = ready[0]?.id ?? '';
+    if (!serverModel || !ready.some((m) => m.id === serverModel)) serverModel = status?.serverModelId ?? ready[0]?.id ?? '';
   }
   onMount(load);
 
@@ -81,6 +81,13 @@
     if (!(await confirm(m.name, text, m.local ? t('ai.models.removeLocal') : t('common.delete'), !m.local))) return;
     await run(() => api('ai.models.delete', { id: m.id }));
     await load();
+  }
+
+  /** Model and profile apply to the next start, also from Pi or the start script (llama.json). */
+  async function choose() {
+    if (!status || status.llama.serverRunning) return;
+    const launch = await run(() => api<AiStatus['launch']>('ai.server.choose', { model: serverModel, profile }));
+    if (launch) status.launch = launch;
   }
 
   async function startServer() {
@@ -254,16 +261,17 @@
       <Icon name="server" />
       <h2>{t('ai.server.title')}</h2>
       {#if status?.llama.serverRunning}<span class="badge ok"><span class="dot"></span>{t('ai.server.running', { port: String(status.llama.port), model: status.llama.serverModel ?? '' })}</span>{/if}
+      {#if status?.llama.external}<span class="badge info">{t('ai.server.external')}</span>{/if}
     </div>
     {#if settings && status}
       <div class="server">
         <label class="field"><span>{t('ai.server.model')}</span>
-          <select bind:value={serverModel} disabled={status.llama.serverRunning}>
+          <select bind:value={serverModel} onchange={choose} disabled={status.llama.serverRunning}>
             {#each ready as m (m.id)}<option value={m.id}>{m.name}</option>{/each}
           </select>
         </label>
         <label class="field"><span>{t('ai.server.profile')}</span>
-          <select bind:value={profile} disabled={status.llama.serverRunning}>
+          <select bind:value={profile} onchange={choose} disabled={status.llama.serverRunning}>
             {#each status.profiles as p (p.id)}<option value={p.id}>{t(`ai.server.profiles.${p.id}`)}</option>{/each}
           </select>
         </label>
@@ -300,6 +308,27 @@
           {#if startBlocked}<span class="small muted">{t(`ai.server.blocked.${startBlocked}`)}</span>{/if}
         {/if}
       </div>
+
+      {#if status.launch}
+        {@const launch = status.launch}
+        <div class="launch stack tight">
+          <div class="launch-head">
+            <h3>{t('ai.launch.title')}</h3>
+            {#if launch.piExtension}<span class="badge ok"><Icon name="check" size={12} />{t('ai.launch.piOn')}</span>{/if}
+          </div>
+          {#if !launch.ready && launch.reason}
+            <div class="note warn"><Calcifer /><p class="small">{t('ai.launch.notReady', { reason: t(`ai.launch.reasons.${launch.reason}`) })}</p></div>
+          {:else}
+            <p class="small">{launch.piExtension ? t('ai.launch.piText') : t('ai.launch.piOff')}</p>
+            <p class="small">{t('ai.launch.script')}</p>
+            <div class="row script">
+              <code class="path">{launch.scriptFile}</code>
+              <button class="btn ghost small" aria-label={t('ai.launch.copyPath')} title={t('ai.launch.copyPath')} onclick={async () => { await copyText(launch.scriptFile); toast('ok', t('common.copied')); }}><Icon name="copy" size={13} /></button>
+              <button class="btn small" onclick={() => run(() => api('app.openFolder', { key: 'llama' }))}><Icon name="folder" size={14} />{t('ai.launch.openFolder')}</button>
+            </div>
+          {/if}
+        </div>
+      {/if}
     {/if}
   </section>
 
@@ -377,6 +406,12 @@
   .error { color: var(--error); }
   .hint { margin: -4px 0 10px; }
   .ext-title { margin-top: 10px; }
+  .launch { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .launch-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .launch-head h3 { margin: 0; }
+  .launch p { margin: 0; }
+  .script { flex-wrap: nowrap; align-items: center; }
+  .path { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
   .ext li { padding: 8px 0; }
   @media (max-width: 1100px) {
     .server, .add { grid-template-columns: 1fr; }
