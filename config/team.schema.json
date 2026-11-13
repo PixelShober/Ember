@@ -46,6 +46,25 @@
       "type": "string",
       "description": "Name des Teams, erscheint in der Seitenleiste."
     },
+    "tagline": {
+      "$ref": "#/$defs/text",
+      "description": "Zeile unter „Ember“ in der Seitenleiste. Leer: DevProblemFixer."
+    },
+    "directory": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Wo der Tab Berechtigungen im Active Directory sucht.",
+      "properties": {
+        "searchBase": {
+          "type": "string",
+          "description": "OU, in der (samt Unter-OUs) nach Benutzern gesucht wird, z. B. OU=Mitarbeiter,DC=firma,DC=local. Leer: die ganze Domäne."
+        },
+        "groupSearchBase": {
+          "type": "string",
+          "description": "OU für Gruppen. Leer: wie searchBase."
+        }
+      }
+    },
     "proxy": {
       "type": "object",
       "additionalProperties": false,

@@ -30,7 +30,7 @@ Ember liest die Datei bei jedem Start und danach alle zwei Minuten, mit deinem W
 | `update` | ja | Team |
 | `playwright` | ja | Team |
 | `mailTemplates` | ja | Team |
-| `proxy`, `software`, `power`, `devTools`, `name` | nein | Teamdatei → Weitere Einstellungen (JSON) |
+| `proxy`, `software`, `power`, `devTools`, `directory`, `name`, `tagline` | nein | Teamdatei → Weitere Einstellungen (JSON) |
 
 `version`, `location`, `signedBy` und `signedAt` setzt Ember beim Signieren selbst.
 
@@ -129,6 +129,32 @@ Wer welche Module sieht. Jede Rolle hat einen Namen, eine Liste von Modulen und 
 Die Startseite gibt es, sobald jemand mindestens ein Modul hat. Sie zeigt nur Karten zu den eigenen Modulen. Energie, KI und Berechtigungen blendet <kbd>Strg</kbd> + <kbd>E</kbd> aus und ein. Gepflegt werden die Rollen am bequemsten im Tab [Berechtigungen](/Ember/handbuch/berechtigungen/).
 
 Ältere Dateien mit `admins` und einer Zugriffsliste (`access.users`, `access.groups`) liest Ember noch. Aus `admins` wird die Rolle „Admins“ mit allen Modulen, aus der alten Zugriffsliste die Rolle „Ember“ mit allem außer Energie, KI und Berechtigungen. Beim Signieren schreibt Ember das neue Format.
+
+### directory
+
+Wo der Tab [Berechtigungen](/Ember/handbuch/berechtigungen/) im Active Directory sucht. Ohne Angabe ist es die ganze Domäne; in großen Domänen ist die Suche deutlich schneller, wenn sie in der OU anfängt, in der eure Leute stehen.
+
+```json
+"directory": {
+  "searchBase": "OU=Mitarbeiter,DC=firma,DC=local",
+  "groupSearchBase": "OU=Gruppen,DC=firma,DC=local"
+}
+```
+
+| Feld | Bedeutung |
+|---|---|
+| `searchBase` | Distinguished Name der OU, in der (samt Unter-OUs) nach Benutzern gesucht wird. `LDAP://server/OU=…` geht auch. |
+| `groupSearchBase` | OU für Gruppen. Leer: wie `searchBase`. |
+
+Die Prüfung, ob ein ausgetippter Name existiert, gilt weiter für die ganze Domäne. Gibt es die OU nicht, bleibt die Vorschlagsliste leer und im Log steht der Grund.
+
+### tagline
+
+Die Zeile unter „Ember“ in der Seitenleiste, ohne Angabe „DevProblemFixer“. Ein Text oder je Sprache:
+
+```json
+"tagline": { "de": "Werkzeugkasten Entwicklung", "en": "Dev toolbox" }
+```
 
 ### devTools
 

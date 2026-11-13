@@ -256,6 +256,7 @@ public sealed class EmberHost : IDisposable
         logDir = Paths.LogDir,
         team = Team.Status,
         teamName = Team.Config.Name,
+        tagline = Team.Config.Tagline?.Get() is { Length: > 0 } tagline ? tagline.Trim() : null,
         serviceCenter = string.IsNullOrWhiteSpace(Team.Config.ServiceCenter?.Email) ? null : Team.Config.ServiceCenter!.Email,
         supervisor = string.IsNullOrWhiteSpace(Team.Config.Supervisor?.Email) ? null : new { Team.Config.Supervisor!.Name, Team.Config.Supervisor.Email },
         repo = "https://github.com/" + AppInfo.GitHubRepo,
@@ -405,11 +406,13 @@ public sealed class EmberHost : IDisposable
         {
             try
             {
-                return await Access.SearchAsync(args.Req("query"), ct);
+                return await Access.SearchAsync(args.Req("query"), Team.Config.Directory, ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                Log.Debug("directory search: " + ex.Message);   // no domain, no VPN: no suggestions, typing still works
+                if (!string.IsNullOrWhiteSpace(Team.Config.Directory?.SearchBase) || !string.IsNullOrWhiteSpace(Team.Config.Directory?.GroupSearchBase))
+                    Log.Warn("directory search (directory.searchBase in the team file?): " + ex.Message);
+                else Log.Debug("directory search: " + ex.Message);   // no domain, no VPN: no suggestions, typing still works
                 return Array.Empty<DirectoryHit>();
             }
         });

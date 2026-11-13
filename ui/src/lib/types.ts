@@ -54,6 +54,8 @@ export interface AppInfo {
   logDir: string;
   team: TeamStatus;
   teamName: string | null;
+  /** The line under "Ember" from the team file (tagline); null: Ember's own. */
+  tagline?: string | null;
   serviceCenter: string | null;
   /** Direct supervisor from team.json: requests for admin rights go there. */
   supervisor: { name: string | null; email: string } | null;

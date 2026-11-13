@@ -440,8 +440,9 @@ export function createMockBridge(): Bridge {
         { name: 'FIRMA\\GG-Ember-Admins', kind: 'group', display: null, detail: 'Admins für Ember' },
         { name: 'FIRMA\\GG-Test', kind: 'group', display: null, detail: 'Testteam' },
       ];
-      const q = String(p.query).toLowerCase();
-      return all.filter((h) => (h.name + (h.display ?? '') + (h.detail ?? '')).toLowerCase().includes(q));
+      // Like the directory: every word ("Jürgen Mößner", "Mößner, Jürgen") has to be somewhere.
+      const words = String(p.query).toLowerCase().split(/[\s,;]+/).filter(Boolean);
+      return all.filter((h) => words.every((w) => (h.name + ' ' + (h.display ?? '') + ' ' + (h.detail ?? '')).toLowerCase().includes(w)));
     },
     'ai.llama.latest': () => ({ tag: 'b12110' }),
     'ai.llama.install': () => { void simulate('llama', 'llama', t('ai.llama.jobs.install'), ['detect', 'release', 'download', 'extract', 'devices', 'cleanup'].map((k) => t(`ai.llama.steps.${k}`))); return null; },

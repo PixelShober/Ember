@@ -147,4 +147,54 @@ public class AccessTests
         Assert.Equal(@"m\2a\29\28x\5c", Access.LdapEscape("m*)(x\\"));
         Assert.Equal("müller", Access.LdapEscape("müller"));
     }
+    [Fact]
+    public void Directory_search_takes_first_and_last_name_in_any_order()
+    {
+        Assert.Equal(new[] { "Max", "Mustermann" }, Access.Words("  Max   Mustermann "));
+        Assert.Equal(new[] { "Mustermann", "Max" }, Access.Words("Mustermann, Max"));
+        Assert.Equal(new[] { "max" }, Access.Words(@"FIRMA\max"));
+        var filter = Access.UserFilter(Access.Words("Max Muster"));
+        Assert.Contains("(|(givenName=Max*)(sn=Max*)", filter);
+        Assert.Contains("(|(givenName=Muster*)(sn=Muster*)", filter);
+        Assert.StartsWith("(&(objectCategory=person)(objectClass=user)", filter);
+        Assert.DoesNotContain("=*Max", filter);   // prefix only: uses the directory's indexes
+        Assert.Contains("(cn=*Test*)", Access.GroupFilter(Access.Words("Test")));
+    }
+
+    [Fact]
+    public void Directory_search_base_is_an_ldap_path()
+    {
+        Assert.Null(Access.Base("  "));
+        Assert.Equal("LDAP://OU=Mitarbeiter,DC=firma,DC=local", Access.Base("OU=Mitarbeiter,DC=firma,DC=local"));
+        Assert.Equal("LDAP://dc01/OU=X,DC=firma", Access.Base("LDAP://dc01/OU=X,DC=firma"));
+    }
+
+    [Fact]
+    public void Exact_names_come_first()
+    {
+        DirectoryHit User(string sam, string display) => new(@"FIRMA\" + sam, "user", display, null);
+        var ranked = Access.Rank(new (DirectoryHit, string?, string?)[]
+        {
+            (User("amax", "Albers, Maxi"), "Maxi", "Albers"),
+            (User("mmustermann", "Mustermann, Max"), "Max", "Mustermann"),
+            (new DirectoryHit(@"FIRMA\GG-Max", "group", null, null), null, null),
+            (User("mmustermann", "Mustermann, Max"), "Max", "Mustermann"),
+        }, "Max Mustermann");
+        Assert.Equal(new[] { @"FIRMA\mmustermann", @"FIRMA\amax", @"FIRMA\GG-Max" }, ranked.Select(h => h.Name));
+    }
+
+    [Fact]
+    public void Only_names_from_the_directory_go_into_the_team_file()
+    {
+        var current = new TeamConfig { Access = new TeamAccess { Roles = new() { new TeamRole { Name = "Test", Modules = new() { "proxy" }, Users = new() { @"FIRMA\alt" } } } } };
+        AccessLookup Lookup(string n) => new(n, "user", n.EndsWith("neu") ? true : n.EndsWith("offline") ? null : n.EndsWith("alt") ? false : false);
+        List<AccessRole> With(params string[] users) => new() { new("Test", new() { "proxy" }, users.Select(u => new AccessEntry(u, "user")).ToList()) };
+
+        // Already in the file: not looked up again, even if the directory no longer knows it.
+        Access.EnsureInDirectory(With(@"FIRMA\alt", @"FIRMA\neu"), new List<AccessEntry>(), current, Lookup);
+        Assert.Equal("accessNotInDirectory", Assert.Throws<EmberException>(() =>
+            Access.EnsureInDirectory(With(@"FIRMA\gibtsnicht"), new List<AccessEntry>(), current, Lookup)).Code);
+        Assert.Equal("accessDirectoryUnreachable", Assert.Throws<EmberException>(() =>
+            Access.EnsureInDirectory(With(), new List<AccessEntry> { new(@"FIRMA\offline", "user") }, current, Lookup)).Code);
+    }
 }
