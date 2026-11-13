@@ -18,6 +18,8 @@ const browser = await chromium.launch();
 for (const lang of langs) {
   for (const scheme of ['light', 'dark']) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 860 }, colorScheme: scheme, locale: lang });
+    // The guided tour starts by itself on the first visit; the pictures show the pages without it.
+    await page.addInitScript(() => localStorage.setItem('ember-tutorial-done', '1'));
     for (const route of routes) {
       await page.goto(`${base}/?lang=${lang}&clean#/${route}`);
       await page.waitForSelector('.page', { timeout: 10000 });

@@ -92,7 +92,7 @@
 
   <!-- Developer tools -->
   <section class="section">
-    <div class="section-head">
+    <div class="section-head" data-tour="software-devtools">
       <div class="grow"><h2>{t('devtools.title')}</h2><p class="small muted">{t('devtools.subtitle')}</p></div>
       {#if missing.length}
         <Calcifer size={30} />

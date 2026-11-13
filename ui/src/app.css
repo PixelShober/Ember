@@ -82,6 +82,9 @@
 /* The sidebar is not cross-faded: it shows live, so its own marker animation (App.svelte) plays. */
 ::view-transition-old(sidebar) { display: none; }
 ::view-transition-new(sidebar) { animation: none; }
+/* Neither is the guided tour (Tour.svelte): it stays on top while the page changes under it. */
+::view-transition-old(tour) { display: none; }
+::view-transition-new(tour) { animation: none; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(6px); } }
 

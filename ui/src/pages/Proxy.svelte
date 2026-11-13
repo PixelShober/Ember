@@ -62,7 +62,7 @@
 </header>
 
 <div class="stack">
-  <section class="card">
+  <section class="card" data-tour="proxy-px">
     <div class="card-head">
       <h2>{t('proxy.px.title')}</h2>
       <span class="badge {tone}"><span class="dot"></span>{statusText}</span>
@@ -87,7 +87,7 @@
     <JobView id="px" />
   </section>
 
-  <section class="card">
+  <section class="card" data-tour="proxy-diag">
     <div class="card-head">
       <div>
         <h2>{t('proxy.diag.title')}</h2>

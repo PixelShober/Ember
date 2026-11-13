@@ -63,7 +63,7 @@
   const actionLabel = $derived(!hasPlaywright ? t('playwright.add') : mode === 'msedge' ? t('playwright.setupEdge') : t('playwright.install'));
 </script>
 
-<section class="card">
+<section class="card" data-tour="pw-project">
   <div class="card-head">
     <Icon name="folder" />
     <div class="grow"><h2>{t('playwright.project')}</h2></div>

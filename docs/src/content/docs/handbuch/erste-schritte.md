@@ -17,7 +17,11 @@ Auf einem frischen Rechner geht es in dieser Reihenfolge am schnellsten:
 4. Unter Software „Fehlende installieren“ für die Entwicklerwerkzeuge (Node.js mit npm, Git, VS Code, Python, Visual Studio, .NET SDK, PowerShell 7), danach die Programme aus der Team-Liste über das Softwarecenter.
 5. Wer lokal Modelle laufen lässt und das Modul Energie hat, wendet dort das Profil „Hohe Leistung (Netzbetrieb)“ an.
 
-Unten auf der Startseite gibt es zwei Abkürzungen: „Diagnosebericht erstellen“ speichert einen Bericht, kopiert ihn in die Zwischenablage und zeigt die Datei im Explorer. „Service-Center kontaktieren“ öffnet die vorbereitete Mail. Den zweiten Knopf gibt es nur, wenn die `team.json` eine Service-Center-Adresse hat.
+Unten auf der Startseite gibt es drei Abkürzungen: „Diagnosebericht erstellen“ speichert einen Bericht, kopiert ihn in die Zwischenablage und zeigt die Datei im Explorer. „Service-Center kontaktieren“ öffnet die vorbereitete Mail. Den zweiten Knopf gibt es nur, wenn die `team.json` eine Service-Center-Adresse hat. „Tutorial starten“ führt dich in etwa einer Minute durch Start, Proxy, Git, Software und Playwright.
+
+## Das Tutorial
+
+Beim ersten Start zeigt Ember von selbst ein kurzes Tutorial: Es hebt nacheinander die wichtigsten Stellen hervor und sagt, wo du wofür klickst. „Weiter“ und „Zurück“ blättern, ebenso die Pfeiltasten. „Überspringen“ oder <kbd>Esc</kbd> beendet es. Du startest es jederzeit wieder mit „Tutorial starten“ auf der Startseite. Tabs, die deine Rollen nicht freigeben, lässt es aus.
 
 ## Das Handbuch
 
