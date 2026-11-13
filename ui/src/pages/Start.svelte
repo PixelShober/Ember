@@ -6,6 +6,7 @@
   import type { GitIdentityInfo, ProxyRow, Route } from '../lib/types';
   import Icon from '../lib/components/Icon.svelte';
   import Calcifer from '../lib/components/Calcifer.svelte';
+  import { startTour } from '../lib/components/Tour.svelte';
 
   let git = $state<GitIdentityInfo | null>(null);
   let gitLoaded = $state(false);
@@ -78,7 +79,7 @@
   <h1>{t('start.title', { name })}</h1>
 </header>
 
-<section class="grid">
+<section class="grid" data-tour="start-status">
   {#each cards as card, i (i)}
     {@const open = canOpen(card.route)}
     <svelte:element this={open ? 'button' : 'div'} class="card status {card.tone}" class:static={!open} role={open ? undefined : 'group'} onclick={open ? () => navigate(card.route) : undefined}>
@@ -97,6 +98,7 @@
   <div class="row">
     <button class="btn" onclick={report}><Icon name="report" size={16} />{t('start.report')}</button>
     {#if app.info?.serviceCenter}<button class="btn" onclick={() => openMail('problem')}><Icon name="mail" size={16} />{t('start.contact')}</button>{/if}
+    <button class="btn" data-tour="start-tour" onclick={startTour}><Icon name="sparkle" size={16} />{t('tour.start')}</button>
   </div>
 </section>
 

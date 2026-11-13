@@ -1450,5 +1450,61 @@
     "title": "Handbuch",
     "hint": "Strg + K schließt, im Handbuch sucht Strg + K",
     "missing": "Das Handbuch steckt nur in der gebauten Oberfläche (npm run build, dann scripts/embed-docs.mjs)."
+  },
+  "tour": {
+    "start": "Tutorial starten",
+    "progress": "Schritt {n} von {total}",
+    "begin": "Los geht’s",
+    "next": "Weiter",
+    "back": "Zurück",
+    "skip": "Überspringen",
+    "finish": "Fertig",
+    "keys": "Mit den Pfeiltasten blätterst du, Esc beendet das Tutorial.",
+    "steps": {
+      "welcome": {
+        "title": "Willkommen bei Ember",
+        "text": "In etwa einer Minute zeige ich dir, wo du was findest: Proxy, Git, Software und Playwright."
+      },
+      "nav": {
+        "title": "Die Seitenleiste",
+        "text": "Hier wechselst du zwischen den Bereichen. Beim Einrichten gehst du sie am besten von oben nach unten durch."
+      },
+      "status": {
+        "title": "Was noch fehlt",
+        "text": "Die Karten zeigen, was auf deinem Rechner schon eingerichtet ist und wo noch etwas zu tun ist. Ein Klick auf eine Karte bringt dich direkt dorthin."
+      },
+      "px": {
+        "title": "Proxy einrichten",
+        "text": "Klick zuerst auf „Installieren / Aktualisieren“. Danach kommen deine Werkzeuge ins Internet. Mit „Starten“ und „Stoppen“ schaltest du den Proxy an und aus."
+      },
+      "diagnose": {
+        "title": "Werkzeuge prüfen",
+        "text": "Die Liste zeigt, welche Werkzeuge schon über den Proxy laufen. Fehlt eins, klickst du in seiner Zeile auf „Auf px setzen“."
+      },
+      "identity": {
+        "title": "Name und E-Mail für Git",
+        "text": "Ember schlägt dir Name und E-Mail vor. Klick auf „Vorschlag übernehmen“ und darunter auf „In git speichern“."
+      },
+      "gitProxy": {
+        "title": "Git ins Netz bringen",
+        "text": "Kommt Git nicht ins Internet, klickst du hier auf „Auf px setzen“."
+      },
+      "devtools": {
+        "title": "Werkzeuge installieren",
+        "text": "„Fehlende installieren“ holt alles, was dir noch fehlt, in einem Rutsch. Einzelne Programme installierst du über ihre Kachel darunter."
+      },
+      "pwTabs": {
+        "title": "Playwright in drei Reitern",
+        "text": "„Projekt“ richtet ein vorhandenes Projekt ein, „Neues Projekt“ legt eins an, und unter „Vorlage“ bestimmst du, womit neue Projekte starten."
+      },
+      "pwProject": {
+        "title": "Projekt einrichten",
+        "text": "Such mit „Ordner wählen“ deinen Projektordner aus und klick dann auf „Browser installieren“."
+      },
+      "done": {
+        "title": "Das war’s",
+        "text": "Das Tutorial startest du jederzeit wieder mit diesem Knopf auf der Startseite. Mehr steht im Handbuch, das du mit Strg + K öffnest."
+      }
+    }
   }
 }

@@ -13,6 +13,7 @@
   import UpdateBanner from './lib/components/UpdateBanner.svelte';
   import PreviewSwitch from './lib/components/PreviewSwitch.svelte';
   import Handbook, { handbook, openHandbook } from './lib/components/Handbook.svelte';
+  import Tour, { tour } from './lib/components/Tour.svelte';
   import Start from './pages/Start.svelte';
   import Proxy from './pages/Proxy.svelte';
   import Git from './pages/Git.svelte';
@@ -54,7 +55,8 @@
     const route = app.route;
     if (!app.ready || !app.info?.access) return;
     document.title = `${t(`nav.${route}`)} · Ember`;
-    if (shown !== null && shown !== route) void focusPage();
+    // The tour changes pages itself and keeps the focus in its card.
+    if (shown !== null && shown !== route && !tour.open) void focusPage();
     shown = route;
   });
 
@@ -95,6 +97,7 @@
 
   /** Ctrl+E shows or hides the advanced tabs (whoever has one; remembered in the settings). */
   async function onKey(e: KeyboardEvent) {
+    if (tour.open) return;
     // Ctrl+K: the handbook, at the page of the open tab.
     if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k' && app.ready) {
       e.preventDefault();
@@ -147,7 +150,7 @@
         </div>
       </div>
 
-      <nav aria-label="Ember">
+      <nav aria-label="Ember" data-tour="nav">
         {#each nav as item (item.route)}
           <a href={'#/' + item.route} class:active={app.route === item.route} aria-current={app.route === item.route ? 'page' : undefined}>
             <Icon name={item.icon} />
@@ -205,6 +208,7 @@
 <Toasts />
 <ConfirmDialog />
 <MailDialog />
+<Tour />
 
 <style>
   .center { height: 100%; display: grid; place-items: center; padding: 24px; }

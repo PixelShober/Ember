@@ -1450,5 +1450,61 @@
     "title": "Handbook",
     "hint": "Ctrl + K closes, inside the handbook Ctrl + K searches",
     "missing": "The handbook is only part of the built UI (npm run build, then scripts/embed-docs.mjs)."
+  },
+  "tour": {
+    "start": "Start tutorial",
+    "progress": "Step {n} of {total}",
+    "begin": "Let’s go",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "finish": "Done",
+    "keys": "The arrow keys turn the pages, Esc ends the tutorial.",
+    "steps": {
+      "welcome": {
+        "title": "Welcome to Ember",
+        "text": "In about a minute I’ll show you where to find what: proxy, Git, software and Playwright."
+      },
+      "nav": {
+        "title": "The sidebar",
+        "text": "This is where you switch between the areas. When setting up, go through them from top to bottom."
+      },
+      "status": {
+        "title": "What is still missing",
+        "text": "The cards show what is already set up on your computer and where something is left to do. Click a card to go straight there."
+      },
+      "px": {
+        "title": "Set up the proxy",
+        "text": "Click “Install / update” first. After that your tools can reach the internet. “Start” and “Stop” turn the proxy on and off."
+      },
+      "diagnose": {
+        "title": "Check your tools",
+        "text": "The list shows which tools already go through the proxy. If one is missing, click “Point to px” in its row."
+      },
+      "identity": {
+        "title": "Name and email for Git",
+        "text": "Ember suggests your name and email. Click “Use suggestion”, then “Save in git” below."
+      },
+      "gitProxy": {
+        "title": "Get Git online",
+        "text": "If Git cannot reach the internet, click “Point to px” here."
+      },
+      "devtools": {
+        "title": "Install your tools",
+        "text": "“Install missing” gets everything you still lack in one go. Single programs are installed from their tile below."
+      },
+      "pwTabs": {
+        "title": "Playwright in three tabs",
+        "text": "“Project” sets up an existing project, “New project” creates one, and “Template” decides what new projects start with."
+      },
+      "pwProject": {
+        "title": "Set up a project",
+        "text": "Pick your project folder with “Choose folder”, then click “Install browsers”."
+      },
+      "done": {
+        "title": "That’s it",
+        "text": "You can start the tutorial again at any time with this button on the home page. There is more in the handbook, which opens with Ctrl + K."
+      }
+    }
   }
 }

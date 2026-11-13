@@ -135,14 +135,15 @@ export function navigate(route: Route): void {
  */
 function changeRoute(next: Route): void {
   if (next === app.route) return;
-  const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+  const doc = document as Document & { startViewTransition?: (update: () => void) => { ready?: Promise<unknown> } | undefined };
   const root = document.documentElement;
   if (!app.ready || !doc.startViewTransition || root.classList.contains('theme-reveal') || matchMedia('(prefers-reduced-motion: reduce)').matches) {
     app.route = next;
     return;
   }
   // The DOM must be updated inside the callback, so the new page is in the "after" snapshot.
-  doc.startViewTransition(() => flushSync(() => (app.route = next)));
+  // A second change right behind the first (arrow keys in the tour, fast clicks) skips this one: no error.
+  doc.startViewTransition(() => flushSync(() => (app.route = next)))?.ready?.catch(() => {});
 }
 
 export async function init(): Promise<void> {

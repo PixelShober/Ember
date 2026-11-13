@@ -61,7 +61,7 @@
     <button class="btn small" onclick={() => navigate('software')}>{t('nav.software')}</button></div>
 {:else if info}
   <h2 class="section-title first">{t('git.identity')}</h2>
-  <div class="grid" class:two={!adopted}>
+  <div class="grid" class:two={!adopted} data-tour="git-identity">
     <section class="card stack tight">
       <div class="row between">
         <h2>{t('git.current')}</h2>
@@ -98,7 +98,7 @@
   </section>
 
   {#if proxy}
-    <section class="card stack tight proxy">
+    <section class="card stack tight proxy" data-tour="git-proxy">
       <div class="card-head">
         <Icon name="proxy" />
         <div class="grow"><h2>{t('git.proxy.title')}</h2></div>
