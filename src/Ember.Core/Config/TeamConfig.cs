@@ -145,6 +145,18 @@ public sealed class TeamAdmins
     public List<string>? Groups { get; set; }
 }
 
+/// <summary>Where the Berechtigungen tab searches the Active Directory.</summary>
+public sealed class TeamDirectory
+{
+    /// <summary>
+    /// Distinguished name of the OU the search for users starts in, e.g. "OU=Mitarbeiter,DC=firma,DC=local"
+    /// (searched with all its sub-OUs). Empty: the whole domain.
+    /// </summary>
+    public string? SearchBase { get; set; }
+    /// <summary>OU for groups; defaults to <see cref="SearchBase"/>.</summary>
+    public string? GroupSearchBase { get; set; }
+}
+
 /// <summary>Pi in the KI tab: which extensions Ember offers (replaces the built-in list).</summary>
 public sealed class TeamUpdate
 {
@@ -165,6 +177,10 @@ public sealed class TeamConfig
     public string? SignedBy { get; set; }
     public DateTime? SignedAt { get; set; }
     public string? Name { get; set; }
+    /// <summary>The line under "Ember" in the sidebar; Ember's own ("DevProblemFixer") if empty.</summary>
+    public LocalizedText? Tagline { get; set; }
+    /// <summary>Where the Berechtigungen tab searches the Active Directory.</summary>
+    public TeamDirectory? Directory { get; set; }
     public TeamProxy? Proxy { get; set; }
     public TeamServiceCenter? ServiceCenter { get; set; }
     public TeamSupervisor? Supervisor { get; set; }

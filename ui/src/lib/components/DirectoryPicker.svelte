@@ -70,8 +70,12 @@
       toast('error', t('access.notFound', { name }));
       return;
     }
+    // Only what exists in the Active Directory goes in: no answer (no VPN) is no.
+    if (found.found === null) {
+      toast('error', t('access.unchecked', { name }));
+      return;
+    }
     const entry: AccessEntry = { name: found.name, kind: found.kind ?? defaultKind };
-    if (found.found === null) toast('info', t('access.unchecked', { name: entry.name, kind: t(`access.${entry.kind}`) }));
     onpick(entry);
     reset();
   }

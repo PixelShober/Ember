@@ -171,6 +171,8 @@
     "playwrightNoEdge": "Microsoft Edge ist auf diesem Rechner nicht installiert. Nimm Chromium oder frag das Service-Center nach Edge.",
     "playwrightEdgeLibrary": "Dein Projekt nutzt {package} ohne Test-Runner, dafür gibt es keine playwright.config. Starte den Browser im Code mit chromium.launch({ channel: 'msedge' }).",
     "accessDenied": "Dieser Bereich ist für dein Konto nicht freigeschaltet.",
+    "accessNotInDirectory": "„{name}“ gibt es im Active Directory nicht. Nur Konten und Gruppen aus dem Verzeichnis dürfen in die Teamdatei.",
+    "accessDirectoryUnreachable": "„{name}“ ließ sich gerade nicht im Active Directory prüfen (VPN?). Ohne Prüfung trägt Ember niemanden ein, versuch es mit Verbindung noch einmal.",
     "accessSelfLockout": "So würdest du dich selbst aussperren: Danach hätte keine deiner Rollen mehr das Modul Berechtigungen.",
     "accessContactInvalid": "„{value}“ ist keine Mailadresse.",
     "accessNoTeamFile": "Ember kennt keine team.json. Trag unter Einstellungen den Pfad ein, dann lassen sich die Listen dort speichern.",
@@ -1316,7 +1318,7 @@
     "group": "Gruppe",
     "remove": "{name} entfernen",
     "notFound": "„{name}“ gibt es im Verzeichnis nicht.",
-    "unchecked": "„{name}“ ließ sich gerade nicht im Verzeichnis prüfen (VPN?) und ist als {kind} eingetragen.",
+    "unchecked": "„{name}“ ließ sich gerade nicht im Verzeichnis prüfen (VPN?). Eingetragen wird nur, wer im Active Directory existiert, versuch es mit Verbindung noch einmal.",
     "duplicate": "„{name}“ steht schon in dieser Rolle.",
     "groupsFilter": "Gruppen filtern",
     "discard": "Verwerfen",
@@ -1434,7 +1436,7 @@
     },
     "roles": "Rollen",
     "tools": "Installationen",
-    "searchEmpty": "Nichts im Verzeichnis zu „{query}“. Mit Enter übernimmst du den Namen so, wie er dasteht.",
+    "searchEmpty": "Nichts im Verzeichnis zu „{query}“. Mit Enter prüft Ember den Namen genau so im Active Directory.",
     "roleHeading": "Rolle {name}"
   },
   "preview": {

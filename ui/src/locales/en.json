@@ -171,6 +171,8 @@
     "playwrightNoEdge": "Microsoft Edge is not installed on this computer. Use Chromium or ask the service center for Edge.",
     "playwrightEdgeLibrary": "Your project uses {package} without the test runner, so there is no playwright.config. Launch the browser in code with chromium.launch({ channel: 'msedge' }).",
     "accessDenied": "This area is not enabled for your account.",
+    "accessNotInDirectory": "“{name}” does not exist in the Active Directory. Only accounts and groups from the directory may go into the team file.",
+    "accessDirectoryUnreachable": "“{name}” could not be checked in the Active Directory right now (VPN?). Ember adds nobody unchecked, try again once connected.",
     "accessSelfLockout": "This would lock you out: none of your roles would have the Permissions module any more.",
     "accessContactInvalid": "\"{value}\" is not a mail address.",
     "accessNoTeamFile": "Ember knows no team.json. Enter its path under Settings, then the lists can be saved there.",
@@ -1316,7 +1318,7 @@
     "group": "Group",
     "remove": "Remove {name}",
     "notFound": "“{name}” does not exist in the directory.",
-    "unchecked": "“{name}” could not be checked in the directory right now (VPN?) and was added as {kind}.",
+    "unchecked": "“{name}” could not be checked in the directory right now (VPN?). Only names that exist in the Active Directory are added, try again once connected.",
     "duplicate": "“{name}” is already in this role.",
     "groupsFilter": "Filter groups",
     "discard": "Discard",
@@ -1434,7 +1436,7 @@
     },
     "roles": "Roles",
     "tools": "Installers",
-    "searchEmpty": "Nothing in the directory for “{query}”. Enter takes the name as typed.",
+    "searchEmpty": "Nothing in the directory for “{query}”. Enter looks the name up in the Active Directory exactly as typed.",
     "roleHeading": "Role {name}"
   },
   "preview": {

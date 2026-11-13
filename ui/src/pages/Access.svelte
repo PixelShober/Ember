@@ -214,7 +214,7 @@
       <div class="field">
         <span>{t('access.sign.keyFile')}</span>
         <div class="row nowrap">
-          <code class="path">{keyFile || '–'}</code>
+          <code class="path" title={keyFile || undefined}>{keyFile || '–'}</code>
           <button class="btn small" type="button" onclick={pickKey}><Icon name="key" size={14} />{t('access.sign.pick')}</button>
         </div>
       </div>
@@ -262,7 +262,8 @@
   .dialog h2 { margin: 0; }
   .field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-muted); }
   .nowrap { flex-wrap: nowrap; }
-  .path { flex: 1; min-width: 0; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-small); overflow-wrap: anywhere; }
+  /* white-space: the row is .nowrap (global: no wrapping), a long key path must still wrap inside its box. */
+  .path { flex: 1; min-width: 0; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-small); white-space: normal; overflow-wrap: anywhere; }
   .end { justify-content: flex-end; margin-top: 6px; }
   .created { padding: 12px 14px; border-radius: var(--radius-small); background: var(--ok-soft); }
   .pem { margin: 0; padding: 10px 12px; border-radius: var(--radius-small); background: var(--surface); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }

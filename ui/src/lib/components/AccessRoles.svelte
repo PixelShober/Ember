@@ -72,12 +72,16 @@
       toast('error', t('access.notFound', { name }));
       return;
     }
+    // Only what exists in the Active Directory goes in: no answer (no VPN) is no.
+    if (found.found === null) {
+      toast('error', t('access.unchecked', { name }));
+      return;
+    }
     const entry: AccessEntry = { name: found.name, kind: found.kind ?? as };
     if (role.members.some((e) => e.name.toLowerCase() === entry.name.toLowerCase())) {
       toast('info', t('access.duplicate', { name: entry.name }));
       return;
     }
-    if (found.found === null) toast('info', t('access.unchecked', { name: entry.name, kind: t(`access.${entry.kind}`) }));
     role.members = [...role.members, entry];
   }
 

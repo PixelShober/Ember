@@ -233,6 +233,7 @@ public static class TeamAdmin
         var bytes = File.ReadAllBytes(path);
         var current = TeamConfig.Parse(TeamFile.Open(new UTF8Encoding(false).GetString(bytes).TrimStart('﻿')).Payload);
         if (current.Version != version) throw new EmberException("teamChanged", ("path", path));
+        if (OperatingSystem.IsWindows()) Access.EnsureInDirectory(doc.Access.Roles, doc.Access.Blocked, current, Access.Lookup);
 
         var target = Target(path);
         var location = TeamFile.Normalize(target);

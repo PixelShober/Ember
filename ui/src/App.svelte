@@ -146,7 +146,7 @@
         <img src="./favicon.svg" alt="" width="32" height="32" />
         <div>
           <strong>Ember</strong>
-          <span class="small muted">{t('app.tagline')}</span>
+          <span class="small muted">{app.info?.tagline || t('app.tagline')}</span>
         </div>
       </div>
 
